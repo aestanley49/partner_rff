@@ -1,0 +1,138 @@
+---
+title: "11.8.19"
+author: "Annabelle"
+date: "November 7, 2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+
+Load in data
+
+```{r}
+getwd()
+setwd("/Users/annabellestanley/Desktop/Fall 2019/RFF part 2")
+###telling computer which folder csv or excel files are in. Note have to specify that folder
+
+tpc <- read.csv("data11.8a.csv") #total partner counts
+sal <- read.csv("data11.8b.csv") #salafsky partner actions
+##two data sets with names assigned
+##note that different csv files from 10.30 (information chanced - see notes AS8)
+```
+
+Data cleaning: Salafsky info 
+  Need to rename columns bc super long
+  Also deleted irrelivant columns 
+
+```{r}
+#deleting columns that won't be used in data set 
+sal$X <- NULL #empty column, nothing even here
+sal$doc.link <- NULL #document links 
+
+#renaming columns
+colnames(sal)[colnames(sal)=="partner.in.agreement"] <- "partner"
+  #note, most column names were manually chnaged in csv file
+```
+
+
+Data cleaning: Salafsky info 
+  Fill in 1s and 0s for partner actions columns X1:funding 
+
+```{r}
+head(sal$X1) #come up as blanks 
+is.na(sal) #no NAs in dataset 
+    #Q: is this because the dataset has been read in as a string/something that doesn't produce NAs?
+str(sal)
+    #all read is a factor bc #automatically turning character vectors into factors.
+#checking to see if blanks in this section of dataset come up as NA
+
+as.numeric(sal$X1) #so each box has corresponding numeric value where empty = 1; anything higher has count 
+as.character(sal$X2)
+as.factor(sal$X2)
+
+#unsure what to do/relevance with structure information 
+
+#try loading data as character strings then chnage to numeric to see if converts to 1s or 0s 
+test <- read.csv("data11.8b.csv", stringsAsFactors = FALSE)
+View(test)
+head(as.numeric(test$X1))
+
+?ifelse
+
+
+#make subsection matrix for all columns want to change as trial
+  #if this works, will need to figure out how to readd later 
+subsal<- sal
+subsal$agreement.number <- subsal$partner <- subsal$Programatic <- subsal$type.of.partners <- NULL
+View(subsal)
+
+as.numeric(subsal$X1)
+
+##Loop attempt  1 
+for(j in 1:ncol(subsal)){ #iterate across the columns of mat
+  if (as.numeric(subsal$X1 == "")) { #
+  print(0)
+  }
+  else {(as.numeric(subsal$X1 > 2))
+  print(1)
+  }
+}
+###code ran but didn't work 
+
+
+##Loop attempt  2
+for(j in 1:ncol(subsal)){ #iterate across the columns of mat
+  if (as.numeric(subsal$X2 == "")) { #
+  subsal$X2 <- 0
+  }
+  else {(as.numeric(subsal$X2 > 2))
+  subsal$X2 <- 1
+  }
+}
+  
+##code is definetely not working
+
+
+```
+
+
+Data cleaning: Salafsky info 
+  checking and correcting for spelling errors 
+  This is probably a living code, where if one is found, change it here
+  Unless there is a better way to do it?
+
+```{r}
+table(sal$partner)
+?count
+data.entry(sal)
+```
+
+
+Data cleaning: Both
+  Check to see if number of partners in salafsky = number of partners in total count 
+  Process:
+    need to make new matrix that holds the count of each document 
+  
+```{r}
+View(sal)
+
+## Questions
+  # how deal with multiple parter rows? 
+```
+
+
+```{r}
+
+```
