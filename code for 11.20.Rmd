@@ -1,0 +1,96 @@
+---
+title: "code for 11.20"
+author: "Annabelle"
+date: "November 18, 2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+Goal here is to establish the code that will generate initial results after cleaning to partner code is done. 
+
+Will run through with current document output document from loop code and this will be written over after the data is cleaned
+
+```{r}
+#load in csv file
+##need to make sure that columns are numeric - how do this? 
+
+
+library(readr)
+require(readr)
+mydata <- read.csv("~/Desktop/Fall 2019/RFF part 2/partnerbyspeciestable.csv", header = TRUE, stringsAsFactors=FALSE)
+mydata$X1 <- NULL
+
+sapply(mydata, class)
+#reading in as interger 
+
+as.numeric(mydata$USFS )
+                   
+                   
+View(mydata)
+```
+
+
+Look at structure 
+
+```{r}
+dim(mydata)
+str(mydata)
+head(mydata)
+is.factor(mydata)
+```
+
+
+column sums 
+
+```{r}
+
+##try subsetting columns so only have numeric ones
+here <- c(mydata$USFS, mydata$BLM, mydata$Montana.Department.of.Fish.Wildlife.and.Parks)
+
+?subset
+abc <- data.frame(mydata$USFS, mydata$BLM, mydata$Montana.Department.of.Fish.Wildlife.and.Parks)
+colSums(abc)
+
+
+#remove nonnumberic columns from dataframe
+a <- mydata
+a <- mydata$Common.name <- mydata$Who.the.partners.are <- mydata$Scientific.name <- NULL
+View(a)
+ca <- colSums(a)
+count(ca)
+v <- (table(subset(a, ca > 1)))
+print(v)
+##really werid output - makes matrix?
+
+
+```
+
+
+row sum 
+```{r}
+
+#even after force conversion of USFS from integer to numeric still get this error ::
+  #Error in rowsum.data.frame(mydata, group = mydata$USFS, reorder = FALSE, : non-numeric data frame in rowsum
+?rowsum.data.frame
+
+##read in again because colsum seems to delete all columns even though tried to subset it 
+library(readr)
+require(readr)
+cs <- read.csv("~/Desktop/Fall 2019/RFF part 2/partnerbyspeciestable.csv", header = TRUE, stringsAsFactors=FALSE)
+cs$X1 <- cs$X <- cs$Who.the.partners.are <- NULL
+
+View(cs)
+
+?rowsum
+
+rowsum(cs, group = cs$Scientific.name)
+  #missing values for 'group'Error in rowsum.data.frame(cs, group = cs$Scientific.name) : 
+  ##non-numeric data frame in rowsum
+rowSums(cs[1,1:ncol(cs)],na.rm = FALSE, dims = 1)
+  #Error in rowSums(cs[1, 1:ncol(cs)], na.rm = FALSE, dims = 1) : 
+  ##'x' must be numeric
+
+```
+
+

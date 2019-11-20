@@ -1,0 +1,170 @@
+---
+title: "code for 11.13"
+author: "Annabelle"
+date: "November 9, 2019"
+output:
+  word_document: default
+---
+
+
+For new code - I am going to c&p what I need from old doc 
+__________________________________________________________
+
+
+
+2. Partner by species table **same code taken from 10.30
+  Creates data table with 1s and 0s for each partner where 1 notes that parter works with species and 0 notes that species is absent for spcified partner
+  Code runs with a number of errors but still seems to work? --> not actually errors just specifiying what the best guess was for each character type 
+  Second part of code deletes extra columns from table 
+
+##this loop seperates parnters on same row by the comma and puts them in their own column 
+
+```{r, echo = FALSE}
+library(readr)
+require(readr)
+trialother <- read_csv("~/Desktop/Fall 2019/RFF part 2/data11.8a_changed.csv")
+is.character(trialother$`Who the partners are`)
+
+
+##Trying to replace NULL values in data sheet
+
+trialother$`Who the partners are`[15]<- "NA"
+trialother$`Who the partners are`[15]
+#this removes all other values in the column
+
+##Most recommended way to replace value is with T-SQL,have requred data base for SQL 
+    #but still not finding SELECT ISNUL command 
+library(dplyr)
+SELECT ISNULL(trialother$`Who the partners are`, 'N/A')
+
+
+#write code to go through and replace? 
+length(NULL)
+if (trialother$`Who the partners are`[] == is.null)
+  replace(trialother$`Who the partners are`[], "N/A")
+#NULL doesn't have any length 
+
+  
+is.list(trialother)
+?apply
+
+trialother[trialother == ""] <- "NA"
+View(trialother)
+
+as.character(trialother$`Who the partners are`)
+for (i in 1:nrow(trialother)) {
+##for (i in c(1,27)) {
+  #cat(i, "\n")
+  dvec <- trimws(strsplit(trialother$`Who the partners are`[i],split=",")[[1]])
+  for (dname in dvec) {
+    if (dname%in%colnames(trialother)) {
+      trialother[i, dname] <- 1              
+    } else {
+      trialother[dname] <- 0
+      trialother[i, dname] <- 1                                     
+    }
+  }
+}
+
+dim(trialother)
+
+# how to remove a column in r / delete column in R # this version will remove column in r by name 
+trialother$`Conservation Plan_1` <- trialother$`notes_all_cleaning specific` <- trialother$'in cooperation (included in total unless stated otherwise) or other vague terms' <- trialother$`number of conservation agreements`<- NULL ;
+  trialother$`total number of partners for species` <- trialother$`type of agreements (source of information)` <- NULL ; trialother$`List agency office (if given)`  <- trialother$`unspecified additional landowners` <- NULL ; 
+    trialother$`If distinction between species specific partners and total agreement partners, list total agreement partners here` <- trialother$`note redundancy` <- NULL ; 
+trialother$'"in cooperation" (included in total unless stated otherwise) or other vague terms' <- NULL
+trialother$X5 <- NULL
+
+View(trialother)
+partnerbyspeciestableb <- trialother
+colnames(partnerbyspeciestableb)
+colnames(trialother)
+
+write.csv(partnerbyspeciestableb, "~/Desktop/Fall 2019/RFF part 2/partnerbyspeciestableb.csv")
+
+```
+
+
+
+
+
+double check spelling 
+```{r, include=FALSE}
+
+View(trialother)
+#something wrong with the code? N/A only counted once for first species with manually entered N/A 
+#probably need to add a line to correct 
+
+(colnames(trialother))
+##should be more than 50 partners total.. I'm confused?? 
+
+##fix spelling 
+?gsub
+?sapply
+
+#rule of tumb - remove acronyms form names unless one of big 3 and replace acronyms with name
+gsub("National Park Service (NPS)", "NPS", trialother$`Who the partners are`)
+gsub("national parks service", "NPS", trialother$`Who the partners are`)
+gsub("Farm Service Agency (FSA)", "Farm Service Agency", trialother$`Who the partners are`)
+
+
+for(i in 1:ncol(trialother)){ #iterate across the columns of mat
+    if(is.na(mat[i,j+1])){ #is this element NA?
+      count=count+1 #if yes, increment "count"
+    }
+}
+
+if(trialother$`Who the partners are`[] == "BLM"){
+  gsub("BLM", "BLAHHHH", trialother$`Who the partners are`)
+}else{
+}
+
+"National Park Service (NPS)" %in% partnerbyspeciestableb$`Who the partners are`
+#so it worked? but it didn't cause still in column after run code 
+
+#trying to see if removed again .. 
+is.element('BLM', partnerbyspeciestableb)
+#not working becayse BLM is definetly element 
+
+View(trialother)
+
+??stringr
+?str_replace_all
+?regex
+require(stringr)
+
+if(trialother$`Who the partners are`[] == "BLM"){
+  gsub("BLM", "BLAHHHH", trialother$`Who the partners are`)
+}else{
+}
+#also tried 
+str_replace_all(trialother$`Who the partners are`, "BLM", "blah")
+
+##challenge is don't want to replace contents of cell, but part of spring while keeping "," and each cell is different 
+
+
+?grepRaw
+
+```
+
+
+
+
+
+double check that have unique values as partners/column heads 
+go through and clean repeated/mis spelt 
+```{r}
+
+View(partnerbyspeciestable)
+
+x <- colnames(partnerbyspeciestable)
+
+require(vctrs)
+count.unique(colnames(trialother))
+??countunique
+vec_count(x)
+
+```
+
+
+
