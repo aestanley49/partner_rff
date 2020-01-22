@@ -1,0 +1,132 @@
+---
+title: "FWS Partnerships"
+author: "Annabelle Stanley, Gwen Iacona, Becky Epanchin-Niell"
+date: "January 21, 2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Objective: 
+Explore the presence and activities of partnerships between players that are engaged in threatened species conservation actions
+
+#Background:
+1.	Threatened species recovery often relies on the formation of partnerships between agencies. These partnerships contribute to recovery through providing resources, performing actions that they are suited to, and encouraging behavior or learning. 
+
+2.	Efficient recovery planning needs to be able to consider existing partnerships and know when to strategically develop new ones. 
+
+3.	This is hard, because we currently do not have a good idea of how common partnerships are, whether they are more or less common across different types of species/recovery initiatives, or who the partners are. In addition, we do not know what the different partners contribute to the recovery effort
+
+4.	One situation where partners are explicitly acknowledged is when species are precluded from listing because of proactive conservation measures. This is likely not representative of how partnerships work across the bulk of ESA listed species, but it gives us an opportunity to start to think about how to explore partnerships so they can be better incorporated into conservation planning.
+
+5.	In this study we aim to characterize partnerships within precluded species and begin to explore how conservation actions are distributed across partnering agencies. We do so by answering the following questions:
+  -	what are the characteristics of partnership for species that are precluded from listing?
+  -	who are the organizations partnering with FWS?
+  - 	what are the roles of different partners?
+
+
+```{r, include = FALSE}
+## setup the file structure so that this markdown document is in the main project folder along with the other folders noted below
+
+DataSource <- "./data" # input raw dataset goes here
+output.dir <-"./output" # output dataset writes to here
+functions.dir <- "./functions" # directory for functions 
+
+source(file.path(functions.dir,'FormatData.R')) # any functions that are called up by this markdown document need to be sourced here
+
+## general functions that need to be read in. I like to put them at the top so they are easier to deal with when they change version (inevitable)
+library(readr)
+
+```
+
+# Methods
+
+For XXX species that have been precluded from listing due to conservation actions:
+
+We collected data from Federal Register documents, recovery plans, and YYY (need description of data sources) on 
+  -	How many partners were involved in the recovery 
+  - Who the partners were, (subset)
+  - What the partners were doing (subset of subset) 
+     -	Categorized to Salafsky action headings + a few categories (?)
+
+```{r, echo = FALSE, include = FALSE}
+##this chunk is used to format the data set. 
+## can use it to make settings etc.
+
+RawData <- read_csv(paste(DataSource,"/dataforloopattempt.csv", sep = "")) ## ideally, the raw dataset gets noted here, then you do any data manipulations in code and generate a useable dataset for later manipulations. I didn't have the dataset you called up in your code, so I put this one in to demonstrate. I would like it if we coudl get from this dataset in code "copyoflatestsummerwork_Partnerships_Precluded_species_recovered.xlsx"
+
+PartnerData <- FormatData(RawData)
+```
+
+
+We use these data to answer:
+1)	what are the characteristics of partnership for species that are precluded from listing?
+  a) How many partners are there?
+   - Total number of partners
+```{r, echo = FALSE, size='tiny'}
+#Total number of partners
+length(names(PartnerData[,-c(1:2)])) # I counted how many columns there were if i didn't look at columns 1 and 2 ## 262 unique partners
+#length(unique(names(PartnerData[,-c(1:2)]))) # just making sure that there are no repeats. ## 262 so its ok
+```
+  - the number of partners working on each species
+```{r, echo= FALSE, size='tiny'}
+# the number of partners working on each species:
+#rowSums(PartnerData[,-c(1:2)]) # this gives a not very intuitive vector so I put it in the dataset
+
+PartnerData$TotalPartners <- rowSums(PartnerData[,-c(1:2)])
+PartnerData[,c(1:2,265)] # this is the dataset with names and numbers of species. It does not print out in a convenient format. probably should save and make a better table.
+
+# Histogram of partners per species
+hist(PartnerData$TotalPartners,
+     xlab ="number of partners working on a species",
+     main = NULL)
+
+#	Max, min, median, and 1st and 3rd quantiles across species
+summary(PartnerData$TotalPartners)
+
+```
+  - Per agreement/species (?) 
+
+  b) Does number of partners relate to species/recovery programs characteristics?
+   -	taxonomic groups, FWS region, threats, # agreements, form of agreements?
+   -	Test performing regression of form 
+      •	# of partners = a + B1(species characteristics) + B2(program characteristics) + B3(threats) + u(random effects) + error  
+
+```{r}
+
+```
+b)	who are the organizations partnering with FWS?
+  - List of all the organizations involved
+  - Which partners are most commonly working with others
+  - Histogram of partnerships/partner
+  - Max, min, median, and 1st and 3rd quantiles partners/partner
+  
+c.	How many species each partner is involved in projects on
+```{r, echo = FALSE}
+# the number of species that each partner works on:
+
+write.csv(colSums(PartnerData[,-c(1:2)]),paste(output.dir,"/PartnersList.csv", sep = "")) # not very well formatted so I just write to file 
+
+#	Histogram of species/partner 
+hist(colSums(PartnerData[,-c(1:2)]),
+     xlab ="number of species that a partner works on",
+     main = NULL)
+
+# table of this info seems more useful
+table(colSums(PartnerData[,-c(1:2)]))
+
+# summary of species/partner
+summary(colSums(PartnerData[,-c(1:2)])) # 509 Max seems wrong?
+
+```
+
+  
+d.	Network representation of who works with who. Partners as nodes (weighted by number of species they work on), edges between partners weighted by number of species they work on together
+
+c)	How are actions distributed across partners?
+a.	Frequency distribution (histogram) of how many partners are participating in each type of action
+b.	Look at distribution of actions across partners (e.g., what proportion of recovery is enacted by FWS?)
+i.	I haven’t figured out how to do this yet? Maybe % of actions performed for a species as a response = partner identity + characteristics of species?....
+
