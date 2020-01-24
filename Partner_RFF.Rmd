@@ -76,7 +76,7 @@ length(names(PartnerData[,-c(1:2)])) # I counted how many columns there were if 
 #rowSums(PartnerData[,-c(1:2)]) # this gives a not very intuitive vector so I put it in the dataset
 
 PartnerData$TotalPartners <- rowSums(PartnerData[,-c(1:2)])
-PartnerData[,c(1:2,265)] # this is the dataset with names and numbers of species. It does not print out in a convenient format. probably should save and make a better table.
+PartnerData[,c(2,265)] # this is the dataset with names and numbers of species. It does not print out in a convenient format. probably should save and make a better table.
 
 # Histogram of partners per species
 hist(PartnerData$TotalPartners,
@@ -87,7 +87,7 @@ hist(PartnerData$TotalPartners,
 summary(PartnerData$TotalPartners)
 
 ```
-  - Per agreement/species (?) 
+  - Per agreement/species (?) # skip for now... revisit later
 
   b) Does number of partners relate to species/recovery programs characteristics?
    -	taxonomic groups, FWS region, threats, # agreements, form of agreements?
