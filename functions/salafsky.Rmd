@@ -1,0 +1,57 @@
+---
+title: "salafsky"
+author: "Annabelle"
+date: "January 18, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(readr)
+require(readr)
+code <- read.csv("~/Desktop/Fall 2019/RFF part 2/codesalafsky.csv")
+View(code)
+head(code)
+```
+
+Summary Stats
+- # species
+- # docs/agreements? 
+
+```{r}
+unique(code$Common.name) ##41
+unique(code$Scientific.name) ##41
+    ##41 of original 90 species represented here 
+
+#count by two columns? 
+#unique(df[c("yad", "per")])
+??count.unique
+require(vctrs)
+vec_count(code[c("agreement.number", "Common.name")])
+  ##51 different agreements 
+```
+
+# partners 
+  - need to address: 
+    - strings sperated by ","
+    - spelling and Capitolization errors 
+    - new notation like 'all parties' or 'private landowners' 
+```{r}
+##subset based on type of partner so don't have any multi (Should exclude any multi partner strings)
+##then count unique 
+
+nom <- code[-which(code$type.of.partners == "M"),]
+View(nom)
+unique(nom$partner.in.agreement)
+  #139 
+```
+

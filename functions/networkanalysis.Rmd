@@ -1,0 +1,97 @@
+---
+title: "network analysis"
+author: "Annabelle"
+date: "January 18, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+Notes:
+package: igraph or tidygraph/ggraph for tidyverse 
+should be downloaded, just need to require 
+```{r}
+??igraph
+??network
+  #Error in fetch(key) : lazy-load database '/Library/Frameworks/R.framework/Versions/3.5/Resources/library/network/help/network.rdb' is corrupt
+
+```
+
+
+
+```{r}
+Mat <- matrix(0, nrow=243, ncol = 243)
+
+```
+
+
+
+trying to use matrix building functions 
+```{r}
+install.packages('String2AdjMatrix')
+install.packages('String2AdjMatrix')
+require(stringr)
+require(String2AdjMatrix)
+#using demo 
+??generate_adj_matrix
+string_in = c('apples, pears, bananas, kiwi', 'apples, bananas', 'apples, pears', 'apples, pears, kiwi')
+blank_matrix = generate_adj_matrix(string_in)
+string_2_matrix(blank_matrix, string_in, self='0')
+
+##applying in trial 
+string_in = c('USFS, BLM','USFS', 'USFS, BLM', 'USFS, USFWS' )
+blank_matrix = generate_adj_matrix(string_in)
+string_2_matrix(blank_matrix, string_in, self='A')
+
+#brute force method
+  #1 need to print out by each species
+    # ie every there is a 1, print out the list for that row by column heads 
+  #2 need to make sure that USFS is the first of the header
+  #then just combine into matrix? **this could create issues if done wrong.. 
+  #Q but then how count apples? 
+
+vec <- c()
+for(i in 1:nrow(edited)){#iterate across the rows of mat
+    if (edited[i,1] == 1) {
+      #create a list of colnames 
+     vec <- colnames((edited[,1]) == 1)
+    }
+} 
+     colnames(edited[1,]) 
+     
+#could get name to be produced here 
+net <- edited
+net$`N/A` <- NULL #need to remove N/A as partner 
+View(net)     
+get <- apply(edited[-1], 1, function(x) names(which(x >0)))
+#list(get, drop("character(0)"))    #need to remove these but not sure how to
+get
+#so have all partner names that got a 1 for each species, now need to formate correctly before making matrix 
+here <- toString(get)     
+here
+?generate_adj_matrix
+string_in = here
+blank_matrix = generate_adj_matrix(string_in)
+string_2_matrix(blank_matrix, string_in, self='10')
+
+#create list from array 
+frame <- edited$`Scientific name`<- NULL
+View(frame)
+toString(edited)
+?toString
+toString(colnames(edited), width=NULL)
+
+
+
+```
+
+or is igraph a better option? 
