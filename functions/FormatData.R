@@ -11,9 +11,12 @@ FormatData <- function(RawData){ # inside the parenthesis indicates what the fun
 #names(RawData) 
 #View(RawData$`Who the partners are`)
 
+## 0. Remove empty column
+  RawData$X5 <- NULL
+
 ## 1. Replace "N/A" with NA so that fields with no data all behave the same
   
-RawData[which(RawData$`Who the partners are` =="N/A"),13] <- NA # 13 is the column called 'Who the partner are'. I called it this way to avoid writing but it is less safe if things move around
+RawData[which(RawData$`Who the partners are` =="N/A"),5] <- NA # 5 is the column called 'Who the partner are'. I called it this way to avoid writing but it is less safe if things move around // note this changed when other dataset was read in 
 #which(is.na(RawData$`Who the partners are`)) # Check to make sure it worked
 
 ## 2. Manually change spelling errors
@@ -78,7 +81,7 @@ for (i in 1:nrow(EditedData)) {
 
 #names(EditedData) # to see what the column names are
 
-EditedData2 <- EditedData[,c(1,2,14:275)]
+EditedData2 <- EditedData[,c(1,2,8:249)]
 
 write.csv(RawData,paste(DataSource,"/PartnersData.csv", sep = ""))
 
