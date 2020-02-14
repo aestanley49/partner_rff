@@ -3,7 +3,11 @@ library(readr)
 #CleanData <- read_csv("~/Desktop/Fall 2019/RFF part 2/codesalafsky.csv")
 #CleanData <- read.csv("~/Desktop/Fall 2019/RFF part 2/codesalafsky.csv", sep = "", stringsAsFactors = FALSE)
 
-CleanData <- read.csv("~/Desktop/Fall 2019/RFF part 2/codesalafsky.csv", stringsAsFactors = FALSE)
+#CleanData <- read.csv("~/Desktop/Fall 2019/RFF part 2/codesalafsky.csv", stringsAsFactors = FALSE)
+
+#CleanData <- read.csv(DataSource,"/codesalafsky.csv", stringsAsFactors = FALSE)
+CleanData <- read.csv("/usr/local/bin/store/partner_rff/data/codesalafsky.csv", stringsAsFactors = FALSE)
+View(CleanData)
 
 #class(CleanData$partner.in.agreement) ## checking data 
 
@@ -29,14 +33,14 @@ CleanData$partner.in.agreement[143] <- "Vermejo Park Ranch"
 ### ### Changing cells so that spelling errors are corrected and match partner names in other data set 
   ## this formate no longer works 
   CleanData[11,4]  ## Check that no levels aka stringAsFactors = False
-CleanData$`partner in agreement`[11] <-  "Natural Resources Conservation Service"
-CleanData$`partner in agreement`[117] <- "California Department of Fish and Game"
-CleanData$`partner in agreement`[45] <- "Kane County"
-CleanData$`partner in agreement`[56] <- "New Mexico Department of Game and Fish" #New Mexico Department of Fish and Game <- “” Game and Fish *multiple occurances]
-CleanData$`partner in agreement`[57] <- "USFWS, BLM, New Mexico Department of Game and Fish"
-CleanData$`partner in agreement`[62] <- "Vauge/Unspecified cooperators: NRCS, New Mexico Department of Game and Fish"
-CleanData$`partner in agreement`[205] <- "North Carolina Department of Agriculture & Consumer Services Plant Conservation Program"
-CleanData$`partner in agreement`[143] <- "Vermejo Park Ranch"
+#CleanData$`partner in agreement`[11] <-  "Natural Resources Conservation Service"
+#CleanData$`partner in agreement`[117] <- "California Department of Fish and Game"
+#CleanData$`partner in agreement`[45] <- "Kane County"
+#CleanData$`partner in agreement`[56] <- "New Mexico Department of Game and Fish" #New Mexico Department of Fish and Game <- “” Game and Fish *multiple occurances]
+#CleanData$`partner in agreement`[57] <- "USFWS, BLM, New Mexico Department of Game and Fish"
+#CleanData$`partner in agreement`[62] <- "Vauge/Unspecified cooperators: NRCS, New Mexico Department of Game and Fish"
+#CleanData$`partner in agreement`[205] <- "North Carolina Department of Agriculture & Consumer Services Plant Conservation Program"
+#CleanData$`partner in agreement`[143] <- "Vermejo Park Ranch"
   
 ### ### Manual check of multiple partner strings
   # split strings
@@ -61,65 +65,30 @@ CleanData[which(CleanData$funding == 0 | CleanData$funding == "" | CleanData$fun
 
 ### Old way of formating column head 
 ### This formate no longer works 
-CleanData[which(CleanData$`1. Land/Water Management` == 0 | CleanData$`1. Land/Water Management` == "" ),] <- NA
-CleanData[which(CleanData$`2. Species Management`== 0),] <- NA
-CleanData[which(CleanData$`3. Awareness raising`== 0),] <- NA
-CleanData[which(CleanData$`4. law enforcement and prosecution`== 0),] <- NA
-CleanData[which(CleanData$`5. livelihood, economic and moral incentrives`== 0),] <- NA
-CleanData[which(CleanData$`6. Conservation Design and Planning`== 0),] <- NA
-CleanData[which(CleanData$`7. Legal and Policy frameworks`== 0),] <- NA
-CleanData[which(CleanData$`8. Research and monitoring`== 0),] <- NA
-CleanData[which(CleanData$`9. Education and Training`== 0),] <- NA
-CleanData[which(CleanData$`10. Institutional Development`== 0),] <- NA
-CleanData[which(CleanData$funding== 0),] <- NA
+#CleanData[which(CleanData$`1. Land/Water Management` == 0 | CleanData$`1. Land/Water Management` == "" ),] <- NA
+#CleanData[which(CleanData$`2. Species Management`== 0),] <- NA
+#CleanData[which(CleanData$`3. Awareness raising`== 0),] <- NA
+#CleanData[which(CleanData$`4. law enforcement and prosecution`== 0),] <- NA
+#CleanData[which(CleanData$`5. livelihood, economic and moral incentrives`== 0),] <- NA
+#CleanData[which(CleanData$`6. Conservation Design and Planning`== 0),] <- NA
+#CleanData[which(CleanData$`7. Legal and Policy frameworks`== 0),] <- NA
+#CleanData[which(CleanData$`8. Research and monitoring`== 0),] <- NA
+#CleanData[which(CleanData$`9. Education and Training`== 0),] <- NA
+#CleanData[which(CleanData$`10. Institutional Development`== 0),] <- NA
+#CleanData[which(CleanData$funding== 0),] <- NA
 
 CleanData[1, c(11:21)]
 View(CleanData)
 
+### need to subset so that chaning salafsky action rows to 1, not entire dataset 
+subclean <- CleanData[, c(11:21)]
 
-
-if (CleanData[is.na(CleanData)] <- 0){
-} else (CleanData[is.character(CleanData[,c(11:21)])] <- write(1))
-
-
-CleanData[which(CleanData$X1..Land.Water.Management == 0),11]
-
-which.is.chatacter 
-
-CleanData[is.character(CleanData[,c(11:21)])] <- 1
-
-if(CleanData[is.na(CleanData)] <- 0){
-} 
-
-if(CleanData[is.character(CleanData[,c(11:21)])]){
-  return("TRUE")
-}
-   #if true print 1 
-   CleanData[,c(11:21)] <- 1
-   
-   if(CleanData[is.character(CleanData[33,13])]){
-     return("TRUE")
-   }
-   
-  
-   
-class(CleanData[,c(11:21)])
-class(CleanData$X2..Species.Management)
-
-#function converts strings to integers 
-strtoi(CleanData$X3..Awareness.raising, base=0L)
-strtoi(CleanData$X3..Awareness.raising[33], base=0L)
-class(CleanData$X3..Awareness.raising[33])
-
-as.numeric(CleanData$X3..Awareness.raising[33])
-
-?write
-  
-trial <- CleanData[,c(11:21)] %>% strtoi()
-  
-class(trial)
-View(trial)
-}
+subclean[!is.na(subclean)] <- 1
+View(subclean)
+CleanData <- CleanData[,-c(11:21)]
+CleanData <- cbind(CleanData, subclean)
+CleanData[is.na(CleanData)] <- 0
+View(CleanData)
 
 
 
