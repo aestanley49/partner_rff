@@ -90,6 +90,8 @@ CleanData <- cbind(CleanData, subclean)
 CleanData[is.na(CleanData)] <- 0
 View(CleanData)
 
+### end of the function
+} 
 
 
 ### checking the strings of multiple partners
@@ -99,10 +101,23 @@ View(check)
 ?strsplit()
 
 i=1:43
-for (i in 1:ncol(check)) {
-  dvec <- strsplit(check$partner.in.agreement[i], split=",")[[1]]
+for (i in nrow(check)) {
+  dvec <- strsplit(check$partner.in.agreement[i], split=",")
 }
 View(dvec)
       
-           
+
+### ### create table of who partners are, species they are working on and actions they are doing 
+   
+
+overview <- CleanData[-which(CleanData$type.of.partners == "M"),] ## not looking at strings of partners
+overview <- overview[, -c(3, 5,6,8:10)] ## remove columns with excess information
+View(overview)
+
+# each unique partner gets a row
+# create column that contains name of all species working on seperated by ;
+# Add up actions in columns if redudant 
+# create column for total number of species being worked on 
+
+     
            
