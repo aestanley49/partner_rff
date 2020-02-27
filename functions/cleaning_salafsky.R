@@ -1,4 +1,4 @@
-library(readr)
+#library(readr)
 #CleanData <- read_csv("~/Desktop/Fall 2019/RFF part 2/codesalafsky.csv", sep = "", stringsAsFactors = FALSE)
 #CleanData <- read_csv("~/Desktop/Fall 2019/RFF part 2/codesalafsky.csv")
 #CleanData <- read.csv("~/Desktop/Fall 2019/RFF part 2/codesalafsky.csv", sep = "", stringsAsFactors = FALSE)
@@ -6,8 +6,10 @@ library(readr)
 #CleanData <- read.csv("~/Desktop/Fall 2019/RFF part 2/codesalafsky.csv", stringsAsFactors = FALSE)
 
 #CleanData <- read.csv(DataSource,"/codesalafsky.csv", stringsAsFactors = FALSE)
-CleanData <- read.csv("/usr/local/bin/store/partner_rff/data/codesalafsky.csv", stringsAsFactors = FALSE)
-View(CleanData)
+#CleanData <- read_csv(DataSource,"/codesalafsky.csv")
+
+#CleanData <- read.csv("/usr/local/bin/store/partner_rff/data/codesalafsky.csv", stringsAsFactors = FALSE)
+#View(CleanData)
 
 #class(CleanData$partner.in.agreement) ## checking data 
 
@@ -90,34 +92,17 @@ CleanData <- cbind(CleanData, subclean)
 CleanData[is.na(CleanData)] <- 0
 View(CleanData)
 
+## reordering columns so parter is first and then sorting into alphabetical order  
+CleanData2 <- CleanData[,c(4,1,2,3, 6:21)]
+CleanData2 <- CleanData2[order(CleanData2$partner.in.agreement),]
+
+#write.csv(RawData,paste(DataSource,"/PartnersData.csv", sep = ""))
+write.csv(CleanData2, "/usr/local/bin/store/partner_rff/data/tableofpartnersandactions.csv")
+
+### ### ### werid issue where function doesn't hold logic changes 
+
+#*#*#*# Need to add in edits to strings 
+
 ### end of the function
 } 
 
-
-### checking the strings of multiple partners
-check <- CleanData[which(CleanData$type.of.partners == "M"),]
-View(check)
-
-?strsplit()
-
-i=1:43
-for (i in nrow(check)) {
-  dvec <- strsplit(check$partner.in.agreement[i], split=",")
-}
-View(dvec)
-      
-
-### ### create table of who partners are, species they are working on and actions they are doing 
-   
-
-overview <- CleanData[-which(CleanData$type.of.partners == "M"),] ## not looking at strings of partners
-overview <- overview[, -c(3, 5,6,8:10)] ## remove columns with excess information
-View(overview)
-
-# each unique partner gets a row
-# create column that contains name of all species working on seperated by ;
-# Add up actions in columns if redudant 
-# create column for total number of species being worked on 
-
-     
-           
