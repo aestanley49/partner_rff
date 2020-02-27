@@ -21,7 +21,7 @@
 
 cleaning_salafsky <- function(CleanData){
   
-View(CleanData) #Looking at data
+#View(CleanData) #Looking at data
   ## reformate the changes to cells (unsure why, but column head changed)
 CleanData$partner.in.agreement[11] <-  "Natural Resources Conservation Service"
 CleanData$partner.in.agreement[117] <- "California Department of Fish and Game"
@@ -32,9 +32,26 @@ CleanData$partner.in.agreement[62] <- "Vauge/Unspecified cooperators: NRCS, New 
 CleanData$partner.in.agreement[205] <- "North Carolina Department of Agriculture & Consumer Services Plant Conservation Program"
 CleanData$partner.in.agreement[143] <- "Vermejo Park Ranch"
 
+
+  ## Multipule partners in string changes
+CleanData$partner.in.agreement[32] <- "USFS, Mississippi National Guard, USFWS, Mississippi Museum of Natural Sciences" #Changed FWS to USFWS and removed and infront of last partner (MMNS)
+CleanData$partner.in.agreement[197] <- "Uintah County, Utah School and Institutional Trust Lands Administration, Utah Governor’s Public Lands Policy Coordination Office, Utah Division of Wildlife Resources, BLM, USFWS"
+    ## removed "the" from beginning of terms
+
+### ### Manual check of multiple partner strings
+# split strings
+# print out unquie names with corresponding row numbers 
+
+## Changes to make 
+#FWS <- USFWS
+#and Mississippi Museum of Natural Sciences <- remove and
+#the Utah School and Institutional Trust Lands ... <- remove the
+# the Utah Governor’s Public Lands Policy C <- remove the
+# the Utah Division of Wildlife Resources <- remove the 
+
 ### ### Changing cells so that spelling errors are corrected and match partner names in other data set 
   ## this formate no longer works 
-  CleanData[11,4]  ## Check that no levels aka stringAsFactors = False
+# CleanData[11,4]  ## Check that no levels aka stringAsFactors = False
 #CleanData$`partner in agreement`[11] <-  "Natural Resources Conservation Service"
 #CleanData$`partner in agreement`[117] <- "California Department of Fish and Game"
 #CleanData$`partner in agreement`[45] <- "Kane County"
@@ -44,9 +61,7 @@ CleanData$partner.in.agreement[143] <- "Vermejo Park Ranch"
 #CleanData$`partner in agreement`[205] <- "North Carolina Department of Agriculture & Consumer Services Plant Conservation Program"
 #CleanData$`partner in agreement`[143] <- "Vermejo Park Ranch"
   
-### ### Manual check of multiple partner strings
-  # split strings
-  # print out unquie names with corresponding row numbers 
+  
 
 ### ### make new data set with 1s and 0s in action columns 
     ### Subsetting based on if a 0 was in the cell, the cell was empty ("") or there was a space in the call (" ")
@@ -79,8 +94,8 @@ CleanData[which(CleanData$funding == 0 | CleanData$funding == "" | CleanData$fun
 #CleanData[which(CleanData$`10. Institutional Development`== 0),] <- NA
 #CleanData[which(CleanData$funding== 0),] <- NA
 
-CleanData[1, c(11:21)]
-View(CleanData)
+#CleanData[1, c(11:21)]
+# View(CleanData)
 
 ### need to subset so that chaning salafsky action rows to 1, not entire dataset 
 subclean <- CleanData[, c(11:21)]
@@ -90,18 +105,21 @@ View(subclean)
 CleanData <- CleanData[,-c(11:21)]
 CleanData <- cbind(CleanData, subclean)
 CleanData[is.na(CleanData)] <- 0
-View(CleanData)
+# View(CleanData)
+
+
+### ### create table of who partners are, species they are working on and actions they are doing 
 
 ## reordering columns so parter is first and then sorting into alphabetical order  
 CleanData2 <- CleanData[,c(4,1,2,3, 6:21)]
 CleanData2 <- CleanData2[order(CleanData2$partner.in.agreement),]
+overview <- CleanData2[-which(CleanData2$type.of.partners == "M" | CleanData2$type.of.partners == "G"),]
+      ## ^^ not looking at strings of partners
 
 #write.csv(RawData,paste(DataSource,"/PartnersData.csv", sep = ""))
-write.csv(CleanData2, "/usr/local/bin/store/partner_rff/data/tableofpartnersandactions.csv")
+write.csv(CleanData2, "/usr/local/bin/store/partner_rff/output/tableofpartnersandactions.csv")
 
 ### ### ### werid issue where function doesn't hold logic changes 
-
-#*#*#*# Need to add in edits to strings 
 
 ### end of the function
 } 
