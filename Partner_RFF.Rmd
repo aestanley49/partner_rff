@@ -128,6 +128,23 @@ summary(colSums(PartnerData[,-c(1:2)])) # 372 Max seems wrong - this is a sum of
   
 d.	Network representation of who works with who. Partners as nodes (weighted by number of species they work on), edges between partners weighted by number of species they work on together
 
+
+adjacency matrix 
+***check that df is correct
+
+```{r}
+Partner <- as.matrix(PartnerData[,-c(1:2)])
+#Data <- t(Partner)
+#View(Data)
+adjmat <- t(Partner) %*% Partner ## matrix multiplcation between the transpose of our matrix and the original matrix
+View(adjmat)
+
+colSums(Partner) ##use to check numbers in adj matrix 
+```
+
+
+
+
 c)	How are actions distributed across partners?
 a.	Frequency distribution (histogram) of how many partners are participating in each type of action
 b.	Look at distribution of actions across partners (e.g., what proportion of recovery is enacted by FWS?)
