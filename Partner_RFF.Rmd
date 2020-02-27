@@ -138,10 +138,12 @@ Partner <- as.matrix(PartnerData[,-c(1:2)])
 #View(Data)
 adjmat <- t(Partner) %*% Partner ## matrix multiplcation between the transpose of our matrix and the original matrix
 View(adjmat)
-
 colSums(Partner) ##use to check numbers in adj matrix 
-```
 
+#write.csv(RawData,paste(DataSource,"/PartnersData.csv", sep = ""))
+write.csv(adjmat, "/usr/local/bin/store/partner_rff/data/adjacencymatrix.csv")
+
+```
 
 
 
