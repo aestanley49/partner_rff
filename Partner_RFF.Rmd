@@ -38,6 +38,9 @@ source(file.path(functions.dir,'FormatData.R')) # any functions that are called 
 
 ## general functions that need to be read in. I like to put them at the top so they are easier to deal with when they change version (inevitable)
 library(readr)
+library(readxl)
+library(tidyverse)
+library(janitor)
 
 ```
 
@@ -57,6 +60,9 @@ We collected data from Federal Register documents, recovery plans, and YYY (need
 
 RawData <- read_csv(paste(DataSource,"/data11.8a.csv", sep = "")) ## ideally, the raw dataset gets noted here, then you do any data manipulations in code and generate a useable dataset for later manipulations. I didn't have the dataset you called up in your code, so I put this one in to demonstrate. I would like it if we coudl get from this dataset in code "copyoflatestsummerwork_Partnerships_Precluded_species_recovered.xlsx"
 
+##I've changed the file we are using to count the partners - this is the most updated rawest data
+##I couldn't get the read_excel to select the tab so I've copied that tab (new notes) to a new csv file AS9_codingdata
+
 PartnerData <- FormatData(RawData)
 ```
 
@@ -67,8 +73,8 @@ We use these data to answer:
    - Total number of partners
 ```{r, echo = FALSE, size='tiny'}
 #Total number of partners
-length(names(PartnerData[,-c(1:2)])) # I counted how many columns there were if i didn't look at columns 1 and 2 ## 242 unique partners
-#length(unique(names(PartnerData[,-c(1:2)]))) # just making sure that there are no repeats. ## 242 so its ok
+length(names(PartnerData[,-c(1:2)])) # I counted how many columns there were if i didn't look at columns 1 and 2 ## 236 unique partners
+#length(unique(names(PartnerData[,-c(1:2)]))) # just making sure that there are no repeats. ## 236 so its ok
 ```
   - the number of partners working on each species
 ```{r, echo= FALSE, size='tiny'}
@@ -76,7 +82,7 @@ length(names(PartnerData[,-c(1:2)])) # I counted how many columns there were if 
 rowSums(PartnerData[,-c(1:2)]) # this gives a not very intuitive vector so I put it in the dataset
 
 PartnerData$TotalPartners <- rowSums(PartnerData[,-c(1:2)])
-PartnerData[,c(2,244)] # this is the dataset with names and numbers of species. It does not print out in a convenient format. probably should save and make a better table.
+PartnerData[,c(2,239)] # this is the dataset with names and numbers of species. It does not print out in a convenient format. probably should save and make a better table.
 
 # Histogram of partners per species
 hist(PartnerData$TotalPartners,
@@ -141,7 +147,7 @@ View(adjmat)
 colSums(Partner) ##use to check numbers in adj matrix 
 
 #write.csv(RawData,paste(DataSource,"/PartnersData.csv", sep = ""))
-write.csv(adjmat, "/usr/local/bin/store/partner_rff/data/adjacencymatrix.csv")
+write.csv(adjmat, "/usr/local/bin/store/partner_rff/output/adjacencymatrix.csv")
 
 ```
 
