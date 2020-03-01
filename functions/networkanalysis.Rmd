@@ -24,6 +24,44 @@ should be downloaded, just need to require
 ??network
   #Error in fetch(key) : lazy-load database '/Library/Frameworks/R.framework/Versions/3.5/Resources/library/network/help/network.rdb' is corrupt
 
+
+summary(PartnerData)
+ncol(PartnerData)
+##no species names
+Partner <- PartnerData[,-c(1:2)]
+##have 242 partners to put into a matrix 
+
+Data <- t(PartnerData)
+View(Data)
+toString()
+i=1
+for (i in 1:ncol(PartnerData))
+    if (1:nrow(PartnerData == 1)){
+    print(toString(colnames(PartnerData)))
+  }
+
+#this will print colnames for entire dataset 
+print(toString(colnames(PartnerData)))
+## print colnames for first row cell = 1
+which(Data)
+
+
+
+
+
+
+Partner <- as.matrix(PartnerData[,-c(1:2)])
+##have 242 partners to put into a matrix 
+
+Data <- t(Partner)
+View(Data)
+
+
+adjmat <- t(Partner) %*% Partner
+View(adjmat)
+
+colSums(Partner)
+
 ```
 
 
@@ -38,14 +76,27 @@ Mat <- matrix(0, nrow=243, ncol = 243)
 trying to use matrix building functions 
 ```{r}
 install.packages('String2AdjMatrix')
-install.packages('String2AdjMatrix')
 require(stringr)
+library(stringr)
 require(String2AdjMatrix)
+library(String2AdjMatrix)
 #using demo 
 ??generate_adj_matrix
-string_in = c('apples, pears, bananas, kiwi', 'apples, bananas', 'apples, pears', 'apples, pears, kiwi')
-blank_matrix = generate_adj_matrix(string_in)
+string_in = c('apples, pears, bananas, kiwi', 'apples, bananas', 'apples, pears', 'apples, pears, kiwi', 'pears, apples', 'kiwi, pears, bananas, apples')
+blank_matrix = generate_adj_matrix(string_in, remove_spaces = T)
 string_2_matrix(blank_matrix, string_in, self='0')
+
+
+paste(colnames(PartnerData)[PartnerData[1,] == 1], collapse = ',')
+pasteheaders <- function(x){
+  paste(colnames(x)[x == 1], collapse = ',')
+}
+pasteheaders(PartnerData[3,])
+
+apply(PartnerData, 1, FUN = pasteheaders)
+?apply
+
+  ## office hours 1:30 daily? or tyipically Mondays in Mann walk-in 
 
 ##applying in trial 
 string_in = c('USFS, BLM','USFS', 'USFS, BLM', 'USFS, USFWS' )
@@ -56,11 +107,12 @@ string_2_matrix(blank_matrix, string_in, self='A')
   #1 need to print out by each species
     # ie every there is a 1, print out the list for that row by column heads 
   #2 need to make sure that USFS is the first of the header
+#write as string 
   #then just combine into matrix? **this could create issues if done wrong.. 
   #Q but then how count apples? 
 
 vec <- c()
-for(i in 1:nrow(edited)){#iterate across the rows of mat
+for(i in 1:nrow(PartnerData)){#iterate across the rows of mat
     if (edited[i,1] == 1) {
       #create a list of colnames 
      vec <- colnames((edited[,1]) == 1)
@@ -82,6 +134,11 @@ here
 string_in = here
 blank_matrix = generate_adj_matrix(string_in)
 string_2_matrix(blank_matrix, string_in, self='10')
+
+#Can use loop to get all in column names, 
+#then t() 
+#row.names sep = ?
+?row.names
 
 #create list from array 
 frame <- edited$`Scientific name`<- NULL
