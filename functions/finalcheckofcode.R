@@ -3,7 +3,7 @@
 library(readxl)
 library(tidyverse)
 library(janitor)
-count <- AS8_codingdata <- read_excel("/usr/local/bin/store/partner_rff/data/archive/AS8_codingdata.xlsx", "new notes")
+count <- AS8_codingdata <- read_excel("/usr/local/bin/store/partner_rff/data/AS8_codingdata.xlsx", "new notes")
 
 View(count)
 str(count)
@@ -136,7 +136,7 @@ mydata <- add_column(additions, total)
 View(mydata)
 
 ## have new correct counts
-
+write.csv(mydata, "/usr/local/bin/store/partner_rff/output/cleanedcountofpartners.csv")
   
   ###########################################################################
 
