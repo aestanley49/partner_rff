@@ -136,7 +136,9 @@ mydata <- add_column(additions, total)
 View(mydata)
 
 ## have new correct counts
-write.csv(mydata, "/usr/local/bin/store/partner_rff/output/cleanedcountofpartners.csv")
+#write.csv(mydata, "/usr/local/bin/store/partner_rff/output/cleanedcountofpartners.csv")
+
+write.csv(mydata, paste0(DataSource,"/cleanedcountofpartners.csv", sep = ""))
   
   ###########################################################################
 
