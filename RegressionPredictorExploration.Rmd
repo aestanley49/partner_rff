@@ -1,0 +1,124 @@
+---
+title: "RegressionPredictorExploration"
+author: "Annabelle"
+date: "March 7, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+Set up file structure
+```{r, include = FALSE, echo = FALSE}
+#Github file set up
+DataSource <- "./data" # input raw dataset goes here
+output.dir <-"./output" # output dataset writes to here
+functions.dir <- "./functions" # directory for functions 
+
+#Functions to read in 
+library(janitor)
+library(tidyverse)
+```
+
+load in data 
+```{r setup data, echo = FALSE}
+#final cleaned counts are in a column of this data set --> this is the response variable
+partnercount <- read.csv(paste0(DataSource,"/cleanedcountofpartners.csv"), stringsAsFactors = FALSE)
+partnercount <- partnercount %>%  as_tibble() #now can use stringr packages 
+partnercount <- partnercount %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
+#dataset that tyler sent, contains a number of predictors 
+tdata <- read.csv(paste0(DataSource,"/precluded_species_data2.csv"), stringsAsFactors = FALSE)
+tdata <- tdata %>%  as_tibble() #now can use stringr packages 
+tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
+```
+
+Combining two datasets and limiting to predictors of interest 
+```{r combining}
+#View(partnercount) looking at data
+partnercount <- partnercount[, c(2,3,11)] #only selected rows with species names and the total counts
+tdata <- tdata[,c(2,5,20,6,21,17)]
+# proxys being used in analysis and corresponding column number
+  # range size --> area c20 
+  # species group --> taxa c6
+  # area weighted footprint --> c21 ?have options
+  # type of threat --> c17
+  # have 4 other issues to address --> may need to come back to this list 
+#combine two datasets
+#First need to have the names columns be the same (tdata currently has x_x at end) - actually going to try without
+tdata <- tdata %>% rename(scientific_name = scientific_name_x_x)
+View(tdata)
+
+combo <- partnercount %>% full_join(tdata,
+                                    by ="scientific_name")
+#no regression data on 4 of the species that we have partner counts for
+#Removing the data that there are no partner counts for 
+combo <- combo[-which(is.na(combo$total)),] #removed all rows that had na's for partners aka the ones with no information
+#removing extra common name colum 
+combo <- combo[,-c(4)]
+
+```
+
+Need some way to standardize number of partners per agreeement (exact number of even weighting?)
+```{r}
+
+```
+
+Predictor: range size 
+```{r area}
+#distribution of area
+hist(combo$area_x, xlab ="area (m^2)", breaks = 30)
+#response variable or total number of partners
+plot(combo$area_x, combo$total)
+#predictor: taxa
+
+#predictor: human footprint
+plot(combo$area_x, combo$area_weighted_footprint_2009)
+#predictor: threat type 
+
+
+
+```
+
+Predictor: taxa 
+```{r taxa}
+#distribution of taxa
+taxa <- table(combo$species_group_x_x)
+barplot(table(combo$species_group_x_x), las=2, space=1.1,cex.names = .4)
+
+```
+
+Predictor: human footprint 
+```{r footprint}
+#distribution of human footprint 
+hist(combo$area_weighted_footprint_2009, xlab ="human footprint value (weighted per county", breaks = 15)
+#response variable or total number of partners
+plot(combo$area_weighted_footprint_2009, combo$total)
+#predictor: taxa
+
+#predictor: human footprint
+plot(combo$area_weighted_footprint_2009, combo$area_x)
+#predictor: threat type 
+```
+
+Predictor: number of overlapping ranges (Need to bring in from ArcGIS)
+```{r}
+
+```
+
+Predictor: threats data 
+```{r threats}
+#distribution of threats
+threats <- table(combo$threats_addressed_by_conservation_x_x)
+barplot(threats, las=2, space=1.1,cex.names = .4)
+  ##need to clean difference between none and None? 
+```
