@@ -26,6 +26,7 @@ functions.dir <- "./functions" # directory for functions
 #Functions to read in 
 library(janitor)
 library(tidyverse)
+library(readxl)
 ```
 
 load in data 
@@ -40,6 +41,9 @@ tdata <- read.csv(paste0(DataSource,"/precluded_species_data2.csv"), stringsAsFa
 tdata <- tdata %>%  as_tibble() #now can use stringr packages 
 tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
                   clean_names()
+#information for categorizing agreements
+agree <- read_excel(paste0(DataSource,"/AS8_codingdata.xlxs", "total data")) ##can't specify a page with this file set up so loading in from my directory 
+agree <- read_excel("/usr/local/bin/store/partner_rff/data/AS8_codingdata.xlsx", "totaldata")
 ```
 
 Combining two datasets and limiting to predictors of interest 
@@ -56,7 +60,6 @@ tdata <- tdata[,c(2,5,20,6,21,17)]
 #combine two datasets
 #First need to have the names columns be the same (tdata currently has x_x at end) - actually going to try without
 tdata <- tdata %>% rename(scientific_name = scientific_name_x_x)
-View(tdata)
 
 combo <- partnercount %>% full_join(tdata,
                                     by ="scientific_name")
@@ -69,7 +72,11 @@ combo <- combo[,-c(4)]
 ```
 
 Need some way to standardize number of partners per agreeement (exact number of even weighting?)
-```{r}
+need to create columns with HCP | CCA | CCAA | Other
+```{r agreements}
+agree <- agree[,c(1,2,8,15)]
+agree <- agree[-which(agree$`type of agreements (source of information)` == "None"),]
+##creating function to check agreement years and then will load in here 
 
 ```
 
@@ -94,6 +101,15 @@ Predictor: taxa
 #distribution of taxa
 taxa <- table(combo$species_group_x_x)
 barplot(table(combo$species_group_x_x), las=2, space=1.1,cex.names = .4)
+#going to change code to do 1 for flowering plants and 0 for all else
+#create new column and fill it
+taxa <- c(0)
+combo <- add_column(combo, taxa)
+which(combo$species_group_x_x == "Flowering Plants")
+combo[which(combo$species_group_x_x == "Flowering Plants"),8] <- 1
+(table(combo$taxa, combo$total))
+
+#charasmatic mega funa (how define?)
 
 ```
 
@@ -117,8 +133,38 @@ Predictor: number of overlapping ranges (Need to bring in from ArcGIS)
 
 Predictor: threats data 
 ```{r threats}
-#distribution of threats
+#cleaning by replacing and with a comma
+combo$threats_addressed_by_conservation_x_x[17] <- "Habitat modification, species-species interaction" #added comma
+combo$threats_addressed_by_conservation_x_x[18] <- "Habitat modification, pollution, species-species interaction" #added comma
+combo$threats_addressed_by_conservation_x_x[26] <- "Habitat modification, species-species interactions, demographic stochasticity, environmental stochasticity" #added comma
+combo$threats_addressed_by_conservation_x_x[36] <- "Habitat modification, demographic stochasticity"
+combo$threats_addressed_by_conservation_x_x[39] <- "Habitat modification, species-species interaction, demographic stochasticity, environmental stochasticity"
+combo$threats_addressed_by_conservation_x_x[44] <-"Habitat modification, species-species interaction" #added comma
+combo$threats_addressed_by_conservation_x_x[53] <- "Habitat modification, species-species interactions, demographic stochasticity, environmental stochasticity"
+
+ #distribution of threats
 threats <- table(combo$threats_addressed_by_conservation_x_x)
 barplot(threats, las=2, space=1.1,cex.names = .4)
-  ##need to clean difference between none and None? 
+ ##need to clean difference between none and None? (will check with tyler but as of now merge)
+combo[which(combo$threats_addressed_by_conservation_x_x == "none"),7] <- "None"
+#going to change code to do 1 for flowering plants and 0 for all else
+hthreat <- c(0) #create new column and fill it
+combo <- add_column(combo, hthreat)
+which(combo$threats_addressed_by_conservation_x_x == "Habitat modification")
+combo[which(combo$threats_addressed_by_conservation_x_x == "Habitat modification"),9] <- 1
+  #this only changes the cells that have habitat modification as the only threat, not ones with multiple threats
+#count the toal number of threats for each species  
+noneaszero <- combo[-which(combo$threats_addressed_by_conservation_x_x == "None"),]
+noneaszero$totalthreat <- str_count(noneaszero$threats_addressed_by_conservation_x_x, ",") +1  #because partners are seperated by a , need to add 1 to each
+#then rejoin with original dataset
+## remove all datacolumns in noneaszeros besides name and counts
+noneaszero <- noneaszero[,-c(3:9)]
+combo <- combo %>%  #combine original and checked into new data frame
+  full_join(noneaszero, 
+            by = c("scientific_name", "common_name"))
+#add the "Nones" into totalthreat column 
+combo[which(combo$threats_addressed_by_conservation_x_x == "None"),10] <- 0
+
+#every column with multiple threats includes habitat as a threat, but because this is in a string it isn't being counted by hthreat column. Going to add count now 
+combo[which(combo$totalthreat > 1),9] <- 1
 ```
