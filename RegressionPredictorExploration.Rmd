@@ -2,7 +2,9 @@
 title: "RegressionPredictorExploration"
 author: "Annabelle"
 date: "March 7, 2020"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -42,7 +44,6 @@ tdata <- tdata %>%  as_tibble() #now can use stringr packages
 tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
                   clean_names()
 #information for categorizing agreements
-agree <- read_excel(paste0(DataSource,"/AS8_codingdata.xlxs", "total data")) ##can't specify a page with this file set up so loading in from my directory 
 agree <- read_excel("/usr/local/bin/store/partner_rff/data/AS8_codingdata.xlsx", "totaldata")
 ```
 
@@ -50,13 +51,15 @@ Combining two datasets and limiting to predictors of interest
 ```{r combining}
 #View(partnercount) looking at data
 partnercount <- partnercount[, c(2,3,11)] #only selected rows with species names and the total counts
-tdata <- tdata[,c(2,5,20,6,21,17)]
+tdata <- tdata[,c(2,5,20,6,21,17,46,53)]
 # proxys being used in analysis and corresponding column number
   # range size --> area c20 
   # species group --> taxa c6
   # area weighted footprint --> c21 ?have options
   # type of threat --> c17
   # have 4 other issues to address --> may need to come back to this list 
+  # employment (all relevant industries) -> 46
+  # income (all relevant industries) -> 53
 #combine two datasets
 #First need to have the names columns be the same (tdata currently has x_x at end) - actually going to try without
 tdata <- tdata %>% rename(scientific_name = scientific_name_x_x)
@@ -106,7 +109,7 @@ barplot(table(combo$species_group_x_x), las=2, space=1.1,cex.names = .4)
 taxa <- c(0)
 combo <- add_column(combo, taxa)
 which(combo$species_group_x_x == "Flowering Plants")
-combo[which(combo$species_group_x_x == "Flowering Plants"),8] <- 1
+combo[which(combo$species_group_x_x == "Flowering Plants"),10] <- 1
 (table(combo$taxa, combo$total))
 
 #charasmatic mega funa (how define?)
@@ -116,7 +119,7 @@ combo[which(combo$species_group_x_x == "Flowering Plants"),8] <- 1
 Predictor: human footprint 
 ```{r footprint}
 #distribution of human footprint 
-hist(combo$area_weighted_footprint_2009, xlab ="human footprint value (weighted per county", breaks = 15)
+hist(combo$area_weighted_footprint_2009, xlab ="human footprint value (weighted per county", breaks = 10)
 #response variable or total number of partners
 plot(combo$area_weighted_footprint_2009, combo$total)
 #predictor: taxa
@@ -127,7 +130,7 @@ plot(combo$area_weighted_footprint_2009, combo$area_x)
 ```
 
 Predictor: number of overlapping ranges (Need to bring in from ArcGIS)
-```{r}
+```{r range}
 
 ```
 
@@ -151,20 +154,96 @@ combo[which(combo$threats_addressed_by_conservation_x_x == "none"),7] <- "None"
 hthreat <- c(0) #create new column and fill it
 combo <- add_column(combo, hthreat)
 which(combo$threats_addressed_by_conservation_x_x == "Habitat modification")
-combo[which(combo$threats_addressed_by_conservation_x_x == "Habitat modification"),9] <- 1
+combo[which(combo$threats_addressed_by_conservation_x_x == "Habitat modification"),11] <- 1
   #this only changes the cells that have habitat modification as the only threat, not ones with multiple threats
 #count the toal number of threats for each species  
 noneaszero <- combo[-which(combo$threats_addressed_by_conservation_x_x == "None"),]
 noneaszero$totalthreat <- str_count(noneaszero$threats_addressed_by_conservation_x_x, ",") +1  #because partners are seperated by a , need to add 1 to each
 #then rejoin with original dataset
 ## remove all datacolumns in noneaszeros besides name and counts
-noneaszero <- noneaszero[,-c(3:9)]
+noneaszero <- noneaszero[,-c(3:11)]
 combo <- combo %>%  #combine original and checked into new data frame
   full_join(noneaszero, 
             by = c("scientific_name", "common_name"))
 #add the "Nones" into totalthreat column 
-combo[which(combo$threats_addressed_by_conservation_x_x == "None"),10] <- 0
+combo[which(combo$threats_addressed_by_conservation_x_x == "None"),12] <- 0
 
 #every column with multiple threats includes habitat as a threat, but because this is in a string it isn't being counted by hthreat column. Going to add count now 
-combo[which(combo$totalthreat > 1),9] <- 1
+combo[which(combo$totalthreat > 1),11] <- 1
 ```
+
+
+```{r employment}
+#view distribution of employment
+hist(combo$employmentsumrelevant, xlab ="average, area weighted per county, employment level", breaks = 30)
+#response variable or total number of partners
+plot(combo$employmentsumrelevant, combo$total)
+
+```
+
+```{r income}
+#view distribution of employment
+hist(combo$incomerelevant, xlab ="average, area weighted per county, income level", breaks = 30)
+#response variable or total number of partners
+plot(combo$incomerelevant, combo$total)
+```
+
+```{r Correlation Matrix}
+# Correlation Matrix of Predictors vs Responses #######
+## modified some code from http://handlesman.blogspot.com/2011/03/matrix-plot-with-confidence-intervals.html
+
+#set up
+
+PredictorsOnlyPixel <- combo[,c(3)]
+
+PredictAndResponsePixel <- combo[,-c(1,2, 5,7)]
+
+PredictAndResponseGrid <- combo[,-c(1,2, 5,7)]
+  
+# put histograms on the diagonal panel	
+panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
+{
+  usr <- par("usr"); on.exit(par(usr))			# not sure what usr is for?
+  par(usr = c(usr[1:2],0,1.5))
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)			# make the hist 
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col="grey", ...)  # defines what the histogram is going to look like
+}
+
+# put correlations on the upper panels,
+panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- cor(x, y,use="everything")				
+  txt <- format(c(r, 0.123456789), digits=digits)[1]
+  prefix <- "r = "
+  rc <- cor.test(x,y,method = c("pearson"))				## calculate pearsons rho for upper grid
+  txt <- paste(prefix,txt,sep="")
+  text(0.5, 0.5, txt, cex = 1)
+}
+
+## plot a correlation matrix plot that uses the functions specified above to say what to plot where
+      ## this was taken directly from website and still not plotting r values for all 
+pairs(PredictAndResponsePixel[1:8], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+
+##Pixel level
+
+pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+
+## Grid level
+
+pairs(PredictAndResponseGrid,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+
+
+### Predictors only  -->  only have one response so not going to run this one
+##pairs(PredictorsOnlyPixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+
+
+#test correlations to look for covariation between predictors
+#cor(combo$total, combo$taxa) # matrix seems fine
+
+
+```
+
