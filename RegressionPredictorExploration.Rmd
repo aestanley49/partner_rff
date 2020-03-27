@@ -128,12 +128,6 @@ plot(combo$area_weighted_footprint_2009, combo$total)
 plot(combo$area_weighted_footprint_2009, combo$area_x)
 #predictor: threat type 
 ```
-
-Predictor: number of overlapping ranges (Need to bring in from ArcGIS)
-```{r range}
-
-```
-
 Predictor: threats data 
 ```{r threats}
 #cleaning by replacing and with a comma
@@ -187,6 +181,17 @@ hist(combo$incomerelevant, xlab ="average, area weighted per county, income leve
 #response variable or total number of partners
 plot(combo$incomerelevant, combo$total)
 ```
+
+Predictor: number of overlapping ranges (Need to bring in from ArcGIS)
+```{r range}
+#If have locations of centroid points 
+#then calculate distance from one point to the closet one? 
+  #so closer to 0 = less independent, bigger number = more independent? 
+rangeoverlap <- c(0)
+combo <- add_column(combo, rangeoverlap)
+#created as empty vector 
+```
+
 
 ```{r Correlation Matrix}
 # Correlation Matrix of Predictors vs Responses #######
