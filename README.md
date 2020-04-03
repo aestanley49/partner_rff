@@ -69,8 +69,8 @@ File list (filenames, directory structure (for zipped files) and brief descripti
 	- data
 		- #all excel and csv files being used in the analysis
 		- achieve 
-			- # all excel and cvv files created during research gathering 
-			- # i.e. data 1, data 2
+			- all excel and cvv files created during research gathering 
+			- i.e. data 1, data 2
 	- documents
 		- # word or writen documents related to research 
 	- functions
