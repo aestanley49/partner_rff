@@ -72,7 +72,7 @@ File list (filenames, directory structure (for zipped files) and brief descripti
 			- all excel and cvv files created during research gathering 
 			- i.e. data 1, data 2
 	- documents
-		- # word or writen documents related to research 
+		- word or writen documents related to research 
 	- functions
 		- Data cleaning documents that are used (as clean data) in later code
 	- outputs
