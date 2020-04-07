@@ -74,25 +74,25 @@ We use these data to answer:
    - Total number of partners
 ```{r, echo = FALSE, size='tiny'}
 #Total number of partners
-length(names(PartnersData[,-c(1:2)])) # I counted how many columns there were if i didn't look at columns 1 and 2 ## 200 unique partners
+length(names(PartnerData[,-c(1:3)])) # I counted how many columns there were if i didn't look at columns 1 and 2 ## 200 unique partners
 #length(unique(names(PartnersData[,-c(1:2)]))) # just making sure that there are no repeats. ## 236 so its ok
 ```
   - the number of partners working on each species
 ```{r, echo= FALSE, size='tiny'}
 # the number of partners working on each species:
-rowSums(PartnersData[,-c(1:2)]) # this gives a not very intuitive vector so I put it in the dataset
+rowSums(PartnerData[,-c(1:3)]) # this gives a not very intuitive vector so I put it in the dataset
 
-PartnersData$TotalPartners <- rowSums(PartnersData[,-c(1:2)])
-PartnersData[,c(2,203)] # this is the dataset with names and numbers of species. It does not print out in a convenient format. probably should save and make a better table.
+PartnerData$TotalPartners <- rowSums(PartnerData[,-c(1:3)])
+PartnerData[,c(2,201)] # this is the dataset with names and numbers of species. It does not print out in a convenient format. probably should save and make a better table.
 
 # Histogram of partners per species
-hist(PartnersData$TotalPartners,
+hist(PartnerData$TotalPartners,
      xlab ="number of partners working on a species",
      breaks = 60,
      main = NULL)
 
 #	Max, min, median, and 1st and 3rd quantiles across species
-summary(PartnersData$TotalPartners)
+summary(PartnerData$TotalPartners)
 
 ```
   - Per agreement/species (?) # skip for now... revisit later
@@ -116,19 +116,19 @@ c.	How many species each partner is involved in projects on
 # the number of species that each partner works on:
 PartnerData <- FormatData(RawData) #reload data to avoid sum(colsums) glitch
 
-write.csv(colSums(PartnersData[,-c(1:2)]),paste(output.dir,"/PartnersList.csv", sep = "")) # not very well formatted so I just write to file 
+write.csv(colSums(PartnerData[,-c(1:3)]),paste(output.dir,"/PartnersList.csv", sep = "")) # not very well formatted so I just write to file 
 
 #	Histogram of species/partner 
-hist(colSums(PartnersData[,-c(1:2)]),
+hist(colSums(PartnerData[,-c(1:3)]),
      xlab ="number of species that a partner works on",
      breaks = 50, 
      main = NULL)
 
 # table of this info seems more useful
-table(colSums(PartnersData[,-c(1:2)]))
+table(colSums(PartnerData[,-c(1:3)]))
 
 # summary of species/partner
-summary(colSums(PartnersData[,-c(1:2)])) # 372 Max seems wrong - this is a sum of the colsums, unclear why this is being added | if data is reloaded at begining of section, don't have this problem
+summary(colSums(PartnerData[,-c(1:3)])) # 372 Max seems wrong - this is a sum of the colsums, unclear why this is being added | if data is reloaded at begining of section, don't have this problem
 
 ```
 
@@ -140,11 +140,11 @@ adjacency matrix
 ***check that df is correct
 
 ```{r}
-Partner <- as.matrix(PartnersData[,-c(1:2)])
+Partner <- as.matrix(PartnerData[,-c(1:3)])
 #Data <- t(Partner)
 #View(Data)
 adjmat <- t(Partner) %*% Partner ## matrix multiplcation between the transpose of our matrix and the original matrix
-View(adjmat)
+#View(adjmat)
 colSums(Partner) ##use to check numbers in adj matrix 
 
 #write.csv(RawData,paste(DataSource,"/PartnersData.csv", sep = ""))

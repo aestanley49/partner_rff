@@ -65,7 +65,7 @@ RawData[RawData$scientific_name == "Sceloporus arenicolus", 5] <- "USFWS, BLM, C
 RawData[RawData$scientific_name == "Oncorhynchus mykiss aquilarum", 5] <- "California Department of Fish and Wildlife, USFS, USFWS"
 RawData[RawData$scientific_name == "Pyrgulopsis notidicola", 5] <- "Nevada Department of Wildlife, NPS, BLM, USFWS, Nevada Natural Heritage Program, The Nature Conservancy, Desert Research Institute"
 RawData[RawData$scientific_name == "Phrynosoma mcallii", 5] <- "Anza-Borrego State Park, Arizona Game and Fish, California Department of Fish and Game, California State Parks, Ocotillo Wells, BLM, US Bureau of Reclamation, USFWS, US Marine Corps, US Naval Air Facility, US Navy"
-RawData[RawData$scientific_name == "Dalea tentaculoides", 5] <- "USFWS, Tohono Oodham Nation" #spelt wrong because of '
+RawData[RawData$scientific_name == "Dalea tentaculoides", 5] <- NA
 RawData[RawData$scientific_name == "Symphyotrichum georgianum", 5] <- "USFWS, Clemson University, Georgia Department of Natural Resources, Georgia Department of Transportation, Georgia Power, Mecklenburg County Park and Recreation North Carolina, NPS, North Carolina Department of Agriculture & Consumer Services Plant Conservation Program, USFS"
 RawData[RawData$scientific_name == "Astragalus anserinus", 5] <- "BLM, USFWS"
 RawData[RawData$scientific_name == "Penstemon grahamii", 5] <- "Uintah County, Rio Blanco County, Utah School and Institutional Trust Lands Administration, Utah Governors Public Lands Policy Coordination Office, Utah Division of Wildlife Resources, BLM, USFWS"
@@ -141,7 +141,7 @@ for (i in 1:nrow(EditedData)) {
 
 names(EditedData) # to see what the column names are
 
-EditedData2 <- EditedData[,c(1,2,4:203)]
+EditedData2 <- EditedData
 
 write.csv(RawData,paste(DataSource,"/PartnersData.csv", sep = ""))
 

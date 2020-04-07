@@ -1,14 +1,13 @@
 "","x"
-"USFS",26
-"BLM",32
+"USFS",18
+"USFWS",43
+"BLM",22
 "Montana Department of Fish Wildlife and Parks",1
-"USFWS",48
-"Montana Department of Natural Resources and Conservation",1
 "Kentucky Ecological Services Field Office",1
 "Owner of the Beaver Cave property",1
-"Kentucky Department of Fish and Wildlife Resources",3
-"Natural Resources Conservation Service",3
-"Farm Service Agency",1
+"Kentucky Department of Fish and Wildlife Resources",2
+"Natural Resources Conservation Service",2
+"Farm Service Agency",2
 "Kentucky State Nature Preserves Commission",1
 "Kentucky Division of Forestry",1
 "California Department of Fish and Game",6
@@ -22,49 +21,39 @@
 "Riverside County Regional Park and Open-Space District",1
 "Riverside Land Conservancy",1
 "San Diego State University Field Stations Program",1
-"The Nature Conservancy",5
+"The Nature Conservancy",3
 "University of California Riverside",1
-"US Navy",1
-"US Marine Corps",1
+"US Navy",2
+"US Marine Corps",2
 "US Customs and Border Protection",1
 "California State Parks",2
 "Mississippi Army National Guard",1
 "Mississippi Department of Wildlife Fisheries and Parks",1
-"Nevada Department of Conservation and Natural Resources",2
-"Clark County",2
+"Nevada Department of Conservation and Natural Resources",1
+"Clark County",1
 "NPS",7
-"Nevada Department of Wildlife",6
-"Nevada Department of Transportation",2
-"Nevada Division of State Parks",4
-"U.S. Air Force",2
-"Boulder City",2
-"Indiana Coal Council",2
-"Indiana Department of Natural Resources",2
-"Kentucky Coal Association",2
-"Kentucky Coal Country Association",2
-"Kentucky Farm Bureau",2
-"Kentucky Natural Resources and Environmental Cabinet",2
-"Western Kentucky Coal Association;  Office of Surface Mining reclamation and Enforcement",1
-"Utah Division of Parks and Recreation",2
-"FWS",2
-"Kane County",2
-"Cow Head Slough",1
-"California reach of Barrel Creek",1
-"California and Modoc County Cattlemen�s Associations",1
-"California Farm Bureau Federation",2
-"California Department of Fish and Game (CDFG).",1
+"Nevada Department of Wildlife",3
+"Nevada Department of Transportation",1
+"Nevada Division of State Parks",2
+"U.S. Air Force",1
+"Boulder City",1
+"Illinois Department of Natural Resources",1
+"Indiana Department of Natural Resources",1
+"Kentucky Coal Association",1
+"Kentucky Coal Country Association",1
+"Kentucky Farm Bureau",1
+"Kentucky Natural Resources and Environmental Cabinet",1
 "Western Kentucky Coal Association",1
-"Office of Surface Mining reclamation and Enforcement",1
-"private landowners of Cow Head Lake",1
-"private landowners of Cow Head Slough",1
-"private landowners of the California reach of Barrel Creek",1
-"California and Modoc County Cattlemen’s Associations",1
-"California Department of Fish and Wildlife",4
-"Eagle Lake Ranger District",1
-"National Park Service (NPS)",2
-"Nevada Natural Heritage Program (NNHP)",1
-"and Desert Research Institute (DRI).",1
+"Office of Surface Mining Reclamation and Enforcement",1
+"Utah Division of Parks and Recreation",1
+"Kane County",1
+"private landowners of Cow Head Lake Cow Head Slough and California reach of Barrel Creek (four owners all CA signatories)",1
+"principal permittees on BLM lands within the drainage",1
+"California and Modoc County Cattlemen's Associations",1
+"the California Farm Bureau Federation",1
+"California Department of Fish and Wildlife Natural Heritage Division Endangered plant program",1
 "Center of Excellence for Hazardous Materials Management",1
+"NRCS",2
 "Texas A&M University",1
 "Texas Comptroller of Public Accounts",1
 "Texas Interagency Task Force on Economic Growth and Endangered Species",1
@@ -78,187 +67,134 @@
 "Texas and Southwestern Cattle Raisers Association",1
 "Texas Wildlife Association",1
 "Texas Association of Business",1
-"Nevada Natural Heritage Program",3
+"California Department of Fish and Wildlife",3
+"Nevada Natural Heritage Program",2
 "Desert Research Institute",2
 "Anza-Borrego State Park",1
-"Arizona Game and Fish Department",3
+"Arizona Game and Fish",1
 "Ocotillo Wells",1
-"U.S. Bureau of Reclamation",1
-"U.S. Marine Corps Air Station",1
-"U.S. Naval Air Facility",1
-"U.S. Navy SW Division",1
-"The Arizona Department of Water Resources",1
-"Arizona Electric Power Cooperative Inc.",1
-"Arizona Game and Fish Commission",1
-"Arizona Power Authority",1
-"Central Arizona Water Conservation District",1
-"Cibola Valley Irrigation and Drainage District",1
-"City of Bullhead City",1
-"City of Lake Havasu City",1
-"City of Mesa",1
-"City of Somerton",1
-"City of Yuma",1
-"Electrical District No. 3 Pinal County Arizona",1
-"Golden Shores Water Conservation District",1
-"Mohave County Water Authority",1
-"Mohave Valley Irrigation and Drainage District",1
-"Mohave Water Conservation District",1
-"North Gila Valley Irrigation and Drainage District",1
-"Salt River Project Agricultural Improvement and Power District",1
-"Town of Fredonia",1
-"Town of Thatcher",1
-"Town of Wickenburg",1
-"Unit ‚ÄúB‚Äù Irrigation and Drainage District",1
-"Wellton-Mohawk Irrigation and Drainage District",1
-"Yuma County Water Users‚Äô Association; Yuma Irrigation District",1
-"Yuma Mesa Irrigation and Drainage District",1
-"City of Needles",1
-"Coachella Valley Water District",1
-"Colorado River Board of California",1
-"Imperial Irrigation District",1
-"Los Angeles Department of Water and Power",1
-"Palo Verde Irrigation District",1
-"San Diego County Water Authority",1
-"Southern California Edison Company",1
-"the Southern California Public Power Authority",1
-"Bard Water District",1
-"Metropolitan Water District of Southern California",1
-"Bureau of Indian Affairs",1
-"Western Area Power Administration (Western)",1
-"Colorado River Commission of Nevada",1
-"Basic Water Company",1
-"Southern Nevada Water Authority",2
-"Clemson University",2
-"Georgia Department of Natural Resources",3
-"Georgia Department of Transportation",2
-"Georgia Power",2
-"Mecklenburg County Park and Recreation North Carolina",2
-"National Park Service",1
-"North Carolina Department of Agriculture & Consumer Services Plant Conservation Program",2
-"Wyoming Natural Diversity Database",1
-"Uintah County",3
-"Rio Blanco County",3
-"Utah School and Institutional Trust Lands Administration",3
-"Utah Governor�s Public Lands Policy Coordination Office",1
-"Utah Division of Wildlife Resources",3
-"Utah Governor’s Public Lands Policy Coordination Office",2
+"US Bureau of Reclamation",1
+"US Naval Air Facility",1
+"Tohono Oodham Nation",1
+"Clemson University",1
+"Georgia Department of Natural Resources",2
+"Georgia Department of Transportation",1
+"Georgia Power",1
+"Mecklenburg County Park and Recreation North Carolina",1
+"North Carolina Department of Agriculture & Consumer Services Plant Conservation Program",1
+"Uintah County",2
+"Rio Blanco County",2
+"Utah School and Institutional Trust Lands Administration",2
+"Utah Governors Public Lands Policy Coordination Office",2
+"Utah Division of Wildlife Resources",2
 "Utah Department of Natural Resources",1
 "Bureau of Reclamation",1
 "Utah Reclamation Mitigation and Conservation Commission",1
 "Confederated Tribes of the Goshute Reservation",1
 "Central Utah Water Conservancy District",1
-"Southern conservation corporation",1
-"Califonia Department of Fish and Game",1
-"John Hancock Mutual Life Insurace Company",2
-"Bob McIntsh (Private landowner)",2
-"Sierra Pacific Industries",2
-"Hearest Corporation",2
-"Siskiyou County Board of Supervisors",2
-"Caltrans",1
-"CDFW",1
-"Pacific Gas and Electric",2
-"USGS",2
-"NRCS",1
-"Mashpee Wampanoag Tribe",2
-"Lyme Land Conservation Trust",2
-"American Forest Foundation",2
-"Woodcock Limited",2
-"WCS Queens Zoo",2
-"Wells National Esturarine Research Reserve",2
-"Roger Williams Park Zoo",2
-"Audubon Connecticut",2
-"Connecticut Audubon Society",2
-"Open Space Institute",2
-"Audubon New York",2
-"Quail Forever",2
-"Pheasants Forever",2
-"Doris Duke Charitable Foundation",2
-"Wildlife Conservation Society",2
-"Amrican Bird Conservancy",2
-"Quality Deer Management Association",2
-"Sustainable Forestry Initiative",2
-"White Memorial Foundation",2
-"National Fish and Wildlife Foundation",2
-"Ruffed Grouse Society/American Woodcock Society",2
-"National Wild Turkey Federation",2
-"Wildlife Management Institute",2
-"New Engalnd Cottontail Conservation Initiative",2
-"Northeast Forest and Fire Management",2
-"Lyme Timber Company",2
-"Monterey Preservation Land Trust",2
-"Narrow River Land Trust",2
-"Nantucket Conservation Foundation",2
-"Scarborough Land Trust",2
-"Avalonia Land Conservancy",2
-"Orenda Wildlife Land Trust",2
-"Trustees of Reservations",2
-"Berkshire Natural Resources Council",2
-"York Land Trust",2
-"Becket Land Trust",2
-"Trust for Public Land",2
-"Massachusetts National Guard",2
-"New York Division of Fish Wildlife and Marine Resources",2
-"Northeast Association of Fish and Wildlife Agencies",2
-"Rhode Island Division of Fish and Wildlife",2
-"Connecticute Department of Energy & Environmental Protection",1
-"Massachusetts Division of Fisheries and Wildlife",2
-"New Hampshire Fish and Game Department",2
-"Maine Department of Inland Fisheries & Wildlife",1
-"University of Rhode Island College of Envionment and Life Sciences",2
-"University of New Hampshire",2
-"University of New Hampshire Cooperative Extenson",2
+"Southern Nevada Water Authority",1
+"John Hancock Mutual Life Insurace Company",1
+"Bob McIntsh (Private landowner)",1
+"Sierra Pacific Industries",1
+"Hearest Corporation",1
+"Siskiyou County Board of Supervisors",1
 "California Department of Transportation (caltrans)",1
+"Pacific Gas and Electric",1
 "Department of Forest and Rangeland Stewardship Colorado State University",1
-"U.S. National Park Service Death Valley National Park",1
+"USGS",1
+"Mashpee Wampanoag Tribe",1
+"Lyme Land Conservation Trust",1
+"American Forest Foundation",1
+"Woodcock Limited",1
+"WCS Queens Zoo",1
+"Wells National Esturarine Research Reserve",1
+"Roger Williams Park Zoo",1
+"Audubon Connecticut",1
+"Connecticut Audubon Society",1
+"Open Space Institute",1
+"Audubon New York",1
+"Quail Forever",1
+"Pheasants Forever",1
+"Doris Duke Charitable Foundation",1
+"Wildlife Conservation Society",1
+"Amrican Bird Conservancy",1
+"Quality Deer Management Association",1
+"Sustainable Forestry Initiative",1
+"White Memorial Foundation",1
+"National Fish and Wildlife Foundation",1
+"Ruffed Grouse Society/American Woodcock Society",1
+"National Wild Turkey Federation",1
+"Wildlife Management Institute",1
+"New Engalnd Cottontail Conservation Initiative",1
+"Northeast Forest and Fire Management",1
+"Lyme Timber Company",1
+"Monterey Preservation Land Trust",1
+"Narrow River Land Trust",1
+"Nantucket Conservation Foundation",1
+"Scarborough Land Trust",1
+"Avalonia Land Conservancy",1
+"Orenda Wildlife Land Trust",1
+"Trustees of Reservations",1
+"Berkshire Natural Resources Council",1
+"York Land Trust",1
+"Becket Land Trust",1
+"Trust for Public Land",1
+"Massachusetts National Guard",1
+"New York Division of Fish Wildlife and Marine Resources",1
+"Northeast Association of Fish and Wildlife Agencies",1
+"Rhode Island Division of Fish and Wildlife",1
 "Connecticute Department of Energy and Environmental Protection",1
+"Massachusetts Division of Fisheries and Wildlife",1
+"New Hampshire Fish and Game Department",1
 "Maine Department of Inland Fisheries and Wildlife",1
+"University of Rhode Island College of Envionment and Life Sciences",1
+"University of New Hampshire",1
+"University of New Hampshire Cooperative Extenson",1
 "City of NCCP",1
+"City of Carlsbad",1
+"City of San Marcos",1
 "California Resources Agency",1
-"Colorado Parks and Wildlife (CPW)",1
-"New Mexico Department of Game and Fish (NMDGF)",1
-"Mescalero Apache Nation",2
-"Jicarilla Apache Nation",2
-"Taos Pueblo",2
-"Trout Unlimited",2
-"Vermejo Park Ranch",2
-"Colorado Division of Parks and Wildlife",2
-"Village of Cloudcroft",1
-"Otero County",1
-"Lincoln National Forest",1
-"USFWS regional office",1
-"USFWS Ecological services New Mexico Field Office",1
+"Arizona Game and Fish Department",2
 "Colorado Parks and Wildlife",1
 "New Mexico Department of Game and Fish",1
+"Mescalero Apache Nation",1
+"Jicarilla Apache Nation",1
+"Taos Pueblo",1
+"Trout Unlimited",1
+"Vermejo Park Ranch",1
+"Colorado Division of Parks and Wildlife",1
+"Otero County",1
+"Village of Cloudcroft",1
+"Newhall Land and Farming Company",1
+"San Diego Gas and Electric Company",1
 "North Carolina Wildlife Resources Commission",1
 "Duke Energy Carolinas",1
 "Eastern Band of Cherokee Indians",1
 "Tennessee Valley Authority",1
-"Office of Species Conservation",2
-"Idaho Department of Fish & Game",1
-"Idaho Department of Lands",2
-"Idaho Army National Guard",2
-"Nongovernmental Cooperator Representative",2
-"Nevada Division of Wildlife",1
-"Idaho Department of Fish and Game (JDFG)",1
-"Idaho Governor's Office of Species Conservation (OSC)",1
-"Soulen Livestock Company Inc. (Soulen Livestock).",2
-"San Diego Gas and Electric Company",1
+"Office of Species Conservation",1
 "Idaho Department of Fish and Game",2
+"Idaho Department of Lands",1
+"Idaho Army National Guard",1
+"Nongovernmental Cooperator Representative",1
+"US Air Force",1
+"Nevada Division of Wildlife",1
 "Idaho Governor's Office of Species Conservation",1
-"California State Lands Commission",2
-"California Department of Parks and Recreation (California State Parks)",1
-"California Tahoe Conservancy",2
-"League to Save Lake Tahoe",2
-"Nevada Division of Forestry",2
-"Nevada Division of State Lands",2
-"Tahoe Lakefront Owners� Association",1
-"Tahoe Regional Planning Agency",2
-"Montana State University",2
-"Montana Fish Wildlife & Parks",1
-"Foster Creek Conservation District (FCCD)",1
-"Threemile Canyon Farms",2
-"General Electric",2
-"Tahoe Lakefront Owners’ Association",1
+"Soulen Livestock Company Inc. (Soulen Livestock)",1
+"California State Lands Commission",1
+"California Tahoe Conservancy",1
+"League to Save Lake Tahoe",1
+"Nevada Division of Forestry",1
+"Nevada Division of State Lands",1
+"Tahoe Lakefront Owners's Association",1
+"Tahoe Regional Planning Agency",1
 "USDA",1
+"Montana State University",1
 "Montana Fish Wildlife and Parks",1
-"TotalPartners",509
+"Foster Creek Conservation District",1
+"Threemile Canyon Farms",1
+"Portland General Electric",1
+"Washington State Department of Fish and Wildlife",1
+"Washington State Department of Natural Resources",1
+"University of Hawaii",1
+"Utah State Office",1
+"Alcoa Power Generating Inc",1
