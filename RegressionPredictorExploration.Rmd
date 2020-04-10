@@ -11,13 +11,6 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-
 Set up file structure
 ```{r, include = FALSE, echo = FALSE}
 #Github file set up
@@ -26,60 +19,100 @@ output.dir <-"./output" # output dataset writes to here
 functions.dir <- "./functions" # directory for functions 
 
 #Functions to read in 
-library(janitor)
-library(tidyverse)
-library(readxl)
+library(janitor) #cleaning data
+library(tidyverse) #cleaning data
+library(readxl) #loading in files 
+library(raster) #for coordinate distance calc
+library(skimr) #super nice summary package 
+library(car) #contains vif function 
+library(VGAM) #for regression 
 ```
 
 load in data 
 ```{r setup data, echo = FALSE}
 #final cleaned counts are in a column of this data set --> this is the response variable
-partnercount <- read.csv(paste0(DataSource,"/cleanedcountofpartners.csv"), stringsAsFactors = FALSE)
+  ### Need to change cleanedcountofpartners to csv output in FormatData.R
+partnercount <- read.csv(paste0(DataSource,"/EditedFormatDataOutputwithTotals.csv"), stringsAsFactors = FALSE)
 partnercount <- partnercount %>%  as_tibble() #now can use stringr packages 
 partnercount <- partnercount %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
                   clean_names()
 #dataset that tyler sent, contains a number of predictors 
-tdata <- read.csv(paste0(DataSource,"/precluded_species_data2.csv"), stringsAsFactors = FALSE)
+tdata <- read.csv(paste0(DataSource,"/Updated_variables.csv"), stringsAsFactors = FALSE)
 tdata <- tdata %>%  as_tibble() #now can use stringr packages 
 tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
                   clean_names()
+#additional two species not in tdata
+plustwo <- read.csv(paste0(DataSource, "/two_additional_species.csv"), stringsAsFactors = FALSE)
+plustwo <- plustwo %>%  as_tibble() #now can use stringr packages 
+plustwo <- plustwo %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
 #information for categorizing agreements
-agree <- read_excel("/usr/local/bin/store/partner_rff/data/AS8_codingdata.xlsx", "totaldata")
+agree <- read_excel(paste0(DataSource,"/Detailed_methods.xlsx"))
+#average center point 
+center <- read_excel(paste0(DataSource, "/mean_center_range_subsetofprecluded_with_partnerdata.xlsx"))
+
 ```
 
 Combining two datasets and limiting to predictors of interest 
 ```{r combining}
 #View(partnercount) looking at data
-partnercount <- partnercount[, c(2,3,11)] #only selected rows with species names and the total counts
-tdata <- tdata[,c(2,5,20,6,21,17,46,53)]
+partnercount <- partnercount[,c(2,3,7)] #only selected rows with species names and the total counts
+tdata <- tdata[,c(3,16,26,27,32,55:59,66,68)]
+colnames(tdata)
 # proxys being used in analysis and corresponding column number
-  # range size --> area c20 
-  # species group --> taxa c6
-  # area weighted footprint --> c21 ?have options
-  # type of threat --> c17
-  # have 4 other issues to address --> may need to come back to this list 
-  # employment (all relevant industries) -> 46
-  # income (all relevant industries) -> 53
+  # range size --> area c32 
+  # species group --> taxa c16
+  # area weighted footprint --> c33 ?have options
+  # total threat count --> c 26
+  # type of threat --> c27
+  # employment (all relevant industries) -> 55:59
+  # remove --> income (all relevant industries) -> 61
+  # percent public and percent federal c66, c68 
+plustwo <- plustwo[,c(3,8,18,19,24,47:51, 58,60)] #collumns that correspond to the variables above
+colnames(plustwo)
+plustwo <- plustwo %>% rename(scientific_name = scientific_name_x_x)
+#tdata <- rbind(tdata, plustwo) 
+#tdata %>% add_row(plustwo)
 #combine two datasets
 #First need to have the names columns be the same (tdata currently has x_x at end) - actually going to try without
-tdata <- tdata %>% rename(scientific_name = scientific_name_x_x)
+#tdata <- tdata %>% rename(scientific_name = scientific_name_x_x)
 
 combo <- partnercount %>% full_join(tdata,
                                     by ="scientific_name")
 #no regression data on 4 of the species that we have partner counts for
 #Removing the data that there are no partner counts for 
 combo <- combo[-which(is.na(combo$total)),] #removed all rows that had na's for partners aka the ones with no information
-#removing extra common name colum 
-combo <- combo[,-c(4)]
+plustwo <- plustwo[1,]
+combo <- bind_rows(plustwo, combo) #adding extra species 
 
+#removing extra common name colum 
+#combo <- combo[,-c(4)]
+#combo <- combo[,-c(1)]
 ```
 
 Need some way to standardize number of partners per agreeement (exact number of even weighting?)
 need to create columns with HCP | CCA | CCAA | Other
-```{r agreements}
+```{r agreements, echo=FALSE, include=FALSE}
 agree <- agree[,c(1,2,8,15)]
 agree <- agree[-which(agree$`type of agreements (source of information)` == "None"),]
 ##creating function to check agreement years and then will load in here 
+
+agree <- agree[-which(is.na(agree$Common_name_final_dataset)),]
+#agree <- agree[,-c(1:12,15,16)]
+#actually need to futher refine agreement removal in code
+agree[28,2] <- "unknown" #want to remove agreements that aren't included based on NAs in this column, but this agreement has just been left blank
+agree[36,3] <- "0" #question with this species that hasn't been addressed yet 
+agree <- agree[-which(is.na(agree$`comservation agreement name`)),]
+## number of agreements 
+data.frame(agree)
+print(table((agree$agreement_included_1yes_0no)))
+## trying to get the number of conservation agreements per species 
+tgree <- t(agree)
+#View(tgree)
+  ### if reset columns so only for single species, could work? 
+
+## Or go through and re-code programmatic (I think there were ~10) to 1s and 0s 
+
 
 ```
 
@@ -94,9 +127,6 @@ plot(combo$area_x, combo$total)
 #predictor: human footprint
 plot(combo$area_x, combo$area_weighted_footprint_2009)
 #predictor: threat type 
-
-
-
 ```
 
 Predictor: taxa 
@@ -109,77 +139,86 @@ barplot(table(combo$species_group_x_x), las=2, space=1.1,cex.names = .4)
 taxa <- c(0)
 combo <- add_column(combo, taxa)
 which(combo$species_group_x_x == "Flowering Plants")
-combo[which(combo$species_group_x_x == "Flowering Plants"),10] <- 1
+combo[which(combo$species_group_x_x == "Flowering Plants"),15] <- 1
 (table(combo$taxa, combo$total))
 
-#charasmatic mega funa (how define?)
-
+plot(combo$taxa, combo$hthreat)
 ```
 
 Predictor: human footprint 
-```{r footprint}
+```{r footprint, echo=FALSE, include=FALSE}
 #distribution of human footprint 
-hist(combo$area_weighted_footprint_2009, xlab ="human footprint value (weighted per county", breaks = 10)
+#hist(combo$area_weighted_footprint_2009, xlab ="human footprint value (weighted per county", breaks = 10)
 #response variable or total number of partners
-plot(combo$area_weighted_footprint_2009, combo$total)
+#plot(combo$area_weighted_footprint_2009, combo$total)
 #predictor: taxa
 
 #predictor: human footprint
-plot(combo$area_weighted_footprint_2009, combo$area_x)
+#plot(combo$area_weighted_footprint_2009, combo$area_x)
 #predictor: threat type 
 ```
 Predictor: threats data 
 ```{r threats}
-#cleaning by replacing and with a comma
-combo$threats_addressed_by_conservation_x_x[17] <- "Habitat modification, species-species interaction" #added comma
-combo$threats_addressed_by_conservation_x_x[18] <- "Habitat modification, pollution, species-species interaction" #added comma
-combo$threats_addressed_by_conservation_x_x[26] <- "Habitat modification, species-species interactions, demographic stochasticity, environmental stochasticity" #added comma
-combo$threats_addressed_by_conservation_x_x[36] <- "Habitat modification, demographic stochasticity"
-combo$threats_addressed_by_conservation_x_x[39] <- "Habitat modification, species-species interaction, demographic stochasticity, environmental stochasticity"
-combo$threats_addressed_by_conservation_x_x[44] <-"Habitat modification, species-species interaction" #added comma
-combo$threats_addressed_by_conservation_x_x[53] <- "Habitat modification, species-species interactions, demographic stochasticity, environmental stochasticity"
+
+#code it broken - would need to go through and check comma placement, but already have total threat counts in dataframe 
+##cleaning by replacing and with a comma
+#combo$threats_addressed_by_conservation_x_x[17] <- "Habitat modification, species-species interaction" #added comma
+#combo$threats_addressed_by_conservation_x_x[18] <- "Habitat modification, pollution, species-species interaction" #added comma
+#combo$threats_addressed_by_conservation_x_x[26] <- "Habitat modification, species-species interactions, demographic stochasticity, environmental stochasticity" #added comma
+#combo$threats_addressed_by_conservation_x_x[36] <- "Habitat modification, demographic stochasticity"
+#combo$threats_addressed_by_conservation_x_x[39] <- "Habitat modification, species-species interaction, demographic stochasticity, environmental stochasticity"
+#combo$threats_addressed_by_conservation_x_x[44] <-"Habitat modification, species-species interaction" #added comma
+#combo$threats_addressed_by_conservation_x_x[53] <- "Habitat modification, species-species interactions, demographic stochasticity, environmental stochasticity"
 
  #distribution of threats
-threats <- table(combo$threats_addressed_by_conservation_x_x)
-barplot(threats, las=2, space=1.1,cex.names = .4)
+#threats <- table(combo$threats_addressed_by_conservation_x_x)
+#barplot(threats, las=2, space=1.1,cex.names = .4)
  ##need to clean difference between none and None? (will check with tyler but as of now merge)
-combo[which(combo$threats_addressed_by_conservation_x_x == "none"),7] <- "None"
+#combo[which(combo$threats_addressed_by_conservation_x_x == "none"),7] <- "None"
 #going to change code to do 1 for flowering plants and 0 for all else
-hthreat <- c(0) #create new column and fill it
-combo <- add_column(combo, hthreat)
-which(combo$threats_addressed_by_conservation_x_x == "Habitat modification")
-combo[which(combo$threats_addressed_by_conservation_x_x == "Habitat modification"),11] <- 1
+#hthreat <- c(0) #create new column and fill it
+#combo <- add_column(combo, hthreat)
+#which(combo$threats_addressed_by_conservation_x_x == "Habitat modification")
+#combo[which(combo$threats_addressed_by_conservation_x_x == "Habitat modification"),16] <- 1
   #this only changes the cells that have habitat modification as the only threat, not ones with multiple threats
 #count the toal number of threats for each species  
-noneaszero <- combo[-which(combo$threats_addressed_by_conservation_x_x == "None"),]
-noneaszero$totalthreat <- str_count(noneaszero$threats_addressed_by_conservation_x_x, ",") +1  #because partners are seperated by a , need to add 1 to each
+#noneaszero <- combo[-which(combo$threats_addressed_by_conservation_x_x == "None"),]
+#noneaszero$totalthreat <- str_count(noneaszero$threats_addressed_by_conservation_x_x, ",") +1  #because partners are seperated by a , need to add 1 to each
 #then rejoin with original dataset
 ## remove all datacolumns in noneaszeros besides name and counts
-noneaszero <- noneaszero[,-c(3:11)]
-combo <- combo %>%  #combine original and checked into new data frame
-  full_join(noneaszero, 
-            by = c("scientific_name", "common_name"))
+#noneaszero <- noneaszero[,-c(3:11)]
+#combo <- combo %>%  #combine original and checked into new data frame
+ # full_join(noneaszero, by = c("scientific_name", "common_name"))
 #add the "Nones" into totalthreat column 
-combo[which(combo$threats_addressed_by_conservation_x_x == "None"),12] <- 0
+#combo[which(combo$threats_addressed_by_conservation_x_x == "None"),12] <- 0
 
 #every column with multiple threats includes habitat as a threat, but because this is in a string it isn't being counted by hthreat column. Going to add count now 
-combo[which(combo$totalthreat > 1),11] <- 1
+#combo[which(combo$totalthreat > 1),11] <- 1
 ```
 
 
 ```{r employment}
 #view distribution of employment
-hist(combo$employmentsumrelevant, xlab ="average, area weighted per county, employment level", breaks = 30)
+#need to subset, replace NAs with 0s and then creat new column of additions 
+employ <- combo[,7:10]
+employ[is.na(employ)] <- 0
+nsumemploy <- rowSums(employ)
+employ <- add_column(employ, nsumemploy) #add column to combo
+combo <- add_column(combo, nsumemploy)
+#remove columns that have older information 
+combo <- combo[,-c(6:10)]
+
+hist(combo$nsumemploy, xlab ="average, area weighted per county, employment level", breaks = 30)
 #response variable or total number of partners
-plot(combo$employmentsumrelevant, combo$total)
+plot(combo$nsumemploy, combo$total)
 
 ```
 
-```{r income}
+```{r income, echo= FALSE, include= FALSE}
 #view distribution of employment
-hist(combo$incomerelevant, xlab ="average, area weighted per county, income level", breaks = 30)
+#hist(combo$incomerelevant, xlab ="average, area weighted per county, income level", breaks = 30)
 #response variable or total number of partners
-plot(combo$incomerelevant, combo$total)
+#plot(combo$incomerelevant, combo$total)
 ```
 
 Predictor: number of overlapping ranges (Need to bring in from ArcGIS)
@@ -187,23 +226,78 @@ Predictor: number of overlapping ranges (Need to bring in from ArcGIS)
 #If have locations of centroid points 
 #then calculate distance from one point to the closet one? 
   #so closer to 0 = less independent, bigger number = more independent? 
-rangeoverlap <- c(0)
-combo <- add_column(combo, rangeoverlap)
-#created as empty vector 
+#rangeoverlap <- c(0) #created as empty vector 
+#combo <- add_column(combo, rangeoverlap)
+#View(center)
+
+center <- center[-which(is.na(center$XCoord)),]
+plot(center$XCoord, center$YCoord)
+##outlier is in hawaii, can basically see the contiential US 
+#
+## there is a difference with variables: XCoord and x / YCoord and Y
+## I don't know what the difference is but when plotting, get the following results=
+coords <- center[,c(4,5)]
+dis <- dist(coords) #distance between points - note this is incorrect bc cartesian distance - doesn't take curviture into account 
+as.matrix(dis) #have matrix of distances between points 
+gdis <- pointDistance(coords, lonlat=TRUE)
+#View(gdis)
+#
+xandy <- center[,c(6,7)]
+gdis <- pointDistance(xandy, lonlat=TRUE) ##this ran without producing any NaNs so correct? 
+#View(gdis)
+gdis[48,27] #this is eastern cottontail and weki bug [distance from hawaii to New england] ## check
+#View(t(gdis))
+##need to combine?? 
+
+#good source - https://rspatial.org/raster/analysis/analysis.pdf
+# decay function 
+#residuals 
+#spatial lag plots ???? --> see chapter 7 of source 
+  #lagsarlm - package, probs need to load 
+
+# probably should create new chunck to do modeling, what else need to prep?? 
+
+
 ```
 
 
+```{r removing blank data}
+#artic greyling - no datat because distinct population segment. This meant there were duplicate scientific names which made some of the data collection difficult 
+#SAN CLEMENTE ISLAND SILVER HOSACKIA or Lotus argophyllus adsurgens - no data bc ?? 
+
+#No threat information for 
+  ### Castilleja christii
+  ### Astragalus oophorus clokeyanus
+  ### Nerodia erythrogaster neglecta
+  ### Lepidium papilliferum
+  ### Aliciella caespitosa
+
+#employment/income
+  ## Employmentrelavantsum is addition of employment construction/forest/mining/farm 
+    ### If one component missing, value not calculated? 
+  ## same with income except sometimes negative from farming and mining 
+
+skim(combo)
+combo <- combo[-which(is.na(combo$area_x)),]
+
+#reordering columns
+combo <- combo[,c(1,8,2,4,9,5:7,10:11,3)]
+#no partner information for Chorizanthe parryi var. fernandina? 
+
+```
+
+
+
 ```{r Correlation Matrix}
-# Correlation Matrix of Predictors vs Responses #######
+# Correlation Matrix of Predictors vs Responses ##
 ## modified some code from http://handlesman.blogspot.com/2011/03/matrix-plot-with-confidence-intervals.html
+#Not working because of NAs in data - getting error that x is not numeric 
+  #might actually be that was reading footprint data as not numeric
 
 #set up
-
-PredictorsOnlyPixel <- combo[,c(3)]
-
-PredictAndResponsePixel <- combo[,-c(1,2, 5,7)]
-
-PredictAndResponseGrid <- combo[,-c(1,2, 5,7)]
+PredictorsOnlyPixel <- combo[,c(6)]
+PredictAndResponsePixel <- combo[,-c(1:4)]
+PredictAndResponseGrid <- combo[,-c(1:4)]
   
 # put histograms on the diagonal panel	
 panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
@@ -231,7 +325,7 @@ panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
 
 ## plot a correlation matrix plot that uses the functions specified above to say what to plot where
       ## this was taken directly from website and still not plotting r values for all 
-pairs(PredictAndResponsePixel[1:8], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+pairs(PredictAndResponsePixel[1:7], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
 
 ##Pixel level
 
@@ -239,7 +333,7 @@ pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,
 
 ## Grid level
 
-pairs(PredictAndResponseGrid,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+#pairs(PredictAndResponseGrid,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
 
 
 ### Predictors only  -->  only have one response so not going to run this one
@@ -249,6 +343,90 @@ pairs(PredictAndResponseGrid,lower.panel = panel.smooth, diag.panel=panel.hist,u
 #test correlations to look for covariation between predictors
 #cor(combo$total, combo$taxa) # matrix seems fine
 
+
+```
+
+```{r bruteforcecalcs}
+
+#cor.test(x,y,method = c("pearson"))	            
+cor.test(combo$total, combo$area_x, method = c("pearson"))	
+cor.test(combo$employmentsumrelevant, combo$totalthreat, method = c("pearson")) #can calculate with NAs if mannually compute 
+
+testcor <- combo[,-c(1,2,4,5)]
+var(testcor, na.rm = TRUE)
+##how work around nas??? 
+#cor(testcor, method = c("pearson"), use = "complete.obs") # also not working bc of nas in data
+
+#brute force method 
+
+##calculating pearsons correlation for all the following (only need to do ones below): 
+  #total 
+    #area
+      #percentpublic
+          #taxa
+            #employ
+              # total threat
+
+cor.test(combo$total, combo$area_x, method = c("pearson"))	
+cor.test(combo$total, combo$percentpublic, method = c("pearson"))
+cor.test(combo$total, combo$taxa, method = c("pearson"))
+cor.test(combo$total, combo$nsumemploy, method = c("pearson"))
+cor.test(combo$total, combo$total_x_x, method = c("pearson"))
+
+
+cor.test(combo$area_x, combo$percentpublic, method = c("pearson"))
+cor.test(combo$area_x, combo$taxa, method = c("pearson"))
+cor.test(combo$area_x, combo$nsumemploy, method = c("pearson"))
+cor.test(combo$area_x, combo$total_x_x, method = c("pearson"))
+
+cor.test(combo$percentpublic, combo$taxa, method = c("pearson"))
+cor.test(combo$percentpublic, combo$nsumemploy, method = c("pearson"))
+cor.test(combo$percentpublic, combo$total_x_x, method = c("pearson"))
+
+cor.test(combo$taxa, combo$nsumemploy, method = c("pearson"))
+cor.test(combo$taxa, combo$total_x_x, method = c("pearson"))
+
+cor.test(combo$nsumemploy, combo$total_x_x, method = c("pearson"))
+
+#didn't work :( 
+Total <- c(	0.104575,	-0.231693,	-0.148348,	0.1082679,	0.2834732)
+	          Area <-	c(0.1195116,	0.1146052	, -0.04671787	, 0.1136827)
+		                Percentpub <-	c(0.1945361,	-0.08236414,-0.05995062)
+	                                		Taxa	<- c(0.3544876,	-0.1059166)
+				                                        Employ	<- c(0.1347974)
+					                                                  Totalthreat <- c()
+				
+```
+
+variance inflation factors : Detecting multicollinearity
+```{r VIFs}
+new <- combo[,-c(1:4,8)]
+??vif
+combo[]
+vif(lm(data = new))
+  #none are above 5
+#not sure what the best way to set this up is? 
+vif(lm(total ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = new))
+vif(lm(total ~ area_x +percentpublic + taxa + nsumemploy, data = new))
+vif(lm(total ~ area_x +percentpublic + taxa, data = new))
+
+vif(lm(total ~ area_x +percentpublic + taxa + nsumemploy + total_x_x, data = new))
+vif(lm(total ~ percentpublic + taxa + nsumemploy + total_x_x, data = new))
+vif(lm(total ~ taxa + nsumemploy + total_x_x, data = new))
+
+#vifsetup = vif(model(independent ~ dependent))
+  #problem if above 5 (none are)
+
+#try wih glm
+
+vif(glm(data = new))
+vif(glm(total ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = new))
+  ## same numbers as with lm 
+```
+
+
+Fitting the data
+```{r}
 
 ```
 
