@@ -1,0 +1,132 @@
+---
+title: "figuresproductionforthesis"
+author: "Annabelle"
+date: "April 16, 2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load data, include=FALSE, echo=FALSE}
+#file setup 
+DataSource <- "./data" # input raw dataset goes here
+output.dir <-"./output" # output dataset writes to here
+functions.dir <- "./functions" # directory for functions 
+
+source(file.path(functions.dir,'FormatData.R')) # any functions that are called up by this markdown document need to be sourced here
+
+#packages
+library(circlize)
+library(readr)
+library(skimr)
+library(igraph)
+library(knitr) #for making tables form kable 
+library(reshape2)
+library(tidytext) #suggested in github helpform for an error
+
+#data 
+adjmatrix <- read_csv("/usr/local/bin/store/partner_rff/data/adjacencymatrix.csv")
+
+RawData <- read_csv(paste(DataSource,"/AS9_codingdata.csv", sep = ""))
+PartnerData <- FormatData(RawData)
+```
+
+<br>
+
+Thoughts: 
+Different matrix types that could convert to graphs
+- currently have a symetry matrix (adj)
+- want an diagonal matrix?
+- would creating upper trianglar matrix remove redundancies? Unclear how currently being graphed 
+--> also need to simplify (remove 0s?)
+
+Read through documentation around graphic creation to see how produced - anything that can go in code to change output?? 
+
+## new idea
+  ### symatry to identiy matrix - melt() then graph? for counts of species for each patner greater than 1? 
+
+PartnerData: chordDiagram
+```{r PartnerData:chordDiagram}
+changeme <- PartnerData
+data <- changeme[,-c(1,3)]
+chordDiagram(data) #this doesn't work right now 
+
+```
+
+
+
+Adjacency matrix: chordDiagram
+```{r Adjacency matrix:chordDiagram}
+dfadj <- melt(adjmatrix) #changes matrix to dataframe
+dfadj <- dfadj %>% filter(value > 1) #remove all partner less than 1
+
+#see if can remove the count of how many species a partner is working on (loop going back to self)
+#to do this can remove row where first two columns have same character
+noextra <- dfadj %>% filter(X1 != variable)
+chordDiagram(noextra)
+
+two <- noextra %>% filter(value > 2) #remove all partners less than 2 
+chordDiagram(two, scale = TRUE)
+## so their still seems to be some redundancy where the is a line going from parter a to partner b and another line (samve value) going from b back to a 
+### scale = TRUE seems to fix this? 
+chordDiagram(two, scale = FALSE)
+### with scale - "value represents the fraction of the interaction going to one other secto"
+
+#labels - need to pre-allocate empty track and costomize later (going to be a pain for each so just do later?)
+
+#scrapwork to try and figure out noextra
+take <- dfadj[!duplicated(dfadj[,c("X1", "variable")]),] #didn't do anything
+data %>% distinct(x,y)
+ugh <- dfadj %>% distinct(.data =dfadj, .keep_all = FALSE)
+trans <- t(dfadj) #can't figure out how to delete column values that are the same
+ttrans <- t(trans)
+
+```
+
+
+Adjacency matrix: igraph 
+```{r Adjacency matrix:igraph}
+
+```
+
+
+<br>
+
+tables and graphs to include 
+
+```{r no species each partner is working on}
+#this is just the diagonal matrix from adj matrix 
+graphme <- adjmatrix
+graphme <- graphme %>% melt()
+graphme <- graphme %>% filter(X1 == variable)
+graphme <- graphme[,-c(1)] #removed duplicate names
+#all partners
+ggplot(data = graphme) + geom_col(mapping = aes(x=variable, y=value))
+g_one <- graphme %>% filter(value >1)
+ggplot(data = g_one, mapping = aes(x=variable, y=value)) + geom_col() + theme(axis.text.x = element_text(angle = 90))
+```
+
+
+<br>
+
+Supplementary material 
+
+```{r}
+
+```
+
+
+```{r list of species}
+#list of species with partners working on them 
+pdata <- PartnerData[,c(1:3)]
+kable(pdata) ##getting werid error here, look into using a different table format? 
+```
+
+
+```{r list of partners}
+kable(colSums(PartnerData[,-c(1:3)]))
+kable(table(colSums(PartnerData[,-c(1:3)])))
+```
+
