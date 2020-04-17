@@ -85,7 +85,7 @@ RawData[RawData$scientific_name == "Lithobates subaquavocalis", 5] <- NA
 RawData[RawData$scientific_name == "Lithobates onca", 5] <- "USFWS,  Nevada Department of Wildlife"
 RawData[RawData$scientific_name == "Oncorhynchus clarkii virginalis", 5] <- "Colorado Parks and Wildlife, New Mexico Department of Game and Fish, USFS, USFWS, Mescalero Apache Nation, Jicarilla Apache Nation, Taos Pueblo, NPS, BLM,  Trout Unlimited, Vermejo Park Ranch, Colorado Division of Parks and Wildlife"
 RawData[RawData$scientific_name == "Euphydryas anicia cloudcrofti", 5] <- "Otero County, USFS, USFWS, Village of Cloudcroft"
-RawData[RawData$scientific_name == "Lotus argophyllus adsurgens", 5] <- "USFWS, Newhall Land and Farming Company"
+RawData[RawData$scientific_name == "Lotus argophyllus adsurgens", 5] <- NA
 RawData[RawData$scientific_name == "Dudleya blochmaniae brevifolia", 5] <- "California Department of Fish and Game, San Diego Gas and Electric Company, USFWS"
 RawData[RawData$scientific_name == "Moxostoma sp 2", 5] <- "North Carolina Wildlife Resources Commission, Duke Energy Carolinas, Eastern Band of Cherokee Indians, Tennessee Valley Authority, Georgia Department of Natural Resources, USFWS"
 RawData[RawData$scientific_name == "Lepidium papilliferum", 5] <- "Office of Species Conservation,  Idaho Department of Fish and Game,  Idaho Department of Lands,  Idaho Army National Guard,  Nongovernmental Cooperator Representative,  Nongovernmental Cooperator Representative, BLM, US Air Force"
@@ -102,6 +102,7 @@ RawData[RawData$scientific_name == "Sonorella macrophallus", 5] <- "USFS,  USFWS
 RawData[RawData$scientific_name == "Penstemon scariosus albifluvis", 5] <- "Uintah County, Rio Blanco County,  Utah School and Institutional Trust Lands Administration, Utah Governors Public Lands Policy Coordination Office, Utah Division of Wildlife Resources, BLM, USFWS"
 RawData[RawData$scientific_name == "Aliciella caespitosa", 5] <- "USFS, NPS,  Utah State Office, USFWS, BLM"
 RawData[RawData$scientific_name == "Solidago plumosa", 5] <- "Alcoa Power Generating Inc, USFWS"
+RawData[RawData$scientific_name == "Chorizanthe parryi var fernandina", 5] <- "USFWS, Newhall Land Farming Company"
 
 ## 3. count how many different strings of partners sperated by commas
 
