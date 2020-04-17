@@ -23,6 +23,7 @@ library(readr)
 library(skimr)
 library(igraph)
 library(knitr) #for making tables form kable 
+library(kableExtra)
 library(reshape2)
 library(tidytext) #suggested in github helpform for an error
 
@@ -92,6 +93,12 @@ Adjacency matrix: igraph
 ```
 
 
+```{r eastcoast_westcoast_partnercomparison}
+## there was something in chord diagram about keeping comparing two diagrams (keeps scale the same fro each?)
+# I think I need to make a new dataset for this - pull togther from centroids data where mississippi is dividing line? 
+```
+
+
 <br>
 
 tables and graphs to include 
@@ -109,13 +116,24 @@ ggplot(data = g_one, mapping = aes(x=variable, y=value)) + geom_col() + theme(ax
 ```
 
 
+```{r regression_correlation_matrix}
+#need to get r-values in 
+```
+
+
 <br>
 
 Supplementary material 
 
+### name assumptions
+
+### regression 
+
 ```{r}
 
 ```
+
+For changing text size - https://stackoverflow.com/questions/40840986/knitrkable-is-there-a-way-to-reduce-the-font-size
 
 
 ```{r list of species}
@@ -126,7 +144,13 @@ kable(pdata) ##getting werid error here, look into using a different table forma
 
 
 ```{r list of partners}
-kable(colSums(PartnerData[,-c(1:3)]))
-kable(table(colSums(PartnerData[,-c(1:3)])))
+#kable(colSums(PartnerData[,-c(1:3)]))
+#kable(table(colSums(PartnerData[,-c(1:3)])))
+
+name <- colSums(PartnerData[,-c(1:3)])
+name %>%
+  kable("html") %>% 
+  kable_styling(font_size = 7)
+
 ```
 
