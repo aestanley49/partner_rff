@@ -86,7 +86,7 @@ PartnerData$TotalPartners <- rowSums(PartnerData[,-c(1:3)])
 PartnerData[,c(2,201)] # this is the dataset with names and numbers of species. It does not print out in a convenient format. probably should save and make a better table.
 
 # Histogram of partners per species
-hist(PartnerData$TotalPartners,
+hist(PartnerData$TotalPartners, ###this isn't in the code anymore?? 
      xlab ="number of partners working on a species",
      breaks = 60,
      main = NULL)
