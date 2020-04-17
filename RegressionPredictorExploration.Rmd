@@ -3,8 +3,8 @@ title: "RegressionPredictorExploration"
 author: "Annabelle"
 date: "March 7, 2020"
 output:
-  word_document: default
   html_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -25,13 +25,18 @@ library(readxl) #loading in files
 library(raster) #for coordinate distance calc
 library(skimr) #super nice summary package 
 library(car) #contains vif function 
-library(VGAM) #for regression 
+#library(VGAM) #for regression new package came out since 
+library(glmmTMB)
 ```
 
 load in data 
 ```{r setup data, echo = FALSE}
 #final cleaned counts are in a column of this data set --> this is the response variable
   ### Need to change cleanedcountofpartners to csv output in FormatData.R
+
+#run function then load in as count data 
+RawData <- read_csv(paste(DataSource,"/AS9_codingdata.csv", sep = "")) ## ideally, the raw dataset 
+PartnerData <- FormatData(RawData)
 partnercount <- read.csv(paste0(DataSource,"/EditedFormatDataOutputwithTotals.csv"), stringsAsFactors = FALSE)
 partnercount <- partnercount %>%  as_tibble() #now can use stringr packages 
 partnercount <- partnercount %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
@@ -230,7 +235,7 @@ Predictor: number of overlapping ranges (Need to bring in from ArcGIS)
 #combo <- add_column(combo, rangeoverlap)
 #View(center)
 
-center <- center[-which(is.na(center$XCoord)),]
+center <- center[-which(is.na(center$XCoord)),] #removes artic greyling 
 plot(center$XCoord, center$YCoord)
 ##outlier is in hawaii, can basically see the contiential US 
 #
@@ -405,28 +410,53 @@ new <- combo[,-c(1:4,8)]
 combo[]
 vif(lm(data = new))
   #none are above 5
-#not sure what the best way to set this up is? 
+
 vif(lm(total ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = new))
-vif(lm(total ~ area_x +percentpublic + taxa + nsumemploy, data = new))
-vif(lm(total ~ area_x +percentpublic + taxa, data = new))
-
-vif(lm(total ~ area_x +percentpublic + taxa + nsumemploy + total_x_x, data = new))
-vif(lm(total ~ percentpublic + taxa + nsumemploy + total_x_x, data = new))
-vif(lm(total ~ taxa + nsumemploy + total_x_x, data = new))
-
 #vifsetup = vif(model(independent ~ dependent))
   #problem if above 5 (none are)
 
-#try wih glm
-
+# wih glm
 vif(glm(data = new))
-vif(glm(total ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = new))
+vif(glm(total ~ area_x +percentpublic + taxa + nsumemploy + total_x_x, data = new))
   ## same numbers as with lm 
+
+##glm and lm will produce the same numbers 
 ```
 
 
-Fitting the data
-```{r}
+Running the model 
+t-possion assumes no over dispersion where as neg bionmical has additional parameter
+  compare AICs to see which fit is better (if not lower by more than 2, not worth adding negative binomial)
+
+
+```{r glm}
+
+#need to fix NA in partnercounts (why is that there now?)
+#then run binomial and possion 
+#read through chapter 11 
+
+fit_tnbinom <- glmmTMB(Y~ X1  + X2 + X3 + X4, + X5, data=new, ,ziformula=~0,  family=list(family="truncated_nbinom1",link="log"))
+
+fit_tnbinom <- glmmTMB(total~ area_x + percentpublic + taxa + nsumemploy + nsumemploy + total_x_x, data=new, ziformula=~0, family=list(family="truncated_nbinom1",link="log"))
+
+#reordering terms didn't work
+fit_tnbinom <- glmmTMB(new$total~ new$area_x + new$percentpublic + new$taxa + new$nsumemploy + new$nsumemploy + new$total_x_x, data=new, family=list(family="truncated_nbinom1",link="log"), ziformula=~0)
+?glmmTMB
+
+fit_zipoisson <- glmmTMB(total~ area_x + percentpublic + taxa + nsumemploy + nsumemploy + total_x_x, data=new, ziformula=~0, family=list(family="truncated_poisson",link="log"))
+
+## Getting two different errors depending on which family use
+```
+
+choose optimal model 
+
+overdispersion test? 
+
+model validation 
+- plot residuals 
+
+both tpoisson and negbinom are computed on a log scale, so if use emmeans would need to "undo" the log --> this package is good for categorical variables 
+```{r emmeans}
 
 ```
 
