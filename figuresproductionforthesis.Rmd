@@ -2,7 +2,7 @@
 title: "figuresproductionforthesis"
 author: "Annabelle"
 date: "April 16, 2020"
-output: github_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -38,6 +38,7 @@ RawData <- read_csv(paste(DataSource,"/AS9_codingdata.csv", sep = ""))
 PartnerData <- FormatData(RawData)
 adjmatrix <- read_csv("/usr/local/bin/store/partner_rff/output/adjacencymatrix.csv")
 ```
+
 
 <br>
 
@@ -84,8 +85,8 @@ chordDiagram(two, scale = FALSE)
 
 #scrapwork to try and figure out noextra
 take <- dfadj[!duplicated(dfadj[,c("X1", "variable")]),] #didn't do anything
-data %>% distinct(x,y)
-ugh <- dfadj %>% distinct(.data =dfadj, .keep_all = FALSE)
+#data %>% distinct(x,y)
+#ugh <- dfadj %>% distinct(.data =dfadj, .keep_all = FALSE)
 trans <- t(dfadj) #can't figure out how to delete column values that are the same
 ttrans <- t(trans)
 
@@ -173,8 +174,9 @@ ggplot(data = filt, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(na
 ```
 
 
+*** need to get the combo to work inorder to set up #species/partner and #partners/partners **
 
-```{r combined?}
+```{r combined?, echo=FALSE, include=FALSE, eval=FALSE}
 #x-axis: # partners?species, y-axis: species/partner, size = #partnerships/partner 
 #(can also try swtiching and see how data is dispersed)
 
@@ -201,10 +203,10 @@ or <- explore %>% full_join(explore, number_of_species_per_partner, by = "X1")
 
 #try and circumvent this by arranging both in the same order and then combining by add column 
 # this also isn't working 
-number_of_species_per_partner <- number_of_species_per_partner %>% arrange(number_of_species_per_partner)
+#####number_of_species_per_partner <- number_of_species_per_partner %>% arrange(number_of_species_per_partner)
 
-number_of_species_per_partner <- sort(number_of_species_per_partner$X1)
-explore <- sort(explore$X1)
+#####number_of_species_per_partner <- sort(number_of_species_per_partner$X1)
+#####explore <- sort(explore$X1)
 
 #not sure what I was trying to plot before
 ggplot(data = explore, mapping = aes(x=number_of_species_per_partner, y=Number_of_partnerships_per_partner)) + geom_point()
