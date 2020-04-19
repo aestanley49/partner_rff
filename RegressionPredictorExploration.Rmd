@@ -334,7 +334,7 @@ panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
 
 ## plot a correlation matrix plot that uses the functions specified above to say what to plot where
       ## this was taken directly from website and still not plotting r values for all 
-pairs(PredictAndResponsePixel[1:7], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
 
 ##Pixel level
 
@@ -468,7 +468,7 @@ fit_zipoisson <- glmmTMB(total~ taxa + nsumemploy, data=new1, family=poisson)
 ## Getting two different errors depending on which family use
 
 
-###############################################
+############################################### part 2
 
 #start again from conversation with gwen and becky 
 
@@ -545,7 +545,7 @@ fit_binom <- glmmTMB(total ~ taxa + taxa + percentpublic + total_x_x + narea, da
 
 fit_tnbinom <- glmmTMB(total ~ taxa + percentpublic + total_x_x + narea, data=new2, family=truncated_nbinom1(link = "log"))
 
-summary(fit_tpoisson)
+summary(fit_tnbinom)
 
 ```
 
