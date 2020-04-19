@@ -34,6 +34,8 @@ RawData <- RawData %>%  ##cleaning/reformating colunm names --> default is lower
 #RawData[which(RawData$`Who the partners are` =="N/A"),5] <- NA # 5 is the column called 'Who the partner are'. I called it this way to avoid writing but it is less safe if things move around // note this changed when other dataset was read in 
 #which(is.na(RawData$`Who the partners are`)) # Check to make sure it worked
 
+RawData <- as.data.frame(RawData)
+  
 ## 2. Manually change spelling errors
 
 RawData[RawData$scientific_name == "Calochortus persistens", 5] <- NA 
@@ -102,7 +104,8 @@ RawData[RawData$scientific_name == "Sonorella macrophallus", 5] <- "USFS,  USFWS
 RawData[RawData$scientific_name == "Penstemon scariosus albifluvis", 5] <- "Uintah County, Rio Blanco County,  Utah School and Institutional Trust Lands Administration, Utah Governors Public Lands Policy Coordination Office, Utah Division of Wildlife Resources, BLM, USFWS"
 RawData[RawData$scientific_name == "Aliciella caespitosa", 5] <- "USFS, NPS,  Utah State Office, USFWS, BLM"
 RawData[RawData$scientific_name == "Solidago plumosa", 5] <- "Alcoa Power Generating Inc, USFWS"
-RawData[RawData$scientific_name == "Chorizanthe parryi var fernandina", 5] <- "USFWS, Newhall Land Farming Company"
+RawData[63,5] <- "USFWS, Newhall Land Farming Company" ## this is for Chorizanthe parryi var fernandina bc subset wasn't working before, had to manually fix 
+
 
 ## 3. count how many different strings of partners sperated by commas
 
