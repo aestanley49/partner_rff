@@ -435,15 +435,32 @@ t-possion assumes no over dispersion where as neg bionmical has additional param
 #then run binomial and possion 
 #read through chapter 11 
 
-fit_tnbinom <- glmmTMB(Y~ X1  + X2 + X3 + X4, + X5, data=new, ,ziformula=~0,  family=list(family="truncated_nbinom1",link="log"))
+#remove NA from parameter 
+new1 <- new[-which(is.na(new$total)),]
+View(new1)
 
-fit_tnbinom <- glmmTMB(total~ area_x + percentpublic + taxa + nsumemploy + nsumemploy + total_x_x, data=new, ziformula=~0, family=list(family="truncated_nbinom1",link="log"))
+
+fit_tnbinom <- glmmTMB(Y~ X1  + X2 + X3 + X4, + X5, data=new,ziformula=~0,  family=list(family="truncated_nbinom1",link="log"))
+
+##need to include total_x in data
+fit_tnbinom <- glmmTMB(total ~ taxa + percentpublic + taxa + nsumemploy + total_x_x, data=new, ziformula=~0, family=list(family="truncated_nbinom1",link="log"))
+
+fit_tnbinom <- glmmTMB(total~ taxa, data=new, ziformula=~0, family=list(family="truncated_nbinom1",link="log"))
+
+summary(total)
 
 #reordering terms didn't work
 fit_tnbinom <- glmmTMB(new$total~ new$area_x + new$percentpublic + new$taxa + new$nsumemploy + new$nsumemploy + new$total_x_x, data=new, family=list(family="truncated_nbinom1",link="log"), ziformula=~0)
 ?glmmTMB
 
-fit_zipoisson <- glmmTMB(total~ area_x + percentpublic + taxa + nsumemploy + nsumemploy + total_x_x, data=new, ziformula=~0, family=list(family="truncated_poisson",link="log"))
+fit_zipoisson <- glmmTMB(total~ area_x + percentpublic + taxa + nsumemploy + nsumemploy + total_x_x, data=new, ziformula=~0, family=list(family="",link="log"))
+
+fit_zipoisson <- glmmTMB(total~ taxa + nsumemploy, data=new1, family=truncated_poisson(link = "log"))
+
+fit_zipoisson <- glmmTMB(total~ taxa + nsumemploy, data=new1, family=gaussian())
+
+fit_zipoisson <- glmmTMB(total~ taxa + nsumemploy, data=new1, family=poisson)
+
 
 ## Getting two different errors depending on which family use
 ```
