@@ -2,12 +2,15 @@
 title: "figuresproductionforthesis"
 author: "Annabelle"
 date: "April 16, 2020"
-output: github_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+Notes
+The adjacency matrix isn't updating?? I have more partners than I should.. 
 
 ```{r load data, include=FALSE, echo=FALSE}
 #file setup 
@@ -19,6 +22,8 @@ source(file.path(functions.dir,'FormatData.R')) # any functions that are called 
 
 #packages
 library(circlize)
+library(janitor) #need for function FormatData to run 
+library(tidyverse) #need for function FormatData to run 
 library(readr)
 library(skimr)
 library(igraph)
@@ -28,10 +33,9 @@ library(reshape2)
 library(tidytext) #suggested in github helpform for an error
 
 #data 
-adjmatrix <- read_csv("/usr/local/bin/store/partner_rff/data/adjacencymatrix.csv")
-
 RawData <- read_csv(paste(DataSource,"/AS9_codingdata.csv", sep = ""))
 PartnerData <- FormatData(RawData)
+adjmatrix <- read_csv("/usr/local/bin/store/partner_rff/data/adjacencymatrix.csv")
 ```
 
 <br>
@@ -114,6 +118,71 @@ ggplot(data = graphme) + geom_col(mapping = aes(x=variable, y=value))
 g_one <- graphme %>% filter(value >1)
 ggplot(data = g_one, mapping = aes(x=variable, y=value)) + geom_col() + theme(axis.text.x = element_text(angle = 90))
 ```
+
+Note, even with the number of partnerships in the adj matrix (right now too many, should only be aprox 200) this script will still run 
+```{r no partnerships for each partner}
+#going to convert all values that are greater than 1 to one so not double counting 
+# then subtract diagonal 
+#then add 
+
+pdata <- adjmatrix
+newmat <- pdata[1,]
+newmat[,1] <- "empty" 
+#add empty row with same no of columns to combine with current matrix 
+newMatrix <- rbind(newmat, pdata)
+
+newMatrix <- newMatrix %>% mutate_if(is.numeric, ~1 * (. != 0))
+
+diag(newMatrix)=0
+#delete top (empty) row 
+newMatrix <- newMatrix[-1,] ##I think this matrix is worth keeping (all numers now 1s and 0s )
+asnum <- newMatrix[,-c(1)]
+names <- newMatrix[,c(1)]
+rssum <- rowSums(newMatrix[,c(-1)])
+newdf <- cbind(names, rssum) ## yay I did it!! 
+
+## now going to try and filter
+
+explore <- newdf 
+explore <- explore %>% arrange(-rssum)
+
+#still feeds mis-represented 
+
+
+####################################################
+## this is old code - counts redundancies 
+## thoguht I just needed to subtract diagonal then add 
+
+ppdata <- adjmatrix
+nnewmat <- ppdata[1,]
+nnewmat[,1] <- "empty" 
+#add empty row with same no of columns to combine with current matrix 
+nnewMatrix <- rbind(newmat, pdata)
+
+diag(nnewMatrix)=0
+#delete top (empty) row 
+nnewMatrix <- nnewMatrix[-1,]
+
+aasnum <- nnewMatrix[,-c(1)]
+
+csum <- colSums(aasnum, na.rm = TRUE)
+
+newdf2 <- cbind(names, rsum)
+
+#################################################
+
+# There is still an issue here, where a partner that worked on one species, but had more parnterships in that conservation agreement looks like it has more partners than another partner that worked on more than one species with less partners. 
+# going to try and adjust for that here by dividing sum of all / sum of 1s 
+
+
+combo <- newdf2$rsum/ newdf$rssum
+
+final <- cbind(names, combo)
+
+#now have fractional amount that isn't really significiant? 
+
+```
+
 
 
 ```{r regression_correlation_matrix}
