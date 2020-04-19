@@ -2,7 +2,7 @@
 title: "figuresproductionforthesis"
 author: "Annabelle"
 date: "April 16, 2020"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -31,11 +31,12 @@ library(knitr) #for making tables form kable
 library(kableExtra)
 library(reshape2)
 library(tidytext) #suggested in github helpform for an error
+library(data.table)
 
 #data 
 RawData <- read_csv(paste(DataSource,"/AS9_codingdata.csv", sep = ""))
 PartnerData <- FormatData(RawData)
-adjmatrix <- read_csv("/usr/local/bin/store/partner_rff/data/adjacencymatrix.csv")
+adjmatrix <- read_csv("/usr/local/bin/store/partner_rff/output/adjacencymatrix.csv")
 ```
 
 <br>
@@ -53,7 +54,7 @@ Read through documentation around graphic creation to see how produced - anythin
   ### symatry to identiy matrix - melt() then graph? for counts of species for each patner greater than 1? 
 
 PartnerData: chordDiagram
-```{r PartnerData:chordDiagram}
+```{r PartnerData:chordDiagram, eval=FALSE, include=FALSE, echo= FALSE}
 changeme <- PartnerData
 data <- changeme[,-c(1,3)]
 chordDiagram(data) #this doesn't work right now 
@@ -107,6 +108,19 @@ Adjacency matrix: igraph
 
 tables and graphs to include 
 
+
+```{r partners per species}
+PartnerData$TotalPartners <- rowSums(PartnerData[,-c(1:3)])
+
+hist(PartnerData$TotalPartners,
+     xlab ="Number of Partners Working on a Species",
+     breaks = 60,
+     main = NULL)
+
+```
+
+
+
 ```{r no species each partner is working on}
 #this is just the diagonal matrix from adj matrix 
 graphme <- adjmatrix
@@ -116,7 +130,7 @@ graphme <- graphme[,-c(1)] #removed duplicate names
 #all partners
 ggplot(data = graphme) + geom_col(mapping = aes(x=variable, y=value))
 g_one <- graphme %>% filter(value >1)
-ggplot(data = g_one, mapping = aes(x=variable, y=value)) + geom_col() + theme(axis.text.x = element_text(angle = 90))
+ggplot(data = g_one, mapping = aes(x=variable, y=value)) + geom_col() + theme(axis.text.x = element_text(angle = 90)) + scale_y_continuous(name ="Number of Species", limits=c(0,45)) + scale_x_discrete(name ="Name of Partner")
 ```
 
 Note, even with the number of partnerships in the adj matrix (right now too many, should only be aprox 200) this script will still run 
@@ -124,7 +138,6 @@ Note, even with the number of partnerships in the adj matrix (right now too many
 #going to convert all values that are greater than 1 to one so not double counting 
 # then subtract diagonal 
 #then add 
-
 pdata <- adjmatrix
 newmat <- pdata[1,]
 newmat[,1] <- "empty" 
@@ -145,11 +158,67 @@ newdf <- cbind(names, rssum) ## yay I did it!!
 
 explore <- newdf 
 explore <- explore %>% arrange(-rssum)
+(explore[c(1:4),])
 
 #still feeds mis-represented 
 
+#summary count of the number of partnership for each partner (how many partner have 2 parnters, 3 etc? ) 
+ggplot(data = explore, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partner", limits=c(-1,175)) + scale_y_continuous(name ="Frequency", limits=c(0,50))
 
-####################################################
+#because data is scewed with giant outlier, have recalibrated to show what majority of the data looks like 
+filt <- explore %>% filter(rssum < 50) 
+ggplot(data = filt, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partner", limits=c(-1,40)) + scale_y_continuous(name ="Frequency", limits=c(0,20))
+
+#need to get r-values in 
+```
+
+
+
+```{r combined?}
+#x-axis: # partners?species, y-axis: species/partner, size = #partnerships/partner 
+#(can also try swtiching and see how data is dispersed)
+
+#partnerperspecies <- PartnerData$TotalPartners
+
+specesperpartner <- colSums(PartnerData[,-c(1:3)])
+speperpart <- t(specesperpartner)
+sppart <- t(speperpart) #trying to get partner names as row names
+number_of_species_per_partner <- sppart[-c(199),] #gets werid when I delete the bottom row
+number_of_species_per_partner <- t(number_of_species_per_partner)
+number_of_species_per_partner <- t(number_of_species_per_partner) #this works
+#making rownames a column so can join later 
+number_of_species_per_partner <- as.data.frame(number_of_species_per_partner)
+number_of_species_per_partner <- number_of_species_per_partner %>% rownames_to_column(var = "X1")
+number_of_species_per_partner <- number_of_species_per_partner %>% rename("species_per_partner" = V1) 
+
+
+View(number_of_species_per_partner)
+explore <- explore %>% rename("partnerships_per_partner" = rssum)
+
+## the joins aren't working - just getting partner names then replicated row columns
+and <- explore %>% left_join(explore, species_per_partner, by = "X1" )
+or <- explore %>% full_join(explore, number_of_species_per_partner, by = "X1")
+
+#try and circumvent this by arranging both in the same order and then combining by add column 
+# this also isn't working 
+number_of_species_per_partner <- number_of_species_per_partner %>% arrange(number_of_species_per_partner)
+
+number_of_species_per_partner <- sort(number_of_species_per_partner$X1)
+explore <- sort(explore$X1)
+
+#not sure what I was trying to plot before
+ggplot(data = explore, mapping = aes(x=number_of_species_per_partner, y=Number_of_partnerships_per_partner)) + geom_point()
+
+#add labels 
+
+ggplot(data = explore, mapping = aes(x=number_of_species_per_partner, y=Number_of_partnerships_per_partner)) + geom_point() + geom_label(mapping = aes(x=number_of_species_per_partner, y=Number_of_partnerships_per_partner, label = X1))
+
+
+```
+
+
+
+```{r partner-partner old code, eval = FALSE, include = FALSE, echo = FALSE}
 ## this is old code - counts redundancies 
 ## thoguht I just needed to subtract diagonal then add 
 
@@ -179,10 +248,8 @@ combo <- newdf2$rsum/ newdf$rssum
 
 final <- cbind(names, combo)
 
-#now have fractional amount that isn't really significiant? 
-
+#now have fractional amount that isn't really significiant?
 ```
-
 
 
 ```{r regression_correlation_matrix}
