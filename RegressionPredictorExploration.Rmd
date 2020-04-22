@@ -229,13 +229,13 @@ plot(combo$nsumemploy, combo$total)
 ```
 
 Predictor: number of overlapping ranges (Need to bring in from ArcGIS)
-```{r range, include= FALSE, echo=FALSE, eval = FALSE}
+```{r range, include= FALSE, echo=FALSE}
 #If have locations of centroid points 
 #then calculate distance from one point to the closet one? 
   #so closer to 0 = less independent, bigger number = more independent? 
 #rangeoverlap <- c(0) #created as empty vector 
 #combo <- add_column(combo, rangeoverlap)
-#View(center)
+View(center)
 
 center <- center[-which(is.na(center$XCoord)),] #removes artic greyling 
 plot(center$XCoord, center$YCoord)
@@ -264,6 +264,26 @@ gdis[48,27] #this is eastern cottontail and weki bug [distance from hawaii to Ne
 
 # probably should create new chunck to do modeling, what else need to prep?? 
 
+
+#### correct values here 
+ugh <- combo
+ugh <- ugh[,c(1,5)]
+okay <- ugh %>% full_join(center, by = "scientific_name")
+#so have slight issue where Chorizanthe parryi var fernandina is splet Chorizanthe parryi var fernandina and Chorizanthe parryi var. fernandina (period after var.)
+okay[53,2] <- 2
+
+okay <- okay[-which(is.na(okay$XCoord)),]
+okay <- okay[-which(is.na(okay$area_x)),] #for some reason this value changed without me changing the value? 
+
+plot(okay$x, okay$y)
+
+## divide by xcoord value to make east coast v westcoast column 
+
+okay <- okay %>% mutate(geo = x < -95)
+summary(okay$geo) #adams cave beetle have same point which is why getting 10 but only see 9 points
+okay[which(okay$geo == FALSE),9] <- 0
+okay[which(okay$geo == TRUE),9] <- 1
+## true or 1 means species is westcoast 
 
 ```
 
