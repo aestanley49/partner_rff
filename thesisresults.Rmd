@@ -1,0 +1,213 @@
+---
+title: "thesisresults"
+author: "Annabelle"
+date: "April 21, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Set up file structure
+```{r, include = FALSE, echo = FALSE}
+#Github file set up
+DataSource <- "./data" # input raw dataset goes here
+output.dir <-"./output" # output dataset writes to here
+functions.dir <- "./functions" # directory for functions 
+
+#Functions to read in 
+library(janitor) #cleaning data
+library(tidyverse) #cleaning data
+library(readxl) #loading in files 
+library(circlize)
+library(readr)
+library(skimr)
+library(igraph)
+library(knitr) #for making tables form kable 
+library(kableExtra)
+library(reshape2)
+library(tidytext) #suggested in github helpform for an error
+library(data.table)
+```
+
+load in data 
+```{r setup data, echo = FALSE}
+#file names need and which rmd they are located in (can write these into new csvs when done with everything and then call them in)
+
+combo #correlation matrix 
+adjmatrix
+PartnerData
+
+
+```
+
+
+### Figure 1: Correlation matrix
+
+```{r}
+#set up
+combooo <- combo
+combooo <- combooo %>% rename("Area" = area_x) 
+combooo <- combooo %>% rename("Threats" = total_x_x)
+combooo <- combooo %>% rename("Partners" = total)
+combooo <- combooo %>% rename("Employment" = nsumemploy)
+combooo <- combooo %>% rename("%PublicLand" = percentpublic)
+combooo <- combooo %>% rename("Taxa" = taxa)
+PredictorsOnlyPixel <- combooo[,c(5)]
+PredictAndResponsePixel <- combooo[,-c(1:4)]
+PredictAndResponseGrid <- combooo[,-c(1:4)]
+#change names in PredictAndResponsePixel
+
+  
+# put histograms on the diagonal panel	
+panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
+{
+  usr <- par("usr"); on.exit(par(usr))			# not sure what usr is for?
+  par(usr = c(usr[1:2],0,1.5))
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)			# make the hist 
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col="grey", ...)  # defines what the histogram is going to look like
+}
+
+## put correlations & 95% CIs on the upper panels,
+panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- cor(x, y,use="complete.obs")
+    txt <- format(c(r, 0.123456789), digits=digits)[1]
+    prefix <- "r = "
+    rc <- cor.test(x,y)
+    rci <- rc$conf.int
+    txt2 <- format(c(rci, 0.123456789), digits=digits)[1]
+    txt3 <- format(c(rci, 0.123456789), digits=digits)[2]
+    prefix2 <- "\nCI = "
+    txt <- paste(prefix, txt, prefix2, txt2, ", ", txt3, sep="")
+    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = 1)
+}
+
+## plot a correlation matrix plot that uses the functions specified above to say what to plot where
+      ## this was taken directly from website and still not plotting r values for all 
+pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+
+##Pixel level
+
+pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+```
+
+
+### Figure 2: Map of the ranges of all species considered in this dataset and the average center point for all species
+![Map of all species]("/partner_rff/map_all_figures.pdf")
+
+### Figure 3: A subsection of the total dataframe to show the number of species a partner is working on 
+##### Planning to use the second of two graphs for paper 
+```{r}
+#this is just the diagonal matrix from adj matrix 
+graphme <- adjmatrix
+graphme <- graphme %>% melt()
+graphme <- graphme %>% filter(X1 == variable)
+graphme <- graphme[,-c(1)] #removed duplicate names
+#all partners
+ggplot(data = graphme) + geom_col(mapping = aes(x=variable, y=value))
+g_one <- graphme %>% filter(value >1)
+ggplot(data = g_one, mapping = aes(x=variable, y=value)) + geom_col() + theme(axis.text.x = element_text(angle = 90)) + scale_y_continuous(name ="Number of Species", limits=c(0,45)) + scale_x_discrete(name ="Name of Partner")
+```
+
+### Number of partners per partner
+  #### Same question as above about subsections/scale of zoom 
+```{r no partnerships for each partner}
+#going to convert all values that are greater than 1 to one so not double counting 
+# then subtract diagonal 
+#then add 
+pdata <- adjmatrix
+newmat <- pdata[1,]
+newmat[,1] <- "empty" 
+#add empty row with same no of columns to combine with current matrix 
+newMatrix <- rbind(newmat, pdata)
+
+newMatrix <- newMatrix %>% mutate_if(is.numeric, ~1 * (. != 0))
+
+diag(newMatrix)=0
+#delete top (empty) row 
+newMatrix <- newMatrix[-1,] ##I think this matrix is worth keeping (all numers now 1s and 0s )
+asnum <- newMatrix[,-c(1)]
+names <- newMatrix[,c(1)]
+rssum <- rowSums(newMatrix[,c(-1)])
+newdf <- cbind(names, rssum) ## yay I did it!! 
+
+## now going to try and filter
+
+explore <- newdf 
+explore <- explore %>% arrange(-rssum)
+(explore[c(1:4),])
+
+#still feeds mis-represented 
+
+#summary count of the number of partnership for each partner (how many partner have 2 parnters, 3 etc? ) 
+ggplot(data = explore, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partners", limits=c(-1,175)) + scale_y_continuous(name ="Frequency", limits=c(0,50))
+
+#because data is scewed with giant outlier, have recalibrated to show what majority of the data looks like 
+filt <- explore %>% filter(rssum < 50) 
+ggplot(data = filt, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partners", limits=c(-1,40)) + scale_y_continuous(name ="Frequency", limits=c(0,20))
+```
+
+### Figure [not yet referenced in text] Number of partners/partner vs number of species/partner
+  #### different options here 
+```{r}
+specesperpartner <- colSums(PartnerData[,-c(1:3)])
+speperpart <- t(specesperpartner)
+sppart <- t(speperpart) #trying to get partner names as row names
+number_of_species_per_partner <- sppart[-c(199),] #gets werid when I delete the bottom row
+number_of_species_per_partner <- t(number_of_species_per_partner)
+number_of_species_per_partner <- t(number_of_species_per_partner) #this works
+#making rownames a column so can join later 
+number_of_species_per_partner <- as.data.frame(number_of_species_per_partner)
+number_of_species_per_partner <- number_of_species_per_partner %>% rownames_to_column(var = "X1")
+number_of_species_per_partner <- number_of_species_per_partner %>% rename("species_per_partner" = V1) 
+
+
+View(number_of_species_per_partner)
+explore <- explore %>% rename("partnerships_per_partner" = rssum)
+
+## the joins aren't working - just getting partner names then replicated row columns
+and <- explore %>% left_join(number_of_species_per_partner, by = NULL)
+#need to fix NRCS
+and  <- and[-which(is.na(and$species_per_partner)),]
+
+ggplot(data = and, mapping = aes(x=partnerships_per_partner, y= species_per_partner)) + geom_point() +geom_label(mapping = aes(x=partnerships_per_partner, y=species_per_partner, label = X1)) +coord_flip()
+
+
+and2 <- and %>% filter(X1 != "BLM") %>% filter(X1 != "USFWS") %>% filter(X1 != "USFS") 
+ggplot(data = and2, mapping = aes(x=partnerships_per_partner, y= species_per_partner)) + geom_count() +coord_flip()
+
+ggplot(data = and, mapping = aes(x=partnerships_per_partner, y= species_per_partner)) + geom_count() +coord_flip()
+```
+
+
+
+### Network analysis / chord diagram 
+
+```{r}
+dfadj <- melt(adjmatrix) #changes matrix to dataframe
+dfadj <- dfadj %>% filter(value > 1) #remove all partner less than 1
+
+#see if can remove the count of how many species a partner is working on (loop going back to self)
+#to do this can remove row where first two columns have same character
+noextra <- dfadj %>% filter(X1 != variable)
+#chordDiagram(noextra)
+
+two <- noextra %>% filter(value > 2) #remove all partners less than 2 
+chordDiagram(two, scale = TRUE)
+## so their still seems to be some redundancy where the is a line going from parter a to partner b and another line (samve value) going from b back to a 
+### scale = TRUE seems to fix this? 
+chordDiagram(two, scale = FALSE)
+### with scale - "value represents the fraction of the interaction going to one other secto"
+
+#labels - need to pre-allocate empty track and costomize later (going to be a pain for each so just do later?)
+```
+
