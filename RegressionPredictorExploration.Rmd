@@ -27,6 +27,8 @@ library(skimr) #super nice summary package
 library(car) #contains vif function 
 #library(VGAM) #for regression new package came out since 
 library(glmmTMB)
+
+source(file.path(functions.dir,'FormatData.R'))
 ```
 
 load in data 
@@ -290,8 +292,9 @@ combo <- combo[,c(1,8,2,4,9,5:7,10:11,3)]
 #no partner information for Chorizanthe parryi var. fernandina? 
 
 #remove percent federal land
-View(combo)
 combo <- combo[,c(1:7,9:11)]
+#having isses getting Chorizanthe parryi var. fernandina total to stick so just going to write that in here
+combo[1,5] <- 2
 
 ```
 
@@ -355,6 +358,71 @@ pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,
 
 ```
 
+
+
+
+
+```{r Correlation Matrix part 2}
+# Correlation Matrix of Predictors vs Responses ##
+## modified some code from http://handlesman.blogspot.com/2011/03/matrix-plot-with-confidence-intervals.html
+#Not working because of NAs in data - getting error that x is not numeric 
+  #might actually be that was reading footprint data as not numeric
+
+#set up
+combooo <- combo
+#change names for graphic 
+combooo <- combooo %>% rename("Area" = area_x) 
+combooo <- combooo %>% rename("Threats" = total_x_x)
+combooo <- combooo %>% rename("Partners" = total)
+combooo <- combooo %>% rename("Employment" = nsumemploy)
+combooo <- combooo %>% rename("%PublicLand" = percentpublic)
+combooo <- combooo %>% rename("Taxa" = taxa)
+#lapply(combooo, as.numeric)
+PredictorsOnlyPixel <- combooo[,c(5)]
+PredictAndResponsePixel <- combooo[,-c(1:4)]
+PredictAndResponseGrid <- combooo[,-c(1:4)]
+
+  
+# put histograms on the diagonal panel	
+panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
+{
+  usr <- par("usr"); on.exit(par(usr))			# not sure what usr is for?
+  par(usr = c(usr[1:2],0,1.5))
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)			# make the hist 
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col="grey", ...)  # defines what the histogram is going to look like
+}
+
+## put correlations & 95% CIs on the upper panels,
+panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- cor(x, y,use="complete.obs")
+    txt <- format(c(r, 0.123456789), digits=digits)[1]
+    prefix <- "r = "
+    rc <- cor.test(x,y)
+    rci <- rc$conf.int
+    txt2 <- format(c(rci, 0.123456789), digits=digits)[1]
+    txt3 <- format(c(rci, 0.123456789), digits=digits)[2]
+    prefix2 <- "\nCI = "
+    txt <- paste(prefix, txt, prefix2, txt2, ", ", txt3, sep="")
+    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = 1)
+}
+
+## plot a correlation matrix plot that uses the functions specified above to say what to plot where
+      ## this was taken directly from website and still not plotting r values for all 
+pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+
+##Pixel level
+
+pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+```
+
+
+
 ```{r bruteforcecalcs}
 
 #cor.test(x,y,method = c("pearson"))	            
@@ -407,9 +475,7 @@ Total <- c(	0.104575,	-0.231693,	-0.148348,	0.1082679,	0.2834732)
 variance inflation factors : Detecting multicollinearity
 ```{r VIFs}
 new <- combo[,-c(1:4)]
-??vif
-combo[]
-vif(lm(data = new))
+#vif(lm(data = new))
   #none are above 5
 
 vif(lm(total ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = new))
@@ -417,8 +483,8 @@ vif(lm(total ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = new)
   #problem if above 5 (none are)
 
 # wih glm
-vif(glm(data = new))
-vif(glm(total ~ area_x +percentpublic + taxa + nsumemploy + total_x_x, data = new))
+#vif(glm(data = new))
+#vif(glm(total ~ area_x +percentpublic + taxa + nsumemploy + total_x_x, data = new))
   ## same numbers as with lm 
 
 ##glm and lm will produce the same numbers 
@@ -438,7 +504,6 @@ t-possion assumes no over dispersion where as neg bionmical has additional param
 
 #remove NA from parameter 
 new1 <- new[-which(is.na(new$total)),]
-View(new1)
 
 
 fit_tnbinom <- glmmTMB(Y~ X1  + X2 + X3 + X4, + X5, data=new,ziformula=~0,  family=list(family="truncated_nbinom1",link="log"))
@@ -508,7 +573,7 @@ fit_tnbinom <- glmmTMB(total ~ taxa + percentpublic + total_x_x + nsumemploy, da
 ```
 
 
-```{r glmm}
+```{r glmm, eval=FALSE}
 # so issue is that numbers in area and nsum are too big 
 # current units : 
     # Area.x = total area in m^2 of the counties the species occupies
@@ -521,7 +586,7 @@ fit_tnbinom <- glmmTMB(total ~ taxa + percentpublic + total_x_x + nsumemploy, da
 #lets try changing it to hectares or 10,000 m2
 
 new2 <- new1 %>% mutate(narea = area_x / 1000000000)
-new2 <- new2[,-c(2)] #remove irrelevant columns 
+#new2 <- new2[,-c(2)] #remove irrelevant columns 
 
 
 #try again with regression 
