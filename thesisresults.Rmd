@@ -2,14 +2,12 @@
 title: "thesisresults"
 author: "Annabelle"
 date: "April 21, 2020"
-output: html_document
+output: word_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-
 
 Set up file structure
 ```{r, include = FALSE, echo = FALSE}
@@ -31,36 +29,38 @@ library(kableExtra)
 library(reshape2)
 library(tidytext) #suggested in github helpform for an error
 library(data.table)
+
+source(file.path(functions.dir,'FormatData.R'))
+
+#data 
+RawData <- read_csv(paste(DataSource,"/AS9_codingdata.csv", sep = ""))
+PartnerData <- FormatData(RawData)
+adjmatrix <- read_csv("/usr/local/bin/store/partner_rff/output/adjacencymatrix.csv")
+combo <- read.csv("/usr/local/bin/store/partner_rff/OutputAndInputsForThesis/combodf.csv", stringsAsFactors = FALSE)
 ```
-
-load in data 
-```{r setup data, echo = FALSE}
-#file names need and which rmd they are located in (can write these into new csvs when done with everything and then call them in)
-
-combo #correlation matrix 
-adjmatrix
-PartnerData
-
-
-```
-
 
 ### Figure 1: Correlation matrix
 
 ```{r}
 #set up
 combooo <- combo
+#change names for graphic 
 combooo <- combooo %>% rename("Area" = area_x) 
 combooo <- combooo %>% rename("Threats" = total_x_x)
 combooo <- combooo %>% rename("Partners" = total)
 combooo <- combooo %>% rename("Employment" = nsumemploy)
 combooo <- combooo %>% rename("%PublicLand" = percentpublic)
 combooo <- combooo %>% rename("Taxa" = taxa)
+#lapply(combooo, as.numeric)
 PredictorsOnlyPixel <- combooo[,c(5)]
 PredictAndResponsePixel <- combooo[,-c(1:4)]
 PredictAndResponseGrid <- combooo[,-c(1:4)]
-#change names in PredictAndResponsePixel
 
+
+#set up
+PredictorsOnlyPixel <- combo[,c(5)]
+PredictAndResponsePixel <- combo[,-c(1:4)]
+PredictAndResponseGrid <- combo[,-c(1:4)]
   
 # put histograms on the diagonal panel	
 panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
@@ -170,8 +170,6 @@ number_of_species_per_partner <- as.data.frame(number_of_species_per_partner)
 number_of_species_per_partner <- number_of_species_per_partner %>% rownames_to_column(var = "X1")
 number_of_species_per_partner <- number_of_species_per_partner %>% rename("species_per_partner" = V1) 
 
-
-View(number_of_species_per_partner)
 explore <- explore %>% rename("partnerships_per_partner" = rssum)
 
 ## the joins aren't working - just getting partner names then replicated row columns
