@@ -27,6 +27,7 @@ library(skimr) #super nice summary package
 library(car) #contains vif function 
 #library(VGAM) #for regression new package came out since 
 library(glmmTMB)
+library(performance) #to use with glmmTMB
 
 source(file.path(functions.dir,'FormatData.R'))
 ```
@@ -221,7 +222,7 @@ plot(combo$nsumemploy, combo$total)
 
 ```
 
-```{r income, echo= FALSE, include= FALSE}
+```{r income, echo= FALSE, include= FALSE, eval=FALSE}
 #view distribution of employment
 #hist(combo$incomerelevant, xlab ="average, area weighted per county, income level", breaks = 30)
 #response variable or total number of partners
@@ -246,7 +247,7 @@ plot(center$XCoord, center$YCoord)
 coords <- center[,c(4,5)]
 dis <- dist(coords) #distance between points - note this is incorrect bc cartesian distance - doesn't take curviture into account 
 as.matrix(dis) #have matrix of distances between points 
-gdis <- pointDistance(coords, lonlat=TRUE)
+#####gdis <- pointDistance(coords, lonlat=TRUE)
 #View(gdis)
 #
 xandy <- center[,c(6,7)]
@@ -605,6 +606,9 @@ fit_tnbinom <- glmmTMB(total ~ taxa + percentpublic + total_x_x + nsumemploy, da
 #going to drop this parameter for now and recalculate area 
 #lets try changing it to hectares or 10,000 m2
 
+new <- combo[,-c(1:4)]
+#remove NA from parameter 
+new1 <- new[-which(is.na(new$percentpublic)),]
 new2 <- new1 %>% mutate(narea = area_x / 1000000000)
 #new2 <- new2[,-c(2)] #remove irrelevant columns 
 
@@ -649,4 +653,16 @@ both tpoisson and negbinom are computed on a log scale, so if use emmeans would 
 ```{r emmeans}
 
 ```
+
+
+
+
+plot(predicted(MODELNAME), residuals(MODEL))
+
+qqnorm(residuals(MODEL)
+qqline(residuals(MODEL))
+hist(residuals(MODEL))
+
+
+
 
