@@ -2,7 +2,9 @@
 title: "thesisresults"
 author: "Annabelle"
 date: "April 21, 2020"
-output: word_document
+output:
+  html_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -41,7 +43,7 @@ combo <- read.csv("/usr/local/bin/store/partner_rff/OutputAndInputsForThesis/com
 
 ### Figure 1: Correlation matrix
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 #set up
 combooo <- combo
 #change names for graphic 
@@ -102,7 +104,11 @@ pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,
 
 
 ### Figure 2: Map of the ranges of all species considered in this dataset and the average center point for all species
-![Map of all species]("/partner_rff/map_all_figures.pdf")
+
+![Map of all species](/usr/local/bin/store/partner_rff/OutputAndInputsForThesis/map_all_figures.pdf)
+
+
+
 
 ### Figure 3: A subsection of the total dataframe to show the number of species a partner is working on 
 ##### Planning to use the second of two graphs for paper 
@@ -129,7 +135,7 @@ newmat <- pdata[1,]
 newmat[,1] <- "empty" 
 #add empty row with same no of columns to combine with current matrix 
 newMatrix <- rbind(newmat, pdata)
-
+class(newmat)
 newMatrix <- newMatrix %>% mutate_if(is.numeric, ~1 * (. != 0))
 
 diag(newMatrix)=0
