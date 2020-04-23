@@ -13,7 +13,10 @@ knitr::opts_chunk$set(echo = TRUE)
 DataSource <- "./OutputAndInputsForThesis" # input raw dataset goes here
 
 library(glmmTMB)
+library(tidyverse)
 library(performance) #to use with glmmTMB
+library(car)
+#function qqPlot - car
 
 RegData <- read_csv(paste(DataSource,"/newdf.csv", sep = ""))
 ```
@@ -29,13 +32,15 @@ summary(lm2)
 
 par(mfrow = c(2, 2))
 plot(lm2)
+
+qqPlot(residuals(lm2))
 par(mfrow = c(1, 1))
 
 #plot(predicted(lm2), residuals(lm2))
 #hist(residuals(lm2))
 # how add CI equivalent around q-q plot? 
 AIC(lm2)
-check_overdispersion(glm2)
+check_overdispersion(lm2)
 ```
 
 Changed area units
@@ -106,6 +111,7 @@ par(mfrow = c(1, 1))
 
 AIC(fit_genpoisson) #much much higher before took the log - 123.25
 #Dispersion parameter for genpois family (): 0.469 
+r2(fit_genpoisson)
 ```
 
 
@@ -132,6 +138,7 @@ par(mfrow = c(1, 1))
 
 AIC(fit_tpoisson) #much much higher because can't take the log = 381.7  
 check_overdispersion(fit_tpoisson)
+r2(fit_tpoisson)
 ```
 
 
