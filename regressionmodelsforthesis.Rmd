@@ -1,0 +1,139 @@
+---
+title: "regressionmodelsforthesis"
+author: "Annabelle"
+date: "April 22, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r setup}
+DataSource <- "./OutputAndInputsForThesis" # input raw dataset goes here
+
+library(glmmTMB)
+library(performance) #to use with glmmTMB
+
+RegData <- read_csv(paste(DataSource,"/newdf.csv", sep = ""))
+```
+
+Issues to address: 
+- overdispersion 
+- taking log of predictor seems to be a lot more successful than altering units 
+
+
+```{r gwenlm2}
+lm2 <- lm(log(total) ~ taxa + percentpublic + area_x + nsumemploy + total_x_x, data=RegData)
+summary(lm2)
+
+par(mfrow = c(2, 2))
+plot(lm2)
+par(mfrow = c(1, 1))
+
+#plot(predicted(lm2), residuals(lm2))
+#hist(residuals(lm2))
+# how add CI equivalent around q-q plot? 
+AIC(lm2)
+check_overdispersion(glm2)
+```
+
+Changed area units
+```{r lm_modarea, echo=FALSE, include=FALSE}
+modRegData <- RegData
+modRegData <- modRegData %>% mutate(narea = area_x / 1000000000)
+
+lm_modarea <- lm(log(total) ~ taxa + percentpublic + narea + nsumemploy + total_x_x, data=modRegData)
+summary(lm_modarea)
+
+par(mfrow = c(2, 2))
+plot(lm_modarea)
+par(mfrow = c(1, 1))
+
+#plot(predicted(lm2), residuals(lm2))
+#hist(residuals(lm2))
+# how add CI equivalent around q-q plot? 
+AIC(lm_modarea)
+check_overdispersion(lm_modarea) ### now this won't work?? needs to be for poisson family 
+```
+Conclusion: same model if modify area units - literally no changes
+
+Now, keeping area units changed - move into glmmTMB 
+```{r gaussian}
+gaus <- modRegData
+gaussian <- glmmTMB(log(total) ~ taxa + percentpublic + total_x_x + narea + nsumemploy, data=gaus, family=gaussian())
+summary(gaussian)
+
+par(mfrow = c(2, 2))
+#plot(predicted(MODELNAME), residuals(MODEL))
+par(mfrow = c(1, 1))
+
+qqplot(residuals(gaussian))
+
+qqnorm(residuals(gaussian), ylab="Residuals")
+qqline(residuals(gaussian)) #qqline won't print
+hist(residuals(gaussian))
+par(mfrow = c(1, 1))
+
+AIC(gaussian)
+#Dispersion estimate for gaussian family (sigma^2): 0.574 
+
+```
+Conclusion - I also don't think this model is doing anything differently (beside package used to run)
+
+
+Now, try possion  
+Have issue with convergence as soon as add + nsumemploy when leave this variable out ...
+Or if change area from modRegData units 
+```{r gaussian}
+pois <- modRegData
+#if change to RegData (no area conversation.. )
+fit_genpoisson <- glmmTMB(log(total) ~ taxa + percentpublic + total_x_x + narea, data=pois, family=genpois(link = "log"))
+  # issue : non-integer counts in a genpois modelNA/NaN function evaluation 
+
+summary(fit_genpoisson)
+
+par(mfrow = c(2, 2))
+#plot(predicted(MODELNAME), residuals(MODEL))
+par(mfrow = c(1, 1))
+
+qqplot(residuals(gaussian))
+
+qqnorm(residuals(fit_genpoisson), ylab="Residuals")
+qqline(residuals(fit_genpoisson)) #qqline won't print
+hist(residuals(fit_genpoisson))
+par(mfrow = c(1, 1))
+
+AIC(fit_genpoisson) #much much higher before took the log - 123.25
+#Dispersion parameter for genpois family (): 0.469 
+```
+
+
+t-poisson 
+unable to take the log of total because "Error in glmmTMB(log(total) ~ taxa + percentpublic + total_x_x + narea,  : 
+  'log(total)' contains zeros (or values close to zero). Zeros are compatible with a truncated distribution only when zero-inflation is added"
+```{r}
+pois <- modRegData
+
+fit_tpoisson <- glmmTMB(total ~ taxa + percentpublic + total_x_x +narea, data=pois, family=truncated_poisson(link = "log"))
+
+summary(fit_tpoisson)
+
+par(mfrow = c(2, 2))
+#plot(predicted(MODELNAME), residuals(MODEL))
+par(mfrow = c(1, 1))
+
+qqplot(residuals(fit_tpoisson))
+
+qqnorm(residuals(fit_tpoisson), ylab="Residuals")
+qqline(residuals(fit_tpoisson)) #qqline won't print
+hist(residuals(fit_tpoisson))
+par(mfrow = c(1, 1))
+
+AIC(fit_tpoisson) #much much higher because can't take the log = 381.7  
+check_overdispersion(fit_tpoisson)
+```
+
+
+
+
