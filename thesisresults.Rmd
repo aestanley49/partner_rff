@@ -19,6 +19,7 @@ functions.dir <- "./functions" # directory for functions
 #Functions to read in 
 library(janitor) #cleaning data
 library(tidyverse) #cleaning data
+library(ggplot2)
 library(readxl) #loading in files 
 library(circlize)
 library(readr)
@@ -40,7 +41,7 @@ combo <- read.csv("/usr/local/bin/store/partner_rff/OutputAndInputsForThesis/com
 ```
 
 ### Figure 1: Correlation matrix
-
+Informative caption Correlation matrix: This matrix plots the bivariate data, the histogram of each variable and calculates the correlations of bivariate plots with their 95% confidence intervals displayed.
 ```{r eval=FALSE, include=FALSE}
 #set up
 combooo <- combo
@@ -104,13 +105,14 @@ pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,
 ### Figure 2: Map of the ranges of all species considered in this dataset and the average center point for all species
 
 ![Map of all species](/usr/local/bin/store/partner_rff/OutputAndInputsForThesis/map_all_figures.pdf)
-
+Informative caption Map: All species, for which I have partner data, have their ranges colored in orange and the average center of their range indicated with a green dot. Ranges may be overlapping and were calculated at a county scale. 
 
 
 
 ### Figure 3: A subsection of the total dataframe to show the number of species a partner is working on 
 ##### Planning to use the second of two graphs for paper 
-```{r}
+Informative caption The number of species a partner is working on: All organizations that have are working on more than one species. This is a subsection of the complete dataset as the vast majority of partners only work on one species. 
+```{r echo=FALSE}
 #this is just the diagonal matrix from adj matrix 
 graphme <- adjmatrix
 graphme <- graphme %>% melt()
@@ -119,12 +121,13 @@ graphme <- graphme[,-c(1)] #removed duplicate names
 #all partners
 ggplot(data = graphme) + geom_col(mapping = aes(x=variable, y=value))
 g_one <- graphme %>% filter(value >1)
-ggplot(data = g_one, mapping = aes(x=variable, y=value)) + geom_col() + theme(axis.text.x = element_text(angle = 90)) + scale_y_continuous(name ="Number of Species", limits=c(0,45)) + scale_x_discrete(name ="Name of Partner")
+ggplot(data = g_one, mapping = aes(x=variable, y=value)) + geom_col() + theme(axis.text.x = element_text(angle = 90)) + scale_y_continuous(name ="# of Species", limits=c(0,45)) + scale_x_discrete(name ="Name of Partner")
 ```
 
 ### Number of partners per partner
   #### Same question as above about subsections/scale of zoom 
-```{r no partnerships for each partner}
+Informative caption The frequency of the number of partnerships per partner: With the exception of several federal agencies and the 50 odd partners working together on one species, the number of partnerships ranges between 0 and 30. Essentially, most organizations partner with more than one other organization and there are a few outliers with vastly more partnerships. 
+```{r no partnerships for each partner echo=FALSE}
 #going to convert all values that are greater than 1 to one so not double counting 
 # then subtract diagonal 
 #then add 
@@ -158,11 +161,15 @@ ggplot(data = explore, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous
 #because data is scewed with giant outlier, have recalibrated to show what majority of the data looks like 
 filt <- explore %>% filter(rssum < 50) 
 ggplot(data = filt, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partners", limits=c(-1,40)) + scale_y_continuous(name ="Frequency", limits=c(0,20))
+
+#try log tranforming 
+ggplot(data = explore, mapping = aes(x=log(rssum))) + geom_bar() 
 ```
 
 ### Figure [not yet referenced in text] Number of partners/partner vs number of species/partner
   #### different options here 
-```{r}
+Informative caption Number of partnerships per partner v number of species per partner: There is a linear correlation between the number of partnerships per partner and the number of species per partner. The more species a partner is working on, the more likely they are to have more partners. [correct conclusion given that this is heavily informed by outliers?] 
+```{r echo=FALSE}
 specesperpartner <- colSums(PartnerData[,-c(1:3)])
 speperpart <- t(specesperpartner)
 sppart <- t(speperpart) #trying to get partner names as row names
@@ -181,8 +188,8 @@ and <- explore %>% left_join(number_of_species_per_partner, by = NULL)
 #need to fix NRCS
 and  <- and[-which(is.na(and$species_per_partner)),]
 
-ggplot(data = and, mapping = aes(x=partnerships_per_partner, y= species_per_partner)) + geom_point() +geom_label(mapping = aes(x=partnerships_per_partner, y=species_per_partner, label = X1)) +coord_flip()
-
+#probably worth getting rid of this one
+#ggplot(data = and, mapping = aes(x=partnerships_per_partner, y= species_per_partner)) + geom_point() +geom_text(mapping = aes(x=partnerships_per_partner, y=species_per_partner, label = X1, geom.text.size = 1)) +coord_flip()
 
 and2 <- and %>% filter(X1 != "BLM") %>% filter(X1 != "USFWS") %>% filter(X1 != "USFS") 
 ggplot(data = and2, mapping = aes(x=partnerships_per_partner, y= species_per_partner)) + geom_count() +coord_flip()
@@ -193,8 +200,9 @@ ggplot(data = and, mapping = aes(x=partnerships_per_partner, y= species_per_part
 
 
 ### Network analysis / chord diagram 
+Informative caption Network Analysis: The number of species that partners are working on together is shown by the a link. The thickness of the link on the axis or edge of the circle indicates how many species the two partners are working on and the color corresponds to a specific partner. [note – need to change names to acronyms] 
 
-```{r}
+```{r echo=FALSE}
 dfadj <- melt(adjmatrix) #changes matrix to dataframe
 dfadj <- dfadj %>% filter(value > 1) #remove all partner less than 1
 
@@ -204,6 +212,11 @@ noextra <- dfadj %>% filter(X1 != variable)
 #chordDiagram(noextra)
 
 two <- noextra %>% filter(value > 2) #remove all partners less than 2 
+#change names to ackronymns 
+two <- two %>% select_all()
+
+abc <- two %>% select(noquote(order(colnames(two))))
+
 chordDiagram(two, scale = TRUE)
 ## so their still seems to be some redundancy where the is a line going from parter a to partner b and another line (samve value) going from b back to a 
 ### scale = TRUE seems to fix this? 
@@ -213,3 +226,33 @@ chordDiagram(two, scale = FALSE)
 #labels - need to pre-allocate empty track and costomize later (going to be a pain for each so just do later?)
 ```
 
+
+Regression
+
+summary table (or section of?)
+
+
+Residual vs fitted and qqplot 
+
+
+Tables for supplementary material 
+
+
+```{r list of species}
+#list of species with partners working on them 
+pdata <- PartnerData[,c(1:3)]
+(pdata) ##getting werid error here, look into using a different table format? 
+```
+
+
+
+```{r list of partners}
+#kable(colSums(PartnerData[,-c(1:3)]))
+#kable(table(colSums(PartnerData[,-c(1:3)])))
+
+name <- colSums(PartnerData[,-c(1:3)])
+name %>%
+ kable("html") %>% 
+ kable_styling(font_size = 7)
+
+```
