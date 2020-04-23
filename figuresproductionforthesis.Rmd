@@ -24,6 +24,7 @@ source(file.path(functions.dir,'FormatData.R')) # any functions that are called 
 library(circlize)
 library(janitor) #need for function FormatData to run 
 library(tidyverse) #need for function FormatData to run 
+library(tibble)
 library(readr)
 library(skimr)
 library(igraph)
@@ -300,29 +301,132 @@ name %>%
 west coast v east coast 
   #### variable okay produced in RegressionPredictoExploration range chunk 
 removing all 0s columns not working 
-```{r}
-
-
+```{r east and west adj matrix}
 west <- okay %>% filter(geo == TRUE)
 west <- west [,c(1,3)]
 west <- west %>% left_join(PartnerData, by = "scientific_name")
+nzwest <- west[,-c(1:4)][,colSums(west[,-c(1:4)])>=1] #removed columns with all 0s
 dim(west)
-west <- west[,-which(colSums(west[,-c(1:4)]) == 0)] #removed columns with all 0s
+nzwest <- as.matrix(nzwest) #prep for making adj matrix
+wajmat <- t(nzwest) %*% nzwest #new adjmat
+tidyweajmat <- as_tibble(wajmat, rownames = "id")
 
-summarise(west)
 
 east <- okay %>% filter(geo == FALSE)
 east <- east [,c(1,3)]
 east <- east %>% left_join(PartnerData, by = "scientific_name") 
-east %>% filter_all(east, any_vars(. != 0))
-east <- east[,-which(colSums(east[,-c(1:4)]) == 0)] #removed columns with all 0s
+nzeast <- east[,-c(1:4)][,colSums(east[,-c(1:4)])>=1]
+dim(nzeast)
+nzeast <- as.matrix(nzeast) #prep for making adj matrix
+eajmat <- t(nzeast) %*% nzeast #new adjmat
+#need to change from matrix to tidyr 
+#need to change to tidyverse for later code
+tidyeajmat <- as_tibble(eajmat, rownames = "id")
+
+```
+
+### Figure 3: A subsection of the total dataframe to show the number of species a partner is working on 
+##### Planning to use the second of two graphs for paper 
+```{r no species WEST}
+#this is just the diagonal matrix from adj matrix 
+graphme <- wajmat
+graphme <- graphme %>% melt()
+graphme <- graphme %>% filter(Var1 == Var2)
+graphme <- graphme[,-c(1)] #removed duplicate names
+#all partners
+ggplot(data = graphme) + geom_col(mapping = aes(x=Var2, y=value))
+g_one <- graphme %>% filter(value >1)
+ggplot(data = g_one, mapping = aes(x=Var2, y=value)) + geom_col() + theme(axis.text.x = element_text(angle = 90)) + scale_y_continuous(name ="Number of Species", limits=c(0,45)) + scale_x_discrete(name ="Name of Partner")
+```
+
+Having some issues here with rotating text on line 345
+```{r no species EAST}
+#this is just the diagonal matrix from adj matrix 
+graphme <- eajmat
+graphme <- graphme %>% melt()
+graphme <- graphme %>% filter(Var1 == Var2)
+graphme <- graphme[,-c(1)] #removed duplicate names
+#all partners
+ggplot(data = graphme) + geom_col(mapping = aes(x=Var2, y=value)) + theme(axis.text.x = element_text(angle = 90))
+g_one <- graphme %>% filter(value >1)
+ggplot(data = g_one, mapping = aes(x=Var2, y=value)) + geom_col() + theme(axis.text.x = element_text(angle = 90)) + scale_y_continuous(name ="Number of Species", limits=c(0,10)) + scale_x_discrete(name ="Name of Partner")
+```
 
 
+```{r no partnerships for each partner WEST}
+#going to convert all values that are greater than 1 to one so not double counting 
+# then subtract diagonal 
+#then add 
+pdata <- tidyweajmat
+newmat <- pdata[1,]
+newmat[,1] <- "empty" 
+#add empty row with same no of columns to combine with current matrix 
+newMatrix <- rbind(newmat, pdata)
+class(newmat)
+newMatrix <- newMatrix %>% mutate_if(is.numeric, ~1 * (. != 0))
+
+diag(newMatrix)=0
+#delete top (empty) row 
+newMatrix <- newMatrix[-1,] ##I think this matrix is worth keeping (all numers now 1s and 0s )
+asnum <- newMatrix[,-c(1)]
+names <- newMatrix[,c(1)]
+rssum <- rowSums(newMatrix[,c(-1)])
+newdfwest <- cbind(names, rssum) ## yay I did it!! 
+
+## now going to try and filter
+
+explore <- newdfwest
+explore <- explore %>% arrange(-rssum)
+(explore[c(1:4),])
+
+#still feeds mis-represented 
+
+#summary count of the number of partnership for each partner (how many partner have 2 parnters, 3 etc? ) 
+ggplot(data = explore, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partners on the West Coast", limits=c(-1,100)) + scale_y_continuous(name ="Frequency", limits=c(0,20))
+
+#don't need the filter but this shows that there are two values that you can't see on the other graph
+filt <- explore %>% filter(rssum > 50) 
+ggplot(data = filt, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partners on the West Coast", limits=c(50,100)) + scale_y_continuous(name ="Frequency", limits=c(0,20))
 ```
 
 
 
+```{r no partnerships for each partner EAST}
+#going to convert all values that are greater than 1 to one so not double counting 
+# then subtract diagonal 
+#then add 
+pdata <- tidyeajmat
+newmat <- pdata[1,]
+newmat[,1] <- "empty" 
+#add empty row with same no of columns to combine with current matrix 
+newMatrix <- rbind(newmat, pdata)
+class(newmat)
+newMatrix <- newMatrix %>% mutate_if(is.numeric, ~1 * (. != 0))
+
+diag(newMatrix)=0
+#delete top (empty) row 
+newMatrix <- newMatrix[-1,] ##I think this matrix is worth keeping (all numers now 1s and 0s )
+asnum <- newMatrix[,-c(1)]
+names <- newMatrix[,c(1)]
+rssum <- rowSums(newMatrix[,c(-1)])
+newdfeast <- cbind(names, rssum) ## yay I did it!! 
+
+## now going to try and filter
+
+explore <- newdfeast
+explore <- explore %>% arrange(-rssum)
+(explore[c(1:4),])
+
+#still feeds mis-represented 
+
+#summary count of the number of partnership for each partner (how many partner have 2 parnters, 3 etc? ) 
+ggplot(data = explore, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partners on the East Coast", limits=c(-1,75)) + scale_y_continuous(name ="Frequency", limits=c(0,50))
+
+## I don'g think you need the filter 
+#because data is scewed with giant outlier, have recalibrated to show what majority of the data looks like 
+filt <- explore %>% filter(rssum < 50) 
+ggplot(data = filt, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partners", limits=c(-1,50)) + scale_y_continuous(name ="Frequency", limits=c(0,20))
+```
 
 
-
-
+Next combine into one graph?? 
