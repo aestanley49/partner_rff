@@ -282,7 +282,7 @@ For changing text size - https://stackoverflow.com/questions/40840986/knitrkable
 ```{r list of species}
 #list of species with partners working on them 
 pdata <- PartnerData[,c(1:3)]
-#kable(pdata) ##getting werid error here, look into using a different table format? 
+(pdata) ##getting werid error here, look into using a different table format? 
 ```
 
 
