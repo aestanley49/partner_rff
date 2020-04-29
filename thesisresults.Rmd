@@ -2,7 +2,10 @@
 title: "thesisresults"
 author: "Annabelle"
 date: "April 21, 2020"
-output: html_document
+output:
+  html_document: default
+  word_document: default
+always_allow_html: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -35,8 +38,11 @@ source(file.path(functions.dir,'FormatData.R'))
 
 #data 
 RawData <- read_csv(paste(DataSource,"/AS9_codingdata.csv", sep = ""))
-PartnerData <- FormatData(RawData)
+PartnerDataaaaa <- FormatData(RawData)
+write.csv(PartnerDataaaaa, "/usr/local/bin/store/partner_rff/OutputAndInputsForThesis/PartnerData.csv")
+
 adjmatrix <- read_csv("/usr/local/bin/store/partner_rff/output/adjacencymatrix.csv")
+two <- read_csv("/usr/local/bin/store/partner_rff/OutputAndInputsForThesis/two.csv")
 combo <- read.csv("/usr/local/bin/store/partner_rff/OutputAndInputsForThesis/combodf.csv", stringsAsFactors = FALSE)
 ```
 
@@ -112,7 +118,7 @@ Informative caption Map: All species, for which I have partner data, have their 
 ### Figure 3: A subsection of the total dataframe to show the number of species a partner is working on 
 ##### Planning to use the second of two graphs for paper 
 Informative caption The number of species a partner is working on: All organizations that have are working on more than one species. This is a subsection of the complete dataset as the vast majority of partners only work on one species. 
-```{r echo=FALSE}
+```{r, echo=FALSE, eval=FALSE}
 #this is just the diagonal matrix from adj matrix 
 graphme <- adjmatrix
 graphme <- graphme %>% melt()
@@ -127,7 +133,7 @@ ggplot(data = g_one, mapping = aes(x=variable, y=value)) + geom_col() + theme(ax
 ### Number of partners per partner
   #### Same question as above about subsections/scale of zoom 
 Informative caption The frequency of the number of partnerships per partner: With the exception of several federal agencies and the 50 odd partners working together on one species, the number of partnerships ranges between 0 and 30. Essentially, most organizations partner with more than one other organization and there are a few outliers with vastly more partnerships. 
-```{r no partnerships for each partner echo=FALSE}
+```{r no partnerships for each partner, echo=FALSE, eval=FALSE}
 #going to convert all values that are greater than 1 to one so not double counting 
 # then subtract diagonal 
 #then add 
@@ -169,7 +175,7 @@ ggplot(data = explore, mapping = aes(x=log(rssum))) + geom_bar()
 ### Figure [not yet referenced in text] Number of partners/partner vs number of species/partner
   #### different options here 
 Informative caption Number of partnerships per partner v number of species per partner: There is a linear correlation between the number of partnerships per partner and the number of species per partner. The more species a partner is working on, the more likely they are to have more partners. [correct conclusion given that this is heavily informed by outliers?] 
-```{r echo=FALSE}
+```{r echo=FALSE, eval=FALSE}
 specesperpartner <- colSums(PartnerData[,-c(1:3)])
 speperpart <- t(specesperpartner)
 sppart <- t(speperpart) #trying to get partner names as row names
@@ -211,16 +217,31 @@ dfadj <- dfadj %>% filter(value > 1) #remove all partner less than 1
 noextra <- dfadj %>% filter(X1 != variable)
 #chordDiagram(noextra)
 
-two <- noextra %>% filter(value > 2) #remove all partners less than 2 
+#two <- noextra %>% filter(value > 2) #remove all partners less than 2   # this is where the csv two came from I wrote it to csv 
 #change names to ackronymns 
-two <- two %>% select_all()
+#two <- two %>% select_all()
 
-abc <- two %>% select(noquote(order(colnames(two))))
+#abc <- two %>% select(noquote(order(colnames(two))))
 
-chordDiagram(two, scale = TRUE)
+two <- two[,-c(1)]
+#View(two)
+
+#chordDiagram(two, scale = TRUE)
 ## so their still seems to be some redundancy where the is a line going from parter a to partner b and another line (samve value) going from b back to a 
 ### scale = TRUE seems to fix this? 
-chordDiagram(two, scale = FALSE)
+
+#chordDiagram(two)
+#circos.info()
+
+#chordDiagram(two, order = c(  "California Department of Fish and Game"    ,"USFWS"               , "The Nature Conservancy"  ,                      "BLM"   ,                                    
+ #            "California Department of Fish and Wildlife" , "NPS"                           ,
+#"USFS"                         ,             
+#        "Nevada Department of Wildlife" ))
+
+chordDiagram(two, scale = FALSE,link.sort = TRUE, link.decreasing = TRUE)
+#circos.info()
+
+chordDiagram(two, order = c( "USFWS",    "CDFG"  ,            "NPS",      "BLM" ,                           "The Nature Conservancy"  ,             "USFS"  , "NDW" ))
 ### with scale - "value represents the fraction of the interaction going to one other secto"
 
 #labels - need to pre-allocate empty track and costomize later (going to be a pain for each so just do later?)
@@ -232,7 +253,10 @@ Regression
 summary table (or section of?)
 
 
+
 Residual vs fitted and qqplot 
+
+
 
 
 Tables for supplementary material 
@@ -242,9 +266,13 @@ Tables for supplementary material
 #list of species with partners working on them 
 pdata <- PartnerData[,c(1:3)]
 (pdata) ##getting werid error here, look into using a different table format? 
+pdata %>% kable("html")
+
+PartnerData[,c(1:3)]  %>% kable("html")
 ```
 
 
+<br>
 
 ```{r list of partners}
 #kable(colSums(PartnerData[,-c(1:3)]))
