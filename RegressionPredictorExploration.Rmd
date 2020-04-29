@@ -326,6 +326,13 @@ combo[1,5] <- 2
 ## modified some code from http://handlesman.blogspot.com/2011/03/matrix-plot-with-confidence-intervals.html
 #Not working because of NAs in data - getting error that x is not numeric 
   #might actually be that was reading footprint data as not numeric
+comboo <- combo
+combooo <- combooo %>% rename("Area" = area_x) 
+combooo <- combooo %>% rename("Threats" = total_x_x)
+combooo <- combooo %>% rename("Partners" = total)
+combooo <- combooo %>% rename("Employment" = nsumemploy)
+combooo <- combooo %>% rename("%PublicLand" = percentpublic)
+combooo <- combooo %>% rename("Taxa" = taxa)
 
 #set up
 PredictorsOnlyPixel <- combo[,c(5)]
@@ -627,7 +634,7 @@ gaussian <- glmmTMB(total ~ taxa + percentpublic + total_x_x + narea, data=new2,
 fit_genpoisson <- glmmTMB(total ~ taxa + percentpublic + total_x_x + narea, data=new2, family=genpois(link = "log"))
   # some issue with convergence 
 
-fit_tpoisson <- glmmTMB(total ~ taxa + percentpublic + total_x_x +narea, data=new2, family=truncated_poisson(link = "log"))
+fit_tpoisson <- glmmTMB(total ~ taxa + percentpublic + total_x_x +area_x + nsumemploy, data=new2, family=truncated_poisson(link = "log"))
 
 fit_binom <- glmmTMB(total ~ taxa + taxa + percentpublic + total_x_x + narea, data=new2, family=nbinom1(link = "log"))
   #got the lgamma value out of range error 
