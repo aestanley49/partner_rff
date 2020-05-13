@@ -101,7 +101,6 @@ CleanData[which(CleanData$funding == 0 | CleanData$funding == "" | CleanData$fun
 subclean <- CleanData[, c(11:21)]
 
 subclean[!is.na(subclean)] <- 1
-View(subclean)
 CleanData <- CleanData[,-c(11:21)]
 CleanData <- cbind(CleanData, subclean)
 CleanData[is.na(CleanData)] <- 0
@@ -115,6 +114,8 @@ CleanData2 <- CleanData[,c(4,1,2,3, 6:21)]
 CleanData2 <- CleanData2[order(CleanData2$partner.in.agreement),]
 overview <- CleanData2[-which(CleanData2$type.of.partners == "M" | CleanData2$type.of.partners == "G"),]
       ## ^^ not looking at strings of partners
+
+
 
 #write.csv(RawData,paste(DataSource,"/PartnersData.csv", sep = ""))
 write.csv(CleanData2, "/usr/local/bin/store/partner_rff/output/tableofpartnersandactions.csv")
