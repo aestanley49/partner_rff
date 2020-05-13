@@ -28,6 +28,7 @@ source(file.path(functions.dir,'cleaning_salafsky.R')) # any functions that are 
 ## general functions that need to be read in. I like to put them at the top so they are easier to deal with when they change version (inevitable)
 
 library(tidyverse)
+library(skimr)
 ```
 
 # Methods
@@ -51,8 +52,19 @@ newdata <- CleanData %>%  as_tibble() ##this is a tibble
 
 ## ideally, the raw dataset gets noted here, then you do any data manipulations in code and generate a useable dataset for later manipulations. I didn't have the dataset you called up in your code, so I put this one in to demonstrate. I would like it if we coudl get from this dataset in code "copyoflatestsummerwork_Partnerships_Precluded_species_recovered.xlsx"
 
-code <- cleaning_salafsky(CleanData)
+code <- cleaning_salafsky(newdata)
 ##function includes 1s and 0s? 
+
+
+#function not running
+code <- CleanData2
+
+head(as.numeric(CleanData2[,c(10:11)]))
+
+code <- read.csv(paste0(DataSource,"/tableofpartnersandactions.csv"), stringsAsFactors = FALSE, header = TRUE)
+
+class(code$funding)
+summary(code) #now should be numeric 
 ```
 
 Summary Stats
@@ -85,7 +97,40 @@ nom <- code[-which(code$type.of.partners == "M"),]
 View(nom)
 unique(nom$partner.in.agreement)
   #139 
+
+#had 139 before but now only 95?
+
 ```
 
 
+```{r}
+skim(code, partner.in.agreement)
+```
+
+
+row and col sums 
+```{r}
+class(as.numeric(code$funding))
+class(code$funding)
+num <- as.numeric(code[-c(1:9)])
+
+as.numeric(unlist(code$X1..Land.Water.Management))
+as.numeric(unlist(code$X2..Species.Management))
+
+
+
+View(num)
+rowSums(as.numeric(code[,c(10:11)]))
+
+colSums(code[,-c(1:9)])
+
+is.numeric(code$X10..Institutional.Development)
+
+```
+
+
+histograms
+```{r}
+plot(code$X1..Land.Water.Management)
+```
 
