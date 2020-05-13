@@ -55,7 +55,7 @@ plustwo <- plustwo %>%  as_tibble() #now can use stringr packages
 plustwo <- plustwo %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
                   clean_names()
 #information for categorizing agreements
-agree <- read_excel(paste0(DataSource,"/Detailed_methods.xlsx"))
+#agree <- read_excel(paste0(DataSource,"/Detailed_methods.xlsx"))
 #average center point 
 center <- read_excel(paste0(DataSource, "/mean_center_range_subsetofprecluded_with_partnerdata.xlsx"))
 
@@ -250,7 +250,7 @@ as.matrix(dis) #have matrix of distances between points
 #####gdis <- pointDistance(coords, lonlat=TRUE)
 #View(gdis)
 #
-xandy <- center[,c(6,7)]
+#xandy <- center[,c(6,7)]
 gdis <- pointDistance(xandy, lonlat=TRUE) ##this ran without producing any NaNs so correct? 
 #View(gdis)
 gdis[48,27] #this is eastern cottontail and weki bug [distance from hawaii to New england] ## check
@@ -326,7 +326,7 @@ combo[1,5] <- 2
 ## modified some code from http://handlesman.blogspot.com/2011/03/matrix-plot-with-confidence-intervals.html
 #Not working because of NAs in data - getting error that x is not numeric 
   #might actually be that was reading footprint data as not numeric
-comboo <- combo
+combooo <- combo
 combooo <- combooo %>% rename("Area" = area_x) 
 combooo <- combooo %>% rename("Threats" = total_x_x)
 combooo <- combooo %>% rename("Partners" = total)
@@ -334,10 +334,13 @@ combooo <- combooo %>% rename("Employment" = nsumemploy)
 combooo <- combooo %>% rename("%PublicLand" = percentpublic)
 combooo <- combooo %>% rename("Taxa" = taxa)
 
+#change order 
+combooo <- combooo[,c(1:4,6:10,5)]
+
 #set up
-PredictorsOnlyPixel <- combo[,c(5)]
-PredictAndResponsePixel <- combo[,-c(1:4)]
-PredictAndResponseGrid <- combo[,-c(1:4)]
+PredictorsOnlyPixel <- combooo[,c(10)]
+PredictAndResponsePixel <- combooo[,-c(1:4)]
+PredictAndResponseGrid <- combooo[,-c(1:4)]
   
 # put histograms on the diagonal panel	
 panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
@@ -405,8 +408,11 @@ combooo <- combooo %>% rename("Partners" = total)
 combooo <- combooo %>% rename("Employment" = nsumemploy)
 combooo <- combooo %>% rename("%PublicLand" = percentpublic)
 combooo <- combooo %>% rename("Taxa" = taxa)
+
+combooo <- combooo[,c(1:4,6:10,5)]
+
 #lapply(combooo, as.numeric)
-PredictorsOnlyPixel <- combooo[,c(5)]
+PredictorsOnlyPixel <- combooo[,c(10)]
 PredictAndResponsePixel <- combooo[,-c(1:4)]
 PredictAndResponseGrid <- combooo[,-c(1:4)]
 
@@ -451,7 +457,7 @@ pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,
 
 
 
-```{r bruteforcecalcs}
+```{r bruteforcecalcs eval = FALSE}
 
 #cor.test(x,y,method = c("pearson"))	            
 cor.test(combo$total, combo$area_x, method = c("pearson"))	
@@ -634,7 +640,9 @@ gaussian <- glmmTMB(total ~ taxa + percentpublic + total_x_x + narea, data=new2,
 fit_genpoisson <- glmmTMB(total ~ taxa + percentpublic + total_x_x + narea, data=new2, family=genpois(link = "log"))
   # some issue with convergence 
 
-fit_tpoisson <- glmmTMB(total ~ taxa + percentpublic + total_x_x +area_x + nsumemploy, data=new2, family=truncated_poisson(link = "log"))
+fit_tpoisson <- glmmTMB(total ~ taxa + percentpublic + total_x_x +narea, data=new2, family=truncated_poisson(link = "log"))
+
+qqPlot(residuals(fit_tpoisson))
 
 fit_binom <- glmmTMB(total ~ taxa + taxa + percentpublic + total_x_x + narea, data=new2, family=nbinom1(link = "log"))
   #got the lgamma value out of range error 
