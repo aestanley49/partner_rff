@@ -45,7 +45,7 @@ We collected data from Federal Register documents, recovery plans, and YYY (need
 ##this chunk is used to format the data set. 
 ## can use it to make settings etc.
 
-CleanData <- read.csv(paste0(DataSource,"/codesalafsky.csv"), stringsAsFactors = FALSE)
+CleanData <- read.csv(paste0(DataSource,"/codesalafsky.csv"), stringsAsFactors = FALSE) #removing end piece doesn't change it to factor (just back to character)
 ##change to tibble if needed
 ?as_tibble
 newdata <- CleanData %>%  as_tibble() ##this is a tibble 
@@ -57,14 +57,15 @@ code <- cleaning_salafsky(newdata)
 
 
 #function not running
-code <- CleanData2
+#code <- CleanData2
+code <- CleanData
 
 head(as.numeric(CleanData2[,c(10:11)]))
 
-code <- read.csv(paste0(DataSource,"/tableofpartnersandactions.csv"), stringsAsFactors = FALSE, header = TRUE)
+code2 <- read.csv(paste0(DataSource,"/tableofpartnersandactions.csv"), stringsAsFactors = FALSE, header = TRUE)
 
 class(code$funding)
-summary(code) #now should be numeric 
+summary(code2) #now should be numeric 
 ```
 
 Summary Stats
@@ -112,19 +113,33 @@ row and col sums
 ```{r}
 class(as.numeric(code$funding))
 class(code$funding)
+class(code2$funding)
 num <- as.numeric(code[-c(1:9)])
 
 as.numeric(unlist(code$X1..Land.Water.Management))
 as.numeric(unlist(code$X2..Species.Management))
 
-
-
-View(num)
-rowSums(as.numeric(code[,c(10:11)]))
+rowSums(as.numeric(code2[,c(10:11)]))
 
 colSums(code[,-c(1:9)])
 
 is.numeric(code$X10..Institutional.Development)
+
+
+is.tibble(code2)
+
+df <- as_tibble(code)
+df <- df %>% convert(num(funding))
+dat[, c(3,6:15,37)] <- sapply(dat[, c(3,6:15,37)], as.numeric)
+
+### this works
+code2[,c(11:21)] <- sapply(code2[ ,c(11:21)], as.numeric)
+class(code2$X6..Conservation.Design.and.Planning)
+
+rowSums((code2[,c(11:21)]))
+
+colSums(code2[,c(11:21)])
+
 
 ```
 
@@ -132,5 +147,15 @@ is.numeric(code$X10..Institutional.Development)
 histograms
 ```{r}
 plot(code$X1..Land.Water.Management)
+
+rsum <- (rowSums(code2[,c(11:21)]))
+
+ggplot(data = code2, mapping = aes(x=rsum)) + geom_bar()
+
+csum <- (colSums(code2[,c(11:21)]))
+
+plot(csum)
+#ggplot(code2) + geom_point(aes(x=csum, y=csum)) weird error message 
+
 ```
 
