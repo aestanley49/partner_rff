@@ -29,6 +29,7 @@ source(file.path(functions.dir,'cleaning_salafsky.R')) # any functions that are 
 
 library(tidyverse)
 library(skimr)
+library(knitr)
 ```
 
 # Methods
@@ -156,6 +157,158 @@ csum <- (colSums(code2[,c(11:21)]))
 
 plot(csum)
 #ggplot(code2) + geom_point(aes(x=csum, y=csum)) weird error message 
+
+csum
+
+```
+For each action – how many times is it applied total (counting each speciesXpartner separately)
+- information contained in csum output 
+
+
+count how many agreeements there are - 
+```{r}
+#start with tidydataset
+is.tibble(df)
+tidycode <- df #new vector so can start over
+tidycode  %>% pivot_wider(names_from = agreement.number, values_from = funding) #getting error column 15 must be named
+library(janitor)
+work <- tidycode %>% get_dupes(agreement.number) %>% filter(Scientific.name) ## 203 agreements? x not removing redundant scientific names 
+
+
+
+```
+
+
+# Part 2
+Loaded in the data to new vector 
+```{r}
+alldf <- CleanData2 #final output in the cleaning_salafsky function 
+alldf <- as_tibble(alldf)
+alldf <- code2 #in previous chunk changed action cat to numeric 
+```
+
+
+# Species
+
+For each species: how many different actions are applied (and how many of each action).
+```{r}
+# loop 
+  #filter by scientific names
+  # For each unique value 
+  # column sum
+  #table output of each? (??)
+colnames(alldf[,c(10:20)])
+
+species <- select(alldf, Scientific.name, X1..Land.Water.Management ,X2..Species.Management, X3..Awareness.raising,X4..law.enforcement.and.prosecution,X5..livelihood..economic.and.moral.incentrives, X6..Conservation.Design.and.Planning,X7..Legal.and.Policy.frameworks,X8..Research.and.monitoring, X9..Education.and.Training, X10..Institutional.Development,funding) #selecting all relevant columns
+
+#Make work as numeric
+### this works
+
+
+eachsp <- species %>% group_by(Scientific.name) %>% summarise_each(funs(sum)) 
+
+eachsp #for each species, summed actions done by each partner
+kable(eachsp) #prints out weird 
+
+
+#get count of total number of actions for each 
+onesandzeros <- eachsp %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+totalno <- onesandzeros %>% mutate(actionsum = rowSums(onesandzeros[,c(2:12)])) #added column "actionsum" that took the row sums for each species to give count of how many actions each species receives 
+kable(totalno) #this prints out weird
+totalno
+```
+
+How many partners  does each species have and do partners conduct the same or different actions from each other
+    - Can find number of partners but unsure how to answer second part of Q
+      - "Do partners conduct same or different actions.." for same partner working on each species or across different species? 
+```{r}
+nopartners <- (alldf %>% group_by(Scientific.name)   #selecting  each species
+%>% distinct(partner.in.agreement)    #count how many partners are distinct 
+%>% summarise(n()))                   # Count the number of distinct 
+
+kable(nopartners)
+
+
+#part two of question 
+```
+
+How many threats does each species face
+   - information found in regression prep script 
+```{r}
+
+```
+
+
+
+# Graphs 
+  (Section two in ppt slide no 4)
+
+For each action – how many species receive that action
+```{r}
+# take column sum of onesandzeros dataset created above
+actionsums <- colSums(onesandzeros[,c(2:12)]) #add all species for which that action happened
+
+kable(actionsums)
+```
+
+For each action – how many times is it applied total (counting each speciesXpartner separately)
+- information contained in csum output 
+```{r}
+kable(csum)
+
+
+#check csum
+check <- colSums(eachsp[,c(2:12)])
+#yes get the same values 
+
+```
+
+For each action – how many partners apply that action to at least 1 species
+```{r}
+partners <- select(alldf, partner.in.agreement, Scientific.name, X1..Land.Water.Management ,X2..Species.Management, X3..Awareness.raising,X4..law.enforcement.and.prosecution,X5..livelihood..economic.and.moral.incentrives, X6..Conservation.Design.and.Planning,X7..Legal.and.Policy.frameworks,X8..Research.and.monitoring, X9..Education.and.Training, X10..Institutional.Development,funding) #selecting all relevant columns
+
+class(partners$funding)
+
+#so summarise will only accept 1 value per group so going to try and do for each group 
+#there is definetly a more elegant/better way to do this but this works
+x1 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(3)])) #84
+x2 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(4)])) #45
+x3 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(5)])) #13
+x4 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(6)])) #4
+x5 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(7)])) #5   
+x6 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(8)])) #68
+x7 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(9)])) #38
+x8 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(10)])) #72
+x9 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(11)])) #26
+x10 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(12)])) #75
+x11 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(13)])) #41
+## (for each row, value is to the right)
+
+#*#*#*#*# Annabelle - find nicer way to present this information == put in table 
+```
+
+
+
+
+
+# Network analysis
+
+actions 
+nodes: actions
+Node size: number of times that action is applied
+Edge: number of partnerships that apply both types of actions
+
+```{r}
+
+```
+
+
+threats 
+Nodes: threats
+Size of nodes: number of species incurring that threat
+Edges – number of species experiencing both threats
+
+```{r}
 
 ```
 
