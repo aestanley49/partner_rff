@@ -30,6 +30,7 @@ source(file.path(functions.dir,'cleaning_salafsky.R')) # any functions that are 
 library(tidyverse)
 library(skimr)
 library(knitr)
+library(janitor)
 ```
 
 # Methods
@@ -67,6 +68,13 @@ code2 <- read.csv(paste0(DataSource,"/tableofpartnersandactions.csv"), stringsAs
 
 class(code$funding)
 summary(code2) #now should be numeric 
+
+
+
+tdata <- read.csv(paste0(DataSource,"/Updated_variables.csv"), stringsAsFactors = FALSE)
+tdata <- tdata %>%  as_tibble() #now can use stringr packages 
+tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
 ```
 
 Summary Stats
@@ -96,7 +104,7 @@ vec_count(code[c("agreement.number", "Common.name")])
 ##then count unique 
 
 nom <- code[-which(code$type.of.partners == "M"),]
-View(nom)
+#View(nom)
 unique(nom$partner.in.agreement)
   #139 
 
@@ -235,6 +243,26 @@ kable(nopartners)
 How many threats does each species face
    - information found in regression prep script 
 ```{r}
+####***********LOAD ME
+
+allspindf <- eachsp
+new <- tdata #need to join with tdata (renamed here)
+new$scientific_name
+#select relevant columns
+tthreats <- select(new, scientific_name, hab_x_x:threats_addressed_by_conservation_x_x)
+
+tthreats$scientific_name
+#need to join with tdata 
+#to do so need to change col name so match 
+
+tthreats <- rename(tthreats, Sciname = scientific_name)
+allspindf <- rename(allspindf, Sciname = Scientific.name)
+
+threats <- left_join(allspindf, tthreats, join_by = Sciname)
+
+#total number of threats for each sp
+threats$total_x_x
+#(missing info for 4 sp)
 
 ```
 
@@ -249,17 +277,31 @@ For each action – how many species receive that action
 actionsums <- colSums(onesandzeros[,c(2:12)]) #add all species for which that action happened
 
 kable(actionsums)
+
+plot(actionsums)
+
+ggplot(actionsums) + geom_count(mapping = aes())
+
 ```
 
 For each action – how many times is it applied total (counting each speciesXpartner separately)
 - information contained in csum output 
 ```{r}
+## for all speciesXpartners csum but this includes some repetition ("partners" which are actually multiple partners working on same action)
 kable(csum)
-
 
 #check csum
 check <- colSums(eachsp[,c(2:12)])
 #yes get the same values 
+
+#redo csum calculation and take out = M
+
+##
+noM <- code2[-which(code2$type.of.partners == "M"),]
+newcsum <- (colSums(noM[,c(11:21)]))
+
+plot(newcsum)
+
 
 ```
 
@@ -284,7 +326,14 @@ x10 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c
 x11 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(13)])) #41
 ## (for each row, value is to the right)
 
-#*#*#*#*# Annabelle - find nicer way to present this information == put in table 
+partnerapptosp <- c(x1, x2, x3, x4,x5, x6,x7,x8,x9,x10,x11)
+
+col_list <- partners[,c(3:13)]
+for(coln in col_list){
+  partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,coln]))
+} ## Got error 
+
+#*#*#*#*#  find nicer way to present this information == put in table 
 ```
 
 
@@ -299,7 +348,37 @@ Node size: number of times that action is applied
 Edge: number of partnerships that apply both types of actions
 
 ```{r}
+actions <- list(c("Land.Water.Management", "Species.Management","Awareness.raising","law.enforcement.and.prosecution","livelihood..economic.and.moral.incentrives","Conservation.Design.and.Planning","Legal.and.Policy.frameworks","Research.and.monitoring","Education.and.Training","Institutional.Development","funding"))
 
+#nodesize - no times action is applied by all partners
+nodesize <- newcsum 
+## actually need to refine this so not including ones with multiple species and partners 
+
+eachsp #for each species, summed actions done by each partner
+totalno # total no of actions for each species 
+nopartners # number of partners for each species 
+actionsums # number of species who recieve the action (for each action)
+csum #number of times action is applied for all speciesXpartnet
+newcsum # same as above but multipartner strings removed 
+
+
+#want to set up matrix where column names and rows are nodes (different actions)
+# diagonal would be nodesize 
+# all other cells would make up the edges between nodes
+  # to get this would write loop where works column by 
+
+mat <- matrix(0L, nrow = 11, ncol = 11, dimnames = actions)
+diag(mat) <- newcsum
+mat
+
+
+## Didn't work bc not same length 
+netset <- noM[,c(11:21)]
+tt <- t(netset)
+
+
+
+new <- as.matrix(netset) %*% as.matrix(tt)
 ```
 
 
