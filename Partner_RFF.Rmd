@@ -5,6 +5,8 @@ date: "January 21, 2020"
 output: word_document
 ---
 
+Becky's learning git!
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
