@@ -1,0 +1,48 @@
+---
+title: "CodeforOverviewDoc"
+author: "Annabelle Stanley, Gwen Iacona, Becky Epanchin-Niell"
+date: "June 1, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+####Set up file structure 
+```{r, include = FALSE}
+## setup the file structure so that this markdown document is in the main project folder along with the other folders noted below
+
+DataSource <- "./data" # input raw dataset goes here
+output.dir <-"./output" # output dataset writes to here
+functions.dir <- "./functions" # directory for functions 
+
+source(file.path(functions.dir,'FormatData.R')) # any functions that are called up by this markdown document need to be sourced here
+
+## general functions that need to be read in. I like to put them at the top so they are easier to deal with when they change version (inevitable)
+library(readr)
+library(readxl)
+library(tidyverse)
+library(janitor)
+library(stringr)
+
+```
+
+####load in different datasets
+```{r, echo = FALSE, include = FALSE}
+##this chunk is used to format the data set. 
+## can use it to make settings etc.
+
+RawData <- read_csv(paste(DataSource,"/AS9_codingdata.csv", sep = "")) ## ideally, the raw dataset gets noted here, then you do any data manipulations in code and generate a useable dataset for later manipulations. I didn't have the dataset you called up in your code, so I put this one in to demonstrate. I would like it if we coudl get from this dataset in code "copyoflatestsummerwork_Partnerships_Precluded_species_recovered.xlsx"
+
+##I've changed the file we are using to count the partners - this is the most updated rawest data
+##I couldn't get the read_excel to select the tab so I've copied that tab (new notes) to a new csv file AS9_codingdata
+
+PartnerData <- FormatData(RawData)
+```
+<br>
+
+##we use this data to answer 
+
+
