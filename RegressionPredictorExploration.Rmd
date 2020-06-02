@@ -94,9 +94,6 @@ combo <- combo[-which(is.na(combo$total)),] #removed all rows that had na's for 
 plustwo <- plustwo[1,]
 combo <- bind_rows(plustwo, combo) #adding extra species 
 
-#write to csv to read into another script 
-write.csv(combo,paste0(DataSource,"/tylerdataandpartnercounts", sep = ""))
-
 #removing extra common name colum 
 #combo <- combo[,-c(4)]
 #combo <- combo[,-c(1)]
