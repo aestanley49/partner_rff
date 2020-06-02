@@ -455,13 +455,6 @@ pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.pan
 pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
 ```
 
-#### Write to csv for future use 
-```{r}
-newdf2 <- combooo
-
-```
-
-
 
 ```{r bruteforcecalcs eval = FALSE}
 
@@ -511,6 +504,12 @@ Total <- c(	0.104575,	-0.231693,	-0.148348,	0.1082679,	0.2834732)
 					                                                  Totalthreat <- c()
 				
 ```
+
+#### Write to csv for future use 
+```{r}
+write.csv(new,paste(DataSource,"/newdf2.csv", sep = ""))
+```
+
 
 variance inflation factors : Detecting multicollinearity
 ```{r VIFs}
