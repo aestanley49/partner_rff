@@ -111,13 +111,15 @@ CleanData[is.na(CleanData)] <- 0
 
 ## reordering columns so parter is first and then sorting into alphabetical order  
 CleanData2 <- CleanData[,c(4,1,2,3, 6:21)]
+write.csv(CleanData2,paste0(DataSource,"/PartnersData.csv", sep = ""))
+
 CleanData2 <- CleanData2[order(CleanData2$partner.in.agreement),]
 overview <- CleanData2[-which(CleanData2$type.of.partners == "M" | CleanData2$type.of.partners == "G"),]
       ## ^^ not looking at strings of partners
 
 
 
-#write.csv(RawData,paste(DataSource,"/PartnersData.csv", sep = ""))
+write.csv(CleanData2,paste0(DataSource,"/PartnersData.csv", sep = ""))
 write.csv(CleanData2, "/usr/local/bin/store/partner_rff/output/tableofpartnersandactions.csv") ##looks like only prodced a local version which would need to be pushed everytime function is run with changes to over write previous versions
 
 ### ### ### werid issue where function doesn't hold logic changes 
