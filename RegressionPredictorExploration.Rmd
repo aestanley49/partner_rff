@@ -81,6 +81,7 @@ colnames(plustwo)
 plustwo <- plustwo %>% rename(scientific_name = scientific_name_x_x)
 #tdata <- rbind(tdata, plustwo) 
 #tdata %>% add_row(plustwo)
+
 #combine two datasets
 #First need to have the names columns be the same (tdata currently has x_x at end) - actually going to try without
 #tdata <- tdata %>% rename(scientific_name = scientific_name_x_x)
@@ -92,6 +93,9 @@ combo <- partnercount %>% full_join(tdata,
 combo <- combo[-which(is.na(combo$total)),] #removed all rows that had na's for partners aka the ones with no information
 plustwo <- plustwo[1,]
 combo <- bind_rows(plustwo, combo) #adding extra species 
+
+#write to csv to read into another script 
+write.csv(combo,paste0(DataSource,"/tylerdataandpartnercounts", sep = ""))
 
 #removing extra common name colum 
 #combo <- combo[,-c(4)]
