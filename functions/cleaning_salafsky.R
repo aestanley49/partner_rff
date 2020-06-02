@@ -118,7 +118,7 @@ overview <- CleanData2[-which(CleanData2$type.of.partners == "M" | CleanData2$ty
 
 
 #write.csv(RawData,paste(DataSource,"/PartnersData.csv", sep = ""))
-write.csv(CleanData2, "/usr/local/bin/store/partner_rff/output/tableofpartnersandactions.csv")
+write.csv(CleanData2, "/usr/local/bin/store/partner_rff/output/tableofpartnersandactions.csv") ##looks like only prodced a local version which would need to be pushed everytime function is run with changes to over write previous versions
 
 ### ### ### werid issue where function doesn't hold logic changes 
 
