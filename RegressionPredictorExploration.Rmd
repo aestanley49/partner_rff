@@ -39,25 +39,25 @@ load in data
 
 #run function then load in as count data 
 RawData <- read_csv(paste(DataSource,"/AS9_codingdata.csv", sep = "")) ## ideally, the raw dataset 
-PartnerData <- FormatData(RawData)
-partnercount <- read.csv(paste0(DataSource,"/EditedFormatDataOutputwithTotals.csv"), stringsAsFactors = FALSE)
+PartnerData <- FormatData(RawData) # this wasn't used in later data processes 
+partnercount <- read.csv(paste0(DataSource,"/EditedFormatDataOutputwithTotals.csv"), stringsAsFactors = FALSE) #this file is writen at the end of the FormatData(RawData) function. Maybe had error getting function to load in so wanted to take final csv instead? 
 partnercount <- partnercount %>%  as_tibble() #now can use stringr packages 
 partnercount <- partnercount %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
                   clean_names()
 #dataset that tyler sent, contains a number of predictors 
-tdata <- read.csv(paste0(DataSource,"/Updated_variables.csv"), stringsAsFactors = FALSE)
+tdata <- read.csv(paste0(DataSource,"/Updated_variables.csv"), stringsAsFactors = FALSE) #shared by tyler
 tdata <- tdata %>%  as_tibble() #now can use stringr packages 
 tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
                   clean_names()
 #additional two species not in tdata
-plustwo <- read.csv(paste0(DataSource, "/two_additional_species.csv"), stringsAsFactors = FALSE)
+plustwo <- read.csv(paste0(DataSource, "/two_additional_species.csv"), stringsAsFactors = FALSE) #also shared by tyler for the additional two species that had data missing before 
 plustwo <- plustwo %>%  as_tibble() #now can use stringr packages 
 plustwo <- plustwo %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
                   clean_names()
 #information for categorizing agreements
 #agree <- read_excel(paste0(DataSource,"/Detailed_methods.xlsx"))
 #average center point 
-center <- read_excel(paste0(DataSource, "/mean_center_range_subsetofprecluded_with_partnerdata.xlsx"))
+center <- read_excel(paste0(DataSource, "/mean_center_range_subsetofprecluded_with_partnerdata.xlsx")) #made excel by calculating centroids in ccegeomaps that cornell had and combining all values into a spreadsheet so this is the raw data from that 
 
 ```
 
@@ -455,6 +455,12 @@ pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.pan
 pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
 ```
 
+#### Write to csv for future use 
+```{r}
+newdf2 <- combooo
+
+```
+
 
 
 ```{r bruteforcecalcs eval = FALSE}
@@ -508,7 +514,8 @@ Total <- c(	0.104575,	-0.231693,	-0.148348,	0.1082679,	0.2834732)
 
 variance inflation factors : Detecting multicollinearity
 ```{r VIFs}
-new <- combo[,-c(1:4)]
+new <- combo[,-c(1:4)] # have csv file in "OutputandInputforThesis" folder and i think this was when newdf.csv was written 
+
 #vif(lm(data = new))
   #none are above 5
 
