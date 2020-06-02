@@ -1,52 +1,52 @@
-"","scientific_name","common_name","species_group_x_x","threats_addressed_by_conservation_x_x","Area","%PublicLand","Taxa","Employment","Threats","Partners"
-"1","Chorizanthe parryi var. fernandina",NA,"Flowering Plants","Habitat modification, demographic stochasticity, species-species interaction, environmental stochasticity",36346284986,0.358767362865535,1,119534.765799159,4,2
-"2","Allium gooddingii","GOODING'S ONION","Flowering Plants","Habitat modification",1.33546e+11,0.529177054,1,13273.9498385,1,2
-"3","Astragalus cusickii var. packardiae","PACKARDS MILKVETCH","Flowering Plants","Habitat modification",2503649630,0.580853124,1,1462.9677372,1,1
-"4","Cimicifuga arizonica","ARIZONA BUGBANE","Flowering Plants","Habitat modification",60545327618,0.594495773,1,6132.3428958,1,2
-"5","Lupinus aridus ssp. ashlandensis","ASHLAND LUPINE","Flowering Plants","generic threats/impacts  - see notes section",7208499985,0.720360231,1,13924,0,2
-"6","Pseudanophthalmus major","BEAVER CAVE BEETLE","Insects","Habitat modification",793480924,0.012570145,0,1533,2,7
-"7","Opuntia X multigeniculata","BLUE DIAMOND CHOLLA","Flowering Plants","Unspecified",54914785414,0.852512706,1,50093.3130541,0,1
-"8","Phacelia stellaris","BRAND'S PHACELIA","Flowering Plants","Habitat modification, species-species interaction",21409375981,0.393168914,1,191018.304107,3,20
-"9","Fallicambarus gordoni","CAMP SHELBY BURROWING CRAYFISH","Crustaceans","Habitat modification",1676259638,0.422765379,0,737,1,4
-"10","Castilleja christii","CHRISTÍS PAINTBRUSH","Flowering Plants",NA,6644895767,0.59440453,1,1928,2,2
-"11","Astragalus oophorus clokeyanus","CLOKEY'S EGGVETCH","Flowering Plants",NA,67530220378,0.919304277,1,37861.0219485,2,11
-"12","Nerodia erythrogaster neglecta","COPPERBELLY WATER SNAKE","Reptiles",NA,13992159747,0.016980333,0,3131.3752968,5,10
-"13","Cicindela albissima","CORAL PINK SAND DUNES TIGER BEETLE","Insects","Habitat modification",10333912540,0.936868296,0,497,2,4
-"14","Gila bicolor vaccaceps","COW HEAD TUI CHUB","Fishes","Habitat modification and species-species interaction",26464059457,0.781364857,0,16580.8031432,2,6
-"15","Downingia concolor brevior","CUYAMAC LAKE DOWNINGIA","Flowering Plants","Habitat modification, pollution and species-species interaction",10898787530,0.478012377,1,127435,3,1
-"16","Sceloporus arenicolus","DUNES SAGEBRUSH LIZARD","Reptiles","none",62472327673,0.491426979,0,4842.8937645,3,17
-"17","Oncorhynchus mykiss aquilarum","EAGLE LAKE TROUT","Fishes","Habitat modification, demographic stochasticity, enviornmental stochasticity",11761615611,0.716067005,0,946,3,3
-"18","Pyrgulopsis notidicola","ELONGATE MUD MEADOW SPRINGSNAIL","Snails","Habitat modification, species-species interaction",24969533279,0.944649643,0,2228,2,7
-"19","Phrynosoma mcallii","FLAT-TAILED HORNED LIZARD","Reptiles","Habitat modification",14281265651,0.513133804,0,16443,2,11
-"20","Symphyotrichum georgianum","GEORGIA ASTER","Flowering Plants","Habitat modification, pollution",91040688014,0.099577544,1,7067.2959413,3,9
-"21","Astragalus anserinus","GOOSE CREEK MILKVETCH","Flowering Plants","Species-Species interaction",65993948162,0.808947585,1,4072.8765371,1,2
-"22","Penstemon grahamii","GRAHAM BEARDTONGUE","Flowering Plants","Habitat modification, species-species interactions, demographic stochasticity and environmental stochasticity",32162164985,0.73164943,1,4203.16980054,4,7
-"23","Pseudanophthalmus pholeter","GREATER ADAMS CAVE BEETLE","Insects","Habitat modification",1132603918,0.008346062,0,3629,1,1
-"24","Horkelia hendersonii","HENDERSON'S HORKELIA","Flowering Plants","generic threats/impacts  - see notes section",23470433277,0.666944565,1,7722.823343,0,2
-"25","Pediocactus paradinei","KAIBAB PLAINS CACTUS","Flowering Plants","Habitat modification, species-species interactions",48222181220,NA,1,6930,3,3
-"26","Iotichthys phlegethontis","LEAST CHUB","Fishes","Habitat modification, species-species interaction, demographic stochasticity",71146688929,0.688740588,0,5854.0588331,4,7
-"27","Pseudanophthalmus catorycetes","LESSER ADAMS CAVE BEETLE","Insects","Habitat modification",1132603918,0.008346062,0,3629,1,1
-"28","Oncorhynchus mykiss ssp.","MCCLOUD RIVER REDBAND TROUT","Fishes","Habitat modification",26040163386,0.643372524,0,5820.2972427,1,8
-"29","Clarkia lingulata","MERCED CLARKIA","Flowering Plants","Unspecified",3752472156,0.541734336,1,896,2,5
-"30","Ambrysus funebris","NEVARES SPRING NAUCORID BUG (=FURNACE CREEK)","Insects","Habitat modification",26368508430,0.959190351,0,785,1,3
-"31","Sylvilagus transitionalis","NEW ENGLAND COTTONTAIL","Mammals","Habitat modification, demographic stochasticity",15525687567,0.127753622,0,10105.2358048,3,52
-"32","Hazardia orcuttii","ORCUTTS'S HAZARDIA","Flowering Plants","Habitat modification and demographic stochasticity",10898787530,0.478012377,1,127435,3,6
-"33","Pyrgulopsis morrisoni","PAGE SPRINGSNAIL","Snails","Habitat modification, species-species interactions",21039796372,NA,0,13230,3,2
-"34","Lithobates onca","RELICT LEOPARD FROG","Amphibians","Habitat modification, demographic stochasticity, species-species interaction, environmental stochasticity, generic threats",54914785414,0.852512706,0,50093.3130541,4,2
-"35","Oncorhynchus clarkii virginalis","RIO GRANDE CUTTHROAT TROUT","Fishes","Habitat modification, species-species interaction, demographic stochasticity and environmental stochasticity",1.31757e+11,0.536300328,0,2095.2158201,4,12
-"36","Euphydryas anicia cloudcrofti","SACRAMENTO MOUNTAINS CHECKERSPOT BUTTERFLY","Insects","Habitat modification, overutilization,  species-species interaction",17126453574,0.666593533,0,2541,5,4
-"37","Dudleya blochmaniae brevifolia","SHORT-LEAVED DUDLEYA","Flowering Plants","Habitat modification",10898787530,0.478012377,1,127435,1,3
-"38","Moxostoma sp 2","SICKLEFIN REDHORSE","Fishes","Habitat modification, demographic stochasticity (spawning sites)",4312882784,0.515980772,0,1947.44698082,3,6
-"39","Lepidium papilliferum","SLICKSPOT PEPPERGRASS","Flowering Plants",NA,44470786293,0.803458444,1,3771.9818804,4,8
-"40","Potentilla basaltica","SOLDIER MEADOW CINQUEFOIL","Flowering Plants","Habitat modification and species-species interaction",36731148890,0.869608708,1,2291.0810183,2,3
-"41","Urocitellus endemicus","SOUTHERN IDAHO GROUND SQUIRREL","Mammals","Habitat modification",9796168928,0.688616153,0,1054.4596823,2,4
-"42","Pseudanophthalmus inexpectatus","SURPRISING CAVE BEETLE","Insects",NA,784468319,0.248985859,0,870,1,2
-"43","Rorippa subumbellata","TAHOE YELLOW CRESS","Flowering Plants","None",26603473882,0.762086687,1,21798.9160146,1,13
-"44","Calochortus umpquaensis","UMPQUA MARIPOSA LILY","Flowering Plants","Habitat modification, species-species interaction",24494886848,0.629248511,1,8884.9639146,2,3
-"45","Zaitzevia thermae","WARM SPRINGS ZAITZEVIAN RIFFLE BEETLE","Insects","Habitat modification, pollution",6746899240,0.5626309,0,11010,2,3
-"46","Urocitellus washingtoni","WASHINGTON GROUND SQUIRREL","Mammals","Habitat modification",1.13048e+11,0.318916664,0,5992.21373462,1,10
-"47","Nysius wekiuicola","WEKIU BUG","Insects","Habitat modification",10433637860,NA,0,3847,1,1
-"48","Sonorella macrophallus","WET CANYON TALUSSNAIL","Snails","Habitat modification",11972778533,0.560559795,0,1022,1,3
-"49","Penstemon scariosus albifluvis","WHITE RIVER BEARDTONGUE","Flowering Plants","Habitat modification, species-species interactions, demographic stochasticity and environmental stochasticity",19951594558,0.803411554,1,4739.2798075,4,7
-"50","Aliciella caespitosa","WONDERLAND ALICE-FLOWER","Flowering Plants",NA,6374158879,0.975858178,1,371,2,5
-"51","Solidago plumosa","YADKIN RIVER GOLDENROD","Flowering Plants","none",2296416963,0.087652908,1,2233.7536804,2,2
+"","total","area_x","percentpublic","taxa","nsumemploy","total_x_x"
+"1",2,36346284986,0.358767362865535,1,119534.765799159,4
+"2",2,1.33546e+11,0.529177054,1,13273.9498385,1
+"3",1,2503649630,0.580853124,1,1462.9677372,1
+"4",2,60545327618,0.594495773,1,6132.3428958,1
+"5",2,7208499985,0.720360231,1,13924,0
+"6",7,793480924,0.012570145,0,1533,2
+"7",1,54914785414,0.852512706,1,50093.3130541,0
+"8",20,21409375981,0.393168914,1,191018.304107,3
+"9",4,1676259638,0.422765379,0,737,1
+"10",2,6644895767,0.59440453,1,1928,2
+"11",11,67530220378,0.919304277,1,37861.0219485,2
+"12",10,13992159747,0.016980333,0,3131.3752968,5
+"13",4,10333912540,0.936868296,0,497,2
+"14",6,26464059457,0.781364857,0,16580.8031432,2
+"15",1,10898787530,0.478012377,1,127435,3
+"16",17,62472327673,0.491426979,0,4842.8937645,3
+"17",3,11761615611,0.716067005,0,946,3
+"18",7,24969533279,0.944649643,0,2228,2
+"19",11,14281265651,0.513133804,0,16443,2
+"20",9,91040688014,0.099577544,1,7067.2959413,3
+"21",2,65993948162,0.808947585,1,4072.8765371,1
+"22",7,32162164985,0.73164943,1,4203.16980054,4
+"23",1,1132603918,0.008346062,0,3629,1
+"24",2,23470433277,0.666944565,1,7722.823343,0
+"25",3,48222181220,NA,1,6930,3
+"26",7,71146688929,0.688740588,0,5854.0588331,4
+"27",1,1132603918,0.008346062,0,3629,1
+"28",8,26040163386,0.643372524,0,5820.2972427,1
+"29",5,3752472156,0.541734336,1,896,2
+"30",3,26368508430,0.959190351,0,785,1
+"31",52,15525687567,0.127753622,0,10105.2358048,3
+"32",6,10898787530,0.478012377,1,127435,3
+"33",2,21039796372,NA,0,13230,3
+"34",2,54914785414,0.852512706,0,50093.3130541,4
+"35",12,1.31757e+11,0.536300328,0,2095.2158201,4
+"36",4,17126453574,0.666593533,0,2541,5
+"37",3,10898787530,0.478012377,1,127435,1
+"38",6,4312882784,0.515980772,0,1947.44698082,3
+"39",8,44470786293,0.803458444,1,3771.9818804,4
+"40",3,36731148890,0.869608708,1,2291.0810183,2
+"41",4,9796168928,0.688616153,0,1054.4596823,2
+"42",2,784468319,0.248985859,0,870,1
+"43",13,26603473882,0.762086687,1,21798.9160146,1
+"44",3,24494886848,0.629248511,1,8884.9639146,2
+"45",3,6746899240,0.5626309,0,11010,2
+"46",10,1.13048e+11,0.318916664,0,5992.21373462,1
+"47",1,10433637860,NA,0,3847,1
+"48",3,11972778533,0.560559795,0,1022,1
+"49",7,19951594558,0.803411554,1,4739.2798075,4
+"50",5,6374158879,0.975858178,1,371,2
+"51",2,2296416963,0.087652908,1,2233.7536804,2
