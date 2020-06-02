@@ -64,7 +64,7 @@ code <- CleanData
 
 head(as.numeric(CleanData2[,c(10:11)]))
 
-code2 <- read.csv(paste0(DataSource,"/tableofpartnersandactions.csv"), stringsAsFactors = FALSE, header = TRUE)
+code2 <- read.csv(paste0(DataSource,"/tableofpartnersandactions.csv"), stringsAsFactors = FALSE, header = TRUE) #this is the same as PartnersData.csv now - basically csv that gets produced during cleaning_salafsky function. Only difference is tableofpartnersandactions.csv is saved on Annabelle's local computer. 
 
 class(code$funding)
 summary(code2) #now should be numeric 
@@ -341,7 +341,7 @@ for(coln in col_list){
 
 
 # Network analysis
-
+*** New idea - replace 1s in each column for actions with column name, then would be able to set up the "to/from" lists*#*#*#
 actions 
 nodes: actions
 Node size: number of times that action is applied
