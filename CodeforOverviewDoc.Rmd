@@ -1,5 +1,5 @@
 ---
-title: "CodeforOverviewDoc"
+title: "Code for Overview Doc"
 author: "Annabelle Stanley, Gwen Iacona, Becky Epanchin-Niell"
 date: "June 1, 2020"
 output: html_document
@@ -9,7 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-adding line of code more text
+**not might work better to write other scripts where tidyed/completed to csvs which can then be loaded back in to this main script - would have to document where each came from 
+** might be worth putting i) ii)s etc as bold bc not standing out in knitted doc rn
 
 ####Set up file structure 
 ```{r, include = FALSE}
@@ -20,14 +21,17 @@ output.dir <-"./output" # output dataset writes to here
 functions.dir <- "./functions" # directory for functions 
 
 source(file.path(functions.dir,'FormatData.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'cleaning_salafsky.R')) # any functions that are called up by this markdown document need to be sourced here
 
 ## general functions that need to be read in. I like to put them at the top so they are easier to deal with when they change version (inevitable)
 library(readr)
 library(readxl)
 library(tidyverse)
-library(janitor)
+library(janitor) #used in cleaning 
 library(stringr)
-
+library(car) #for function qqplot 
+library(knitr) #for making tables form kable 
+library(data.table) #function setnames() allows to set multiple column names in one line of code 
 ```
 
 ####load in different datasets
@@ -35,15 +39,611 @@ library(stringr)
 ##this chunk is used to format the data set. 
 ## can use it to make settings etc.
 
-RawData <- read_csv(paste(DataSource,"/AS9_codingdata.csv", sep = "")) ## ideally, the raw dataset gets noted here, then you do any data manipulations in code and generate a useable dataset for later manipulations. I didn't have the dataset you called up in your code, so I put this one in to demonstrate. I would like it if we coudl get from this dataset in code "copyoflatestsummerwork_Partnerships_Precluded_species_recovered.xlsx"
+RawData <- read_csv(paste(DataSource,"/AS9_codingdata.csv", sep = "")) 
+PartnerData <- FormatData(RawData) #running RawData through function 
 
-##I've changed the file we are using to count the partners - this is the most updated rawest data
-##I couldn't get the read_excel to select the tab so I've copied that tab (new notes) to a new csv file AS9_codingdata
+##RegData <- read_csv(paste(DataSource,"/newdf.csv", sep = "")) #this csv was produced at some point during thesis production but code writing it seems to be deleted. Have recreated newdf in a new csv file for sake of reproducablility --> see next line 
+RegData <- read_csv(paste(DataSource,"/newdf2.csv", sep = "")) #code produced in RegressionPredictorExploration.Rmd other code in that markdown includes correlation matrix and vifs 
 
-PartnerData <- FormatData(RawData)
+adjmatrix <- read_csv("/usr/local/bin/store/partner_rff/output/adjacencymatrix.csv") #this isn't set up correctly 
+
+CleanData <- read.csv(paste0(DataSource,"/codesalafsky.csv"), stringsAsFactors = FALSE) #removing end piece  ## codesalafsky.csv is the rawest data that function runs on
+code <- cleaning_salafsky(CleanData)
+sdata <- read_csv(paste(DataSource,"/tableofpartnersandactions.csv", sep = "")) #this csv is produced at end of cleaning_salafsky.R function 
+sdata <- sdata %>% select(-X1) #remove X1 column that is getting produced 
+
+tdata <- read.csv(paste0(DataSource,"/Updated_variables.csv"), stringsAsFactors = FALSE) #data provided by tyler 
+tdata <- tdata %>%  as_tibble() #now can use stringr packages 
+tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
 ```
 <br>
 
-##we use this data to answer 
+###we use this data to answer 
+####1)	what are the characteristics of partnership for species that are precluded from listing?
+##### a. How many partners are there?
+   - i) **Total number of partners**
+```{r, echo = FALSE, size='tiny'}
+#Total number of partners
+length(names(PartnerData[,-c(1:3)])) # I counted how many columns there were if i didn't look at columns 1 and 2 ## 197 unique partners
+#length(unique(names(PartnerData[,-c(1:3)]))) # just making sure that there are no repeats. ## 197 so its ok
+```
+   - ii) **Histogram of # partners/species**
+```{r, echo= FALSE, size='tiny'}
+# the number of partners working on each species:
+rowSums(PartnerData[,-c(1:3)]) # this gives a not very intuitive vector so I put it in the dataset
+
+PartnerData$TotalPartners <- rowSums(PartnerData[,-c(1:3)])
+PartnerData[,c(2,201)] # this is the dataset with names and numbers of species. It does not print out in a convenient format. probably should save and make a better table.
+
+# Histogram of partners per species
+hist(PartnerData$TotalPartners,
+     xlab ="number of partners working on a species",
+     breaks = 60,
+     main = NULL)
+```
+
+   - iii) **Max, min, median, and 1st and 3rd quantiles across species**
+```{r}
+summary(PartnerData$TotalPartners)
+```
+
+##### b. How does number of partners relate to species/recovery programs characteristics?
+   - **i) Thesis tested: Area, %publicland, taxa (1 = flowering plant), employment, total number of threats (a few other predictors looked at and removed due to high correlation were human footprint, threats = habitat as threat (1/0 as y/n))** 
+
+   - **ii) Test performing regression of form** 
+        •	log(# of partners) = B1(taxa) + B2(%public land) + B3(area) + B4(sum of relevant employment sectors) + B5(total number of threats)
+```{r}
+lm2 <- lm(log(total) ~ taxa + percentpublic + area_x + nsumemploy + total_x_x, data=RegData)
+summary(lm2)
+plot(lm2)
+
+qqPlot(residuals(lm2))
+AIC(lm2)
+```
+Most of this code ^ was taken from regressionmodelforthesis.Rmd
+
+<br>
+        
+####b) who are the organizations partnering with FWS?  
+##### a. List of all the organizations involved
+```{r}
+PartnerData <- FormatData(RawData) #reload data to avoid sum(colsums) glitch
+#kable(table(colSums(PartnerData[,-c(1:3)])))
+
+#also includes number of species each partner is working on
+name <- colSums(PartnerData[,-c(1:3)])
+name %>% kable()
+ # kable("html") %>% 
+ # kable_styling(font_size = 7)
+```
+
+##### b. Which partners are most commonly working with others
+   - **i) Histogram of partnerships/partner**
+```{r no partnerships for each partner}
+#going to convert all values that are greater than 1 to one so not double counting 
+# then subtract diagonal 
+#then add 
+pdata <- adjmatrix
+newmat <- pdata[1,]
+newmat[,1] <- "empty" 
+#add empty row with same no of columns to combine with current matrix 
+newMatrix <- rbind(newmat, pdata)
+
+newMatrix <- newMatrix %>% mutate_if(is.numeric, ~1 * (. != 0))
+
+diag(newMatrix)=0
+#delete top (empty) row 
+newMatrix <- newMatrix[-1,] ##I think this matrix is worth keeping (all numers now 1s and 0s )
+asnum <- newMatrix[,-c(1)]
+names <- newMatrix[,c(1)]
+rssum <- rowSums(newMatrix[,c(-1)])
+newdf <- cbind(names, rssum) ## yay I did it!! 
+
+## now going to try and filter
+
+explore <- newdf 
+explore <- explore %>% arrange(-rssum)
+(explore[c(1:4),])
+
+#still feeds mis-represented 
+
+#summary count of the number of partnership for each partner (how many partner have 2 parnters, 3 etc? ) 
+ggplot(data = explore, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partners", limits=c(-1,175)) + scale_y_continuous(name ="Frequency", limits=c(0,50))
+
+#because data is scewed with giant outlier, have recalibrated to show what majority of the data looks like 
+filt <- explore %>% filter(rssum < 50) 
+ggplot(data = filt, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partners", limits=c(-1,40)) + scale_y_continuous(name ="Frequency", limits=c(0,20))
+```
+
+   - **ii) Max, min, median, and 1st and 3rd quantiles partners/partner**
+```{r}
+summary(explore)
+```
+
+##### c. How many species each partner is involved in projects on
+   - **i)	Histogram of species /partner**	
+   - **ii)	Max, min, median, and 1st and 3rd quantiles species/partner**
+```{r, echo = FALSE}
+# the number of species that each partner works on:
+PartnerData <- FormatData(RawData) #reload data to avoid sum(colsums) glitch
+
+#	Histogram of species/partner 
+hist(colSums(PartnerData[,-c(1:3)]),
+     xlab ="number of species that a partner works on",
+     breaks = 50, 
+     main = NULL)
+
+# table of this info seems more useful
+table(colSums(PartnerData[,-c(1:3)]))
+
+# summary of species/partner
+summary(colSums(PartnerData[,-c(1:3)])) # 372 Max seems wrong - this is a sum of the colsums, unclear why this is being added | if data is reloaded at begining of section, don't have this problem
+
+```
 
 
+##### d. Network representation of who works with who. Partners as nodes (weighted by number of species they work on), edges between partners weighted by number of species they work on together
+Gwen's note - or use choard diagram - I don't think this lends itself to a high number of "nodes"
+** Need to look at network documentation to find out how to set up from matrix (everything I've read so far has been based on lists)
+
+<br>
+
+#### c)	Does the number of actions relate to species characteristics?
+##### a.	Same as the number of partners analysis, but with number of actions as the response variable
+- note to self - this might not knit if vector is produced lower in script so repeating code here to find no actions per species 
+- decided to try two new predictors (the addition is the number of actions increased by each partner doing that action (might make sense to change this to a weighted value later on))
+
+```{r}
+####copied text to find new variable 
+alldf <- sdata #change variable name 
+
+#species <- select(alldf, Scientific.name, X1..Land.Water.Management ,X2..Species.Management, X3..Awareness.raising,X4..law.enforcement.and.prosecution,X5..livelihood..economic.and.moral.incentrives, X6..Conservation.Design.and.Planning,X7..Legal.and.Policy.frameworks,X8..Research.and.monitoring, X9..Education.and.Training, X10..Institutional.Development,funding) #selecting all relevant columns
+
+
+species <- alldf[,c(2,10:20)] #unable to knit with select so indexed 
+
+eachsp <- species %>% group_by(Scientific.name) %>% summarise_each(funs(sum)) 
+
+
+onesandzeros <- eachsp %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+
+noactionswithpartner <- eachsp %>% mutate(actpartsum = rowSums(onesandzeros[,c(2:12)]))
+
+totalno <- onesandzeros %>% mutate("actionsum" = rowSums(onesandzeros[,c(2:12)])) #added column "actionsum" that took the row sums for each species to give count of how many actions each species receives 
+
+
+#add to regression predictor df with join()
+
+newregdata <- RegData #doesn't work because nothing to join by 
+modtdata <- tdata
+
+#first going to join totalno and noactionswithpartner
+
+predictors <- noactionswithpartner %>% full_join(totalno, by = "Scientific.name") #join two new predictors together
+#predictors1 <- predictors %>% select(Scientific.name, actionsum, actpartsum)
+predictors1 <- predictors[,c(1,13,25)] #unable to knit with select so indexed 
+predictors2 <- rename(predictors1, scientific_name = Scientific.name) #renamed predictors vector so would have something to join by 
+
+#so if select values that don't change from tdata with somes that weren't modified in RegData, should be able to join
+#modtdata <- modtdata %>% select(scientific_name, total_x_x, area_x) #select relevant predictors from tdata 
+modtdata <- modtdata[,c(3,26,32)] #unable to knit with select so indexed 
+newregdata <- newregdata %>% left_join(modtdata, by = c("total_x_x", "area_x")) #note 1 name is missing, but will see if that is an issue based on names in action dataset 
+
+# now going to join with predictors 
+
+regdf <- predictors2 %>% left_join(newregdata, by = "scientific_name")
+#so issue now isn't the missing name, but the number of species that have missing na values 
+
+(which(is.na(regdf$total_x_x))) #so have 7 missing values? 
+# Moxostoma - in my dataset name is "Moxostoma sp 2"
+# Erigeron basalticus - no information in PartnerData but should be in dataset****
+
+###should remove these species from cleaning_salafsky script 
+# Thymallus arcticus had issue with subspecies - should be NA
+# Dalea tentaculoides ^^ - document was not for partnership
+# Cymopterus deserticola ^ - even though link is different for Detailed_methods and salasfkycoding (AND both are broken) I think the main difference is Vol1 vs Vol2 - have indicated that Vol1 was wrong year so remove
+# Cordylanthus nidularius ^ - I think this should also be removed (from book not ca)
+# Calochortus persistens - year is wrong here, should have been removed from S dataset 
+
+regdf <- regdf[-which(is.na(regdf$taxa)),] # here i deleted all the rows with an NA
+#regdf <- regdf %>% select(-c(X1, total, scientific_name))#remove column X1
+regdf <- regdf[,-c(1,4,5)] #unable to knit with select so indexed 
+#reorder so that predictors are at end of df 
+regdf <- regdf[,c(3:7,1,2)] 
+
+#lets try this first without the repetition from partners
+
+#regdf1 <- regdf %>% select(-c(actpartsum))
+
+regdf1 <- regdf[,-c(6)]
+
+############### 
+
+
+#set up
+PredictorsOnlyPixel <- regdf1[,c(1)]
+PredictAndResponsePixel <- regdf1
+PredictAndResponseGrid <- regdf1
+  
+# put histograms on the diagonal panel	
+panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
+{
+  usr <- par("usr"); on.exit(par(usr))			# not sure what usr is for?
+  par(usr = c(usr[1:2],0,1.5))
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)			# make the hist 
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col="grey", ...)  # defines what the histogram is going to look like
+}
+
+# put correlations on the upper panels,
+panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- cor(x, y,use="everything")				
+  txt <- format(c(r, 0.123456789), digits=digits)[1]
+  prefix <- "r = "
+  rc <- cor.test(x,y,method = c("pearson"))				## calculate pearsons rho for upper grid
+  txt <- paste(prefix,txt,sep="")
+  text(0.5, 0.5, txt, cex = 1)
+}
+
+## plot a correlation matrix plot that uses the functions specified above to say what to plot where
+      ## this was taken directly from website and still not plotting r values for all 
+pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+
+pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+
+# so still having some issues with getting r values to print out 
+
+######### VIFs
+
+vif(lm(actionsum ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = regdf1))
+#looks good 
+
+
+######## Run the model for actionsum 
+
+lm_actionsum <- lm(actionsum ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = regdf1)
+summary(lm_actionsum)
+#lose significance of threats
+plot(lm_actionsum)
+
+
+
+
+################### other predictor
+
+
+#lets try this first without the repetition from partners
+
+#regdf2 <- regdf %>% select(-c(actionsum))
+regdf2 <- regdf[,-c(7)]
+
+#set up
+PredictorsOnlyPixel <- regdf2[,c(1)]
+PredictAndResponsePixel <- regdf2
+PredictAndResponseGrid <- regdf2
+  
+# put histograms on the diagonal panel	
+panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
+{
+  usr <- par("usr"); on.exit(par(usr))			# not sure what usr is for?
+  par(usr = c(usr[1:2],0,1.5))
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)			# make the hist 
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col="grey", ...)  # defines what the histogram is going to look like
+}
+
+# put correlations on the upper panels,
+panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- cor(x, y,use="everything")				
+  txt <- format(c(r, 0.123456789), digits=digits)[1]
+  prefix <- "r = "
+  rc <- cor.test(x,y,method = c("pearson"))				## calculate pearsons rho for upper grid
+  txt <- paste(prefix,txt,sep="")
+  text(0.5, 0.5, txt, cex = 1)
+}
+
+## plot a correlation matrix plot that uses the functions specified above to say what to plot where
+      ## this was taken directly from website and still not plotting r values for all 
+pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+
+pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+
+# so still having some issues with getting r values to print out 
+
+######### VIFs
+
+vif(lm(actpartsum ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = regdf2))
+#looks good 
+
+
+######## Run the model for actpartsum 
+
+lm_actpartsum <- lm(actpartsum ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = regdf2)
+summary(lm_actpartsum)
+#lose significance of threats
+plot(lm_actpartsum)
+
+lm_actpartsum <- lm(log(actpartsum) ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = regdf2)
+#still nothing 
+```
+
+
+<br>
+
+#### d)	How are actions distributed across partners?
+
+From a planning perspective, we care about actions because decision makers need to know a) what needs to be done for species recovery, and b) which actors can best do it.
+Thus, we want to know “what actions are different partners doing and how do they contribute to the sum total of what needs to be done for different species?”
+
+<br>
+<br>
+
+### Data Exploration
+
+##### a.	Frequency distribution (histogram) of how many partners are participating in each type of action
+```{r}
+df <- as_tibble(sdata)
+df[,c(10:20)] <- sapply(df[ ,c(10:20)], as.numeric)
+
+#rowSums((code2[,c(11:21)]))
+
+colsum <- (as.data.frame(colSums(df[,c(10:20)])) #creating dataframe so can plot
+  %>% rownames_to_column()) #making sure that dataframe has rownames to set as x and y 
+ 
+  
+colsum <- colsum  %>% rename(count = `colSums(df[, c(10:20)])`) #renaming column produced by colsums
+  
+
+#ggplot(colsum) + geom_point(mapping = aes(x = rowname, y = count))
+
+ggplot(colsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Name of Action")
+#same graph, just expanded with text shifted
+ggplot(colsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 30))  + scale_x_discrete(name ="Name of Action")
+
+```
+
+##### b. For each species 
+   - **i) For each species: how many different actions are applied (and how many of each action).**
+```{r}
+# loop 
+  #filter by scientific names
+  # For each unique value 
+  # column sum
+  #table output of each? (??)
+
+alldf <- df #change variable name 
+#colnames(alldf[,c(10:20)])
+
+species <- select(alldf, Scientific.name, X1..Land.Water.Management ,X2..Species.Management, X3..Awareness.raising,X4..law.enforcement.and.prosecution,X5..livelihood..economic.and.moral.incentrives, X6..Conservation.Design.and.Planning,X7..Legal.and.Policy.frameworks,X8..Research.and.monitoring, X9..Education.and.Training, X10..Institutional.Development,funding) #selecting all relevant columns
+
+#Make work as numeric
+### this works
+
+
+eachsp <- species %>% group_by(Scientific.name) %>% summarise_each(funs(sum)) 
+
+#eachsp #for each species, summed actions done by each partner
+kable(eachsp) #prints out weird # this is actually working in markdown
+
+
+#get count of total number of actions for each 
+onesandzeros <- eachsp %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+totalno <- onesandzeros %>% mutate(actionsum = rowSums(onesandzeros[,c(2:12)])) #added column "actionsum" that took the row sums for each species to give count of how many actions each species receives 
+kable(totalno) #this prints out weird # kable is actually working in markdown
+# totalno  #this is working 
+```
+
+
+   - **ii) Action richness and diversity for each species?**
+How is this measured? 
+
+   - **iii) How many partners  does each species have and do partners conduct the same or different actions from each other**
+```{r}
+nopartners <- (alldf %>% group_by(Scientific.name)   #selecting  each species
+%>% distinct(partner.in.agreement)    #count how many partners are distinct 
+%>% summarise(n()))                   # Count the number of distinct 
+
+kable(nopartners)
+
+
+#part two of question 
+```
+    - Can find number of partners but unsure how to answer second part of Q
+      - "Do partners conduct same or different actions.." for same partner working on each species or across different species? 
+  
+      
+   - **iv)	How many threats does each species face**    
+         - information found in regression prep script 
+```{r}
+
+allspindf <- eachsp
+new <- tdata #need to join with tdata (renamed here)
+###new$scientific_name
+#select relevant columns
+tthreats <- select(new, scientific_name, hab_x_x:threats_addressed_by_conservation_x_x)
+
+###tthreats$scientific_name
+#need to join with tdata 
+#to do so need to change col name so match 
+
+tthreats <- rename(tthreats, Sciname = scientific_name)
+allspindf <- rename(allspindf, Sciname = Scientific.name)
+
+threats <- left_join(allspindf, tthreats, join_by = Sciname)
+
+#total number of threats for each sp
+threats$total_x_x
+#(missing info for 4 sp) [already checked plustwo dataset which was joined when did work for regression]
+
+kable(head(threats)) #printing out top 6 lines of code in table
+```    
+   
+##### c. Graphs
+   - **i)	For each action – how many species receive that action**
+```{r}
+# take column sum of onesandzeros dataset created above (chunk b. For each species - i.. )
+actionsums <- colSums(onesandzeros[,c(2:12)]) #add all species for which that action happened
+
+actionsums <- (as.data.frame(actionsums) #had to change to df
+               %>% rownames_to_column() #moving rownames to columns
+               %>% rename(count = actionsums)) #renaming column produced by colsums
+
+kable(actionsums)
+
+ggplot(actionsums) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Name of Action")
+#same graph, just expanded with text shifted
+ggplot(colsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 30))  + scale_x_discrete(name ="Name of Action")
+```
+   
+   - **ii) For each action – how many times is it applied total (counting each speciesXpartner separately) information contained in csum output**
+```{r}
+## for all speciesXpartners csum but this includes some repetition ("partners" which are actually multiple partners working on same action)
+csum <- (colSums(sdata[,c(10:20)]))
+
+#check csum
+check <- colSums(eachsp[,c(2:12)])
+#yes get the same values 
+
+#redo csum calculation and take out = M
+
+##
+noM <- sdata[-which(sdata$type.of.partners == "M"),]
+newcsum <- (colSums(noM[,c(10:20)]))
+
+newcsum <- as.data.frame(actionsums) #had to change to df
+               
+ggplot(newcsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Name of Action")
+#same graph, just expanded with text shifted
+ggplot(newcsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 30))  + scale_x_discrete(name ="Name of Action")
+
+```
+
+   - **iii )For each action – how many partners apply that action to at least 1 species**
+```{r}
+partners <- select(alldf, partner.in.agreement, Scientific.name, X1..Land.Water.Management ,X2..Species.Management, X3..Awareness.raising,X4..law.enforcement.and.prosecution,X5..livelihood..economic.and.moral.incentrives, X6..Conservation.Design.and.Planning,X7..Legal.and.Policy.frameworks,X8..Research.and.monitoring, X9..Education.and.Training, X10..Institutional.Development,funding) #selecting all relevant columns
+
+class(partners$funding)
+
+#so summarise will only accept 1 value per group so going to try and do for each group 
+#there is definetly a more elegant/better way to do this but this works
+x1 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(3)])) #84
+x2 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(4)])) #45
+x3 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(5)])) #13
+x4 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(6)])) #4
+x5 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(7)])) #5   
+x6 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(8)])) #68
+x7 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(9)])) #38
+x8 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(10)])) #72
+x9 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(11)])) #26
+x10 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(12)])) #75
+x11 <- partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,c(13)])) #41
+## (for each row, value is to the right)
+
+partnerapptosp <- as.data.frame(c(x1, x2, x3, x4,x5, x6,x7,x8,x9,x10,x11))
+
+#condense into one df 
+partnerapptosp <- partnerapptosp[,-c(1,3,5,7,9,11,13,15,17,19,21)] #remove relplicated columns (and don't need to know partner ids)
+colnames(partnerapptosp)
+setnames(partnerapptosp, old = c('sum.partners...c.3...', 'sum.partners...c.4...', 'sum.partners...c.5...', 'sum.partners...c.6...', 'sum.partners...c.7...', 'sum.partners...c.8...', 'sum.partners...c.9...', 'sum.partners...c.10...', 'sum.partners...c.11...', 'sum.partners...c.12..', 'sum.partners...c.13..'),skip_absent=TRUE, new = c('Land.Water.Management' , 'Species.Management', 'Awareness.raising','law.enforcement.and.prosecution', 'livelihoodeconomic', 'ConservationDesign', 'LegalandPolicy', 'ResearchMonitoring', 'Education.and.Training', 'InstitutionalDevelopment','funding')) #for some reason this wouldn't over write c12 or c13 (institutional development and funding) so setting manually below 
+
+partnerapptosp <- partnerapptosp %>% rename(InstitutionalDevelopment = 'sum.partners...c.12...')
+partnerapptosp <- partnerapptosp %>% rename(funding = 'sum.partners...c.13...')
+
+partnerapptosp <- partnerapptosp[2,] #only need to select 1 row 
+action <- t(partnerapptosp) 
+#trying not to loose rownames when convert
+
+actiondf <- data.frame(action = row.names(action),action) #changed to df and set column names 
+
+kable(actiondf)
+
+ggplot(actiondf) + geom_bar(mapping = aes(x = action, y = X2), stat = "identity")+ scale_y_continuous(name ="Count")
+
+#same graph with names rotated 
+ggplot(actiondf) + geom_bar(mapping = aes(x = action, y = X2), stat = "identity") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Name of Action") + scale_y_continuous(name ="Count")
+
+
+#col_list <- partners[,c(3:13)]
+#for(coln in col_list){
+#  partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,coln]))
+#} ## Got error 
+```
+
+##### d. Thoughts about typologies/groupings
+
+   - **i)	Can we group partners into types based on the actions that they do? (numbers and type of actions?)**
+   
+```{r eval = FALSE}
+condensep <- sdata[,c(1,6,10:20)] #select relevant columns
+colnames(condensep)
+condensep <- condensep[-which(condensep$type.of.partners == "M"),] #remove ones with multiple partners in string 
+#this is avoiding the data issue instead of addressing it
+
+condensep <- condensep %>% group_by(partner.in.agreement) %>% select(X1..Land.Water.Management:funding) %>% summarise_each(funs(sum))
+
+#for each column
+#print rowname if value is greater than 1
+
+#rownames(condensep) <- condensep$partner.in.agreement #set partnernames as rownames
+#condensep[,1] <- NULL #then remove column 
+
+listname <- condensep[,c(1:11)]
+x = .5
+for (i in 1:length(listname)){
+  if (listname[i] > x){
+        print(listname[i])
+  }
+}
+
+idx <- which(listname > x) # row numbers
+listname[idx]              # values with names
+
+#so this didn't work 
+
+  if (listname[i] > x){
+        print(listname[i]) }
+
+condensep[which(condensep$X1..Land.Water.Management > .5),] <- rownames(condensep[,1])
+
+```
+  
+   - **ii) Can we group partners base on type of organization (fed agency, wildlife agency, private landowner, ngo, researchers?)**
+   
+   - **iii) Can we group species based on the sets of threats that they face?**
+   
+```{r}
+as
+```
+
+   - **iv) East coast v west coast (makes most sense to focus on west coast split as there are more species here)**
+```{r}
+
+```
+
+   
+   
+#### Questions we want to answer 
+
+##### e.	How are total actions distributed across partners (e.g., what proportion of land management is enacted by FWS?)
+
+
+
+
+#### Annabelle Spatial analysis 
+Background to analysis
+
+   - map of centers and ranges (load in pdf)
+
+
+   - variograms
+   - regression exploration 
+   - Pat Sullivan's notes - have c&p into word document    
