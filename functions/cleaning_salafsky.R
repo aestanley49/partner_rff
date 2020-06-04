@@ -117,8 +117,15 @@ CleanData2 <- CleanData[,c(4,1,2,3, 6:21)]
 ## This list should be a subset of species used in larger partner count study 
 ## check of which species names to remove is located in 3rd chunk down in CodeforOverviewDoc.Rmd (done elsewhere bc I don't know if you can load a dataset into a function)
 
-CleanData3 <- CleanData2 %>% filter(!(Scientific.name == 'Dalea tentaculoides')) %>% filter(!(Scientific.name == 'Cymopterus deserticola')) %>% filter(!(Scientific.name == 'Cordylanthus nidularius')) %>% filter(!(Scientific.name == 'Calochortus persistens'))
+#CleanData3 <- CleanData2 %>% filter(!(Scientific.name == 'Dalea tentaculoides')) %>% filter(!(Scientific.name == 'Cymopterus deserticola')) %>% filter(!(Scientific.name == 'Cordylanthus nidularius')) %>% filter(!(Scientific.name == 'Calochortus persistens'))
 #these species all only have one document so okay to remove by sp name                                       
+#couldn't get species removed this way 
+
+CleanData2[which(CleanData2$Scientific.name == "Cymopterus deserticola" | CleanData2$Scientific.name == "Dalea tentaculoides" | CleanData2$Scientific.name == "Cordylanthus nidularius" | CleanData2$Scientific.name == "Calochortus persistens"),2] <- NA
+
+#now remove nas
+CleanData2 <- CleanData2[-which(is.na(CleanData2$Scientific.name)),] # here i deleted all the rows with an NA
+
 
 write.csv(CleanData2,paste0(DataSource,"/PartnersData.csv", sep = ""))
 
@@ -128,8 +135,8 @@ overview <- CleanData2[-which(CleanData2$type.of.partners == "M" | CleanData2$ty
 
 
 
-write.csv(CleanData3,paste0(DataSource,"/tableofpartnersandactions.csv", sep = ""))
-write.csv(CleanData3, "/usr/local/bin/store/partner_rff/output/tableofpartnersandactions.csv") ##looks like only prodced a local version which would need to be pushed everytime function is run with changes to over write previous versions
+write.csv(CleanData2,paste0(DataSource,"/tableofpartnersandactions.csv", sep = ""))
+write.csv(CleanData2, "/usr/local/bin/store/partner_rff/output/tableofpartnersandactions.csv") ##looks like only prodced a local version which would need to be pushed everytime function is run with changes to over write previous versions
 
 ### ### ### werid issue where function doesn't hold logic changes 
 
