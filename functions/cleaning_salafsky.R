@@ -111,6 +111,15 @@ CleanData[is.na(CleanData)] <- 0
 
 ## reordering columns so parter is first and then sorting into alphabetical order  
 CleanData2 <- CleanData[,c(4,1,2,3, 6:21)]
+
+
+### ### Need to remove species whose document have been removed after this list was last cleaned 
+## This list should be a subset of species used in larger partner count study 
+## check of which species names to remove is located in 3rd chunk down in CodeforOverviewDoc.Rmd (done elsewhere bc I don't know if you can load a dataset into a function)
+
+CleanData3 <- CleanData2 %>% filter(!(Scientific.name == 'Dalea tentaculoides')) %>% filter(!(Scientific.name == 'Cymopterus deserticola')) %>% filter(!(Scientific.name == 'Cordylanthus nidularius')) %>% filter(!(Scientific.name == 'Calochortus persistens'))
+                                      
+
 write.csv(CleanData2,paste0(DataSource,"/PartnersData.csv", sep = ""))
 
 CleanData2 <- CleanData2[order(CleanData2$partner.in.agreement),]
@@ -119,8 +128,8 @@ overview <- CleanData2[-which(CleanData2$type.of.partners == "M" | CleanData2$ty
 
 
 
-write.csv(CleanData2,paste0(DataSource,"/tableofpartnersandactions.csv", sep = ""))
-write.csv(CleanData2, "/usr/local/bin/store/partner_rff/output/tableofpartnersandactions.csv") ##looks like only prodced a local version which would need to be pushed everytime function is run with changes to over write previous versions
+write.csv(CleanData3,paste0(DataSource,"/tableofpartnersandactions.csv", sep = ""))
+write.csv(CleanData3, "/usr/local/bin/store/partner_rff/output/tableofpartnersandactions.csv") ##looks like only prodced a local version which would need to be pushed everytime function is run with changes to over write previous versions
 
 ### ### ### werid issue where function doesn't hold logic changes 
 
