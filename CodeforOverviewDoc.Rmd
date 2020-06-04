@@ -9,9 +9,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-**not might work better to write other scripts where tidyed/completed to csvs which can then be loaded back in to this main script - would have to document where each came from 
-** might be worth putting i) ii)s etc as bold bc not standing out in knitted doc rn
-
 ####Set up file structure 
 ```{r, include = FALSE}
 ## setup the file structure so that this markdown document is in the main project folder along with the other folders noted below
@@ -57,6 +54,56 @@ tdata <- tdata %>%  as_tibble() #now can use stringr packages
 tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
                   clean_names()
 ```
+
+checking against Detailed Methods that all species have correct docs
+```{r eval=FALSE, include=FALSE, echo=FALSE}
+sdata <- rename(sdata, scientific_name = Scientific.name)
+pdata <- PartnerData %>% select(scientific_name,common_name, partner_names, USFS)
+condense <- sdata[,c(1,2,6,10:20)] #select relevant columns
+
+condense <- condense[-which(condense$type.of.partners == "M"),] #remove ones with multiple partners in string 
+#this is avoiding the data issue instead of addressing it
+
+condense <- condense %>% select(scientific_name, partner.in.agreement, X1..Land.Water.Management:funding) %>% group_by(scientific_name)
+#losing scientific_name so will add with join 
+con <- condense2 %>% left_join(condense, by = c("X1..Land.Water.Management" ,                    
+"X2..Species.Management"            ,             "X3..Awareness.raising"   ,                      
+"X4..law.enforcement.and.prosecution"      ,      "X5..livelihood..economic.and.moral.incentrives",
+"X6..Conservation.Design.and.Planning"    ,       "X7..Legal.and.Policy.frameworks"     ,          
+"X8..Research.and.monitoring"           ,         "X9..Education.and.Training"  ,                  
+"X10..Institutional.Development"        ,         "funding"))
+
+
+data <- condense %>% left_join(pdata, by = "scientific_name")
+
+#data <- pdata %>% left_join(condense, by = "scientific_name") #shows values missing from original subset 
+
+
+(which(is.na(data$USFS)))
+
+names <- data[c(10,14,27,41,44,48,59,68,77,78,91,92,97,102,109,121,134,155),1]
+ names <- unique(names)
+ 
+#idential to previous list of names  
+ 
+ 
+ 
+ ##################################### *************  still need to addresss  *************
+ 
+# Moxostoma - in my dataset name is "Moxostoma sp 2" - this species is fine, just have issue with name inconsistencies 
+# Erigeron basalticus - no information in PartnerData but should be in dataset****
+
+ ######## these have been removed -> 
+###should remove these species from cleaning_salafsky script 
+# Thymallus arcticus had issue with subspecies - should be NA
+#X# Dalea tentaculoides ^^ - document was not for partnership
+#X# Cymopterus deserticola ^ - even though link is different for Detailed_methods and salasfkycoding (AND both are broken) I think the main difference is Vol1 vs Vol2 - have indicated that Vol1 was wrong year so remove
+#X# Cordylanthus nidularius ^ - I think this should also be removed (from book not ca)
+#X# Calochortus persistens - year is wrong here, should have been removed from S dataset 
+
+```
+
+
 <br>
 
 ###we use this data to answer 
@@ -187,6 +234,44 @@ summary(colSums(PartnerData[,-c(1:3)])) # 372 Max seems wrong - this is a sum of
 Gwen's note - or use choard diagram - I don't think this lends itself to a high number of "nodes"
 ** Need to look at network documentation to find out how to set up from matrix (everything I've read so far has been based on lists)
 
+current code source -https://www.mjdenny.com/Preparing_Network_Data_In_R.html
+
+```{r eval = FALSE, include= FALSE}
+install.packages("statnet")
+library(statnet)
+
+modajdm <- adjmatrix
+
+rownames(modajdm) <- modajdm$X1 #set partnernames as rownames
+modajdm[,1] <- NULL #then remove column  #need to set first column to rownames
+
+net <- as.network(x = modajdm, # the network object
+                  directed = TRUE, # specify whether the network is directed
+                  loops = FALSE, # do we allow self ties (should not allow them)
+                  matrix.type = "adjacency" # the type of input
+                  )
+
+pdf("Network_Plot_1.pdf", # name of pdf (need to include .pdf)
+    width = 100, # width of resulting pdf in inches
+    height = 100 # height of resulting pdf in inches
+    ) 
+plot.network(net, # our network object
+             #vertex.col = node_colors, # color nodes by gender
+             #vertex.cex = (age)/5, # size nodes by their age
+             displaylabels = T, # show the node names
+             label.pos = 5 # display the names directly over nodes
+             )
+dev.off() # finishes plotting and finalizes pdf
+
+#
+
+#so think kind of works? I think the number of partners is going to be an issue no matter what package you use
+#nope, can't open pdf :/ 
+
+```
+
+
+
 <br>
 
 #### c)	Does the number of actions relate to species characteristics?
@@ -292,7 +377,7 @@ panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
 
 ## plot a correlation matrix plot that uses the functions specified above to say what to plot where
       ## this was taken directly from website and still not plotting r values for all 
-pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+#pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
 
 pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
 
@@ -309,7 +394,7 @@ vif(lm(actionsum ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = 
 lm_actionsum <- lm(actionsum ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = regdf1)
 summary(lm_actionsum)
 #lose significance of threats
-plot(lm_actionsum)
+#plot(lm_actionsum)
 
 
 
@@ -353,7 +438,7 @@ panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
 
 ## plot a correlation matrix plot that uses the functions specified above to say what to plot where
       ## this was taken directly from website and still not plotting r values for all 
-pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+#pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
 
 pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
 
@@ -370,7 +455,7 @@ vif(lm(actpartsum ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data =
 lm_actpartsum <- lm(actpartsum ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = regdf2)
 summary(lm_actpartsum)
 #lose significance of threats
-plot(lm_actpartsum)
+#plot(lm_actpartsum)
 
 lm_actpartsum <- lm(log(actpartsum) ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = regdf2)
 #still nothing 
@@ -552,7 +637,7 @@ partnerapptosp <- as.data.frame(c(x1, x2, x3, x4,x5, x6,x7,x8,x9,x10,x11))
 
 #condense into one df 
 partnerapptosp <- partnerapptosp[,-c(1,3,5,7,9,11,13,15,17,19,21)] #remove relplicated columns (and don't need to know partner ids)
-colnames(partnerapptosp)
+#colnames(partnerapptosp)
 setnames(partnerapptosp, old = c('sum.partners...c.3...', 'sum.partners...c.4...', 'sum.partners...c.5...', 'sum.partners...c.6...', 'sum.partners...c.7...', 'sum.partners...c.8...', 'sum.partners...c.9...', 'sum.partners...c.10...', 'sum.partners...c.11...', 'sum.partners...c.12..', 'sum.partners...c.13..'),skip_absent=TRUE, new = c('Land.Water.Management' , 'Species.Management', 'Awareness.raising','law.enforcement.and.prosecution', 'livelihoodeconomic', 'ConservationDesign', 'LegalandPolicy', 'ResearchMonitoring', 'Education.and.Training', 'InstitutionalDevelopment','funding')) #for some reason this wouldn't over write c12 or c13 (institutional development and funding) so setting manually below 
 
 partnerapptosp <- partnerapptosp %>% rename(InstitutionalDevelopment = 'sum.partners...c.12...')
@@ -582,7 +667,7 @@ ggplot(actiondf) + geom_bar(mapping = aes(x = action, y = X2), stat = "identity"
 
    - **i)	Can we group partners into types based on the actions that they do? (numbers and type of actions?)**
    
-```{r eval = FALSE}
+```{r eval = FALSE, include=FALSE}
 condensep <- sdata[,c(1,6,10:20)] #select relevant columns
 colnames(condensep)
 condensep <- condensep[-which(condensep$type.of.partners == "M"),] #remove ones with multiple partners in string 
@@ -621,10 +706,11 @@ condensep[which(condensep$X1..Land.Water.Management > .5),] <- rownames(condense
    - **iii) Can we group species based on the sets of threats that they face?**
    
 ```{r}
-as
+
 ```
 
    - **iv) East coast v west coast (makes most sense to focus on west coast split as there are more species here)**
+   primary exploration attached below in spatial analysis section 
 ```{r}
 
 ```
@@ -642,8 +728,204 @@ as
 Background to analysis
 
    - map of centers and ranges (load in pdf)
+![Map of all species](/usr/local/bin/store/partner_rff/OutputAndInputsForThesis/map_all_figures.pdf)
+Informative caption Map: All species, for which I have partner data, have their ranges colored in orange and the average center of their range indicated with a green dot. Ranges may be overlapping and were calculated at a county scale. 
 
+west coast v east coast 
+  #### variable okay produced in RegressionPredictoExploration range chunk 
+removing all 0s columns not working 
+```{r east and west adj matrix, eval= FALSE}
+ combo <- read.csv(paste0("/usr/local/bin/store/partner_rff/OutputAndInputsForThesis/combodf.csv"))
+center <- read_excel(paste0(DataSource, "/mean_center_range_subsetofprecluded_with_partnerdata.xlsx"))
+
+#### correct values here 
+ugh <- combo
+#ugh <- ugh[,c(2,6)] #had to re calibrate when reloaded the data
+okay <- ugh %>% left_join(center, by = "scientific_name")
+#so have slight issue where Chorizanthe parryi var fernandina is splet Chorizanthe parryi var fernandina and Chorizanthe parryi var. fernandina (period after var.)
+#okay[53,2] <- 2
+
+okay <- okay[-which(is.na(okay$XCoord)),]
+
+
+#plot(okay$x, okay$y)
+
+## divide by xcoord value to make east coast v westcoast column 
+
+okay <- okay %>% mutate(geo = x < -95)
+summary(okay$geo) #adams cave beetle have same point which is why getting 10 but only see 9 points
+okay[which(okay$geo == FALSE),9] <- 0
+okay[which(okay$geo == TRUE),9] <- 1
+## true or 1 means species is westcoast
+
+west <- okay %>% filter(geo == TRUE)
+fullwest <- west %>% left_join(full)
+
+east <- okay %>% filter(geo == FALSE)
+fulleast <- east %>% left_join(full)
+
+west <- okay %>% filter(geo == TRUE)   #### ***need to find what geo is - I think this was where made e/w divide but idk where in previous code that was 
+west <- west [,c(1,3)]
+west <- west %>% left_join(PartnerData, by = "scientific_name")
+nzwest <- west[,-c(1:4)][,colSums(west[,-c(1:4)])>=1] #removed columns with all 0s
+dim(west)
+nzwest <- as.matrix(nzwest) #prep for making adj matrix
+wajmat <- t(nzwest) %*% nzwest #new adjmat
+tidyweajmat <- as_tibble(wajmat, rownames = "id")
+
+
+east <- okay %>% filter(geo == FALSE)
+east <- east [,c(1,3)]
+east <- east %>% left_join(PartnerData, by = "scientific_name") 
+nzeast <- east[,-c(1:4)][,colSums(east[,-c(1:4)])>=1]
+dim(nzeast)
+nzeast <- as.matrix(nzeast) #prep for making adj matrix
+eajmat <- t(nzeast) %*% nzeast #new adjmat
+#need to change from matrix to tidyr 
+#need to change to tidyverse for later code
+tidyeajmat <- as_tibble(eajmat, rownames = "id")
+
+
+#this is just the diagonal matrix from adj matrix 
+
+
+graphme <- wajmat
+graphme <- graphme %>% melt()
+graphme <- graphme %>% filter(Var1 == Var2)
+graphme <- graphme[,-c(1)] #removed duplicate names
+#all partners
+ggplot(data = graphme) + geom_col(mapping = aes(x=Var2, y=value))
+g_one <- graphme %>% filter(value >1)
+ggplot(data = g_one, mapping = aes(x=Var2, y=value)) + geom_col() + theme(axis.text.x = element_text(angle = 90)) + scale_y_continuous(name ="Number of Species", limits=c(0,45)) + scale_x_discrete(name ="Name of Partner")
+
+``` 
 
    - variograms
+   
+```{r new set up}
+ combo <- read.csv(paste0("/usr/local/bin/store/partner_rff/OutputAndInputsForThesis/combodf.csv"))
+ center <- read_excel(paste0(DataSource, "/mean_center_range_subsetofprecluded_with_partnerdata.xlsx"))
+
+  
+#make changes so can join 
+combo$common_name[10] <- "CHRISTS PAINTBRUSH" #the accent on the o gets messed up in this species so set to same
+center$common_name[9] <- "CHRISTS PAINTBRUSH"
+combo$common_name[1] <- "San Fernando Valley spineflower" #loaded without common name 
+
+#now join the two df and drop species with data missing 
+
+full <- center %>% left_join(combo, by = "common_name")
+#remove ones without partner data
+
+full <- full[-which(is.na(full$total)),]
+
+#remove extra scientific name column 
+full <- full[,-c(7,8)]
+
+#note, only one species was removed due to inadequate information about geographic range (artic greyling)
+```   
+
+Generate variogram with raw data - L10
+was unable to run as part of markdown script (previously in .r so that might be source of problem) current error is "object logp not found"
+```{r vario_all, eval = FALSE}
+Head <- full #made in chunk above
+Head <- Head[,c(5,6,9)] #select only necessary columns 
+Head <- as.data.frame(Head)
+#
+Head$logp = log(Head$total)
+#
+# remove NA values 
+### Head <- Head[-which(is.na(Head$total)),]
+#
+library(sp)
+#data(meuse)
+#
+coordinates(Head) = c("x", "y")
+#
+library(RColorBrewer)
+library(classInt)
+library(gstat)
+  #     hscat(logp~1,data=Head, breaks=c(0,5,10,15,20,25,30,200))
+hscat(logp~1,data=Head, breaks=c(0,1,2,3,5,10,15,20,25,30,35))    ## axes are wrong? Plots look square.. 
+#
+# How many points are there?
+#
+length(Head$logp)
+#
+# How many pairs of points?
+#
+choose(49,2)
+#
+# Scatter plot of squared differences
+#
+plot(variogram(logp~1,Head,cloud=T))
+#
+# Differences averaged for distance increments
+# to show empirical variogram
+#
+logzinc.vario = variogram(logp~1,Head)
+#
+# Take a look at the contents of logzinc.vario
+#
+logzinc.vario
+#
+# Now plot the empirical variogram
+# and identify the number of pairs of points
+# going into each estimate
+#
+plot(gamma~dist,data=logzinc.vario,xlim=c(0,30))
+#text(logzinc.vario$dist+100,logzinc.vario$gamma,logzinc.vario$np)
+#
+# Sometimes outliers can have a big effect
+# Note that for this data set one outlier will go into the 
+# computation of the squared difference 155 times.
+# Cressie suggests a robust measure of the variogram.
+#
+logzinc.vario.robust = variogram(logp~1,Head,cressie=T)
+#
+par(mfrow=c(1,2))
+plot(gamma~dist,data=logzinc.vario,type="b")
+#title("Classical Variogram")
+plot(gamma~dist,data=logzinc.vario.robust,type="b") 
+#title("Robust Variogram")
+par(mfrow=c(1,1))
+#
+#
+# *** this part of the code doesn't work right yet.. don't think the lines would be super relevant for this data anyway? 
+#
+#
+# Do a permutation test by shifting the values associated with
+# each location around at random (i.e. permute them)
+# and compute the variogram and plot it each time this is done.
+#
+# First plot the original variogram estimate
+#
+plot(gamma~dist,data=logzinc.vario,type="n")
+#
+# Now do 100 permutations and plot the resulting "pure nugget" effect
+# Where our variogram lies outside this envelope show significant
+# correlation.
+#
+x=data.frame(Head)$x
+y=data.frame(Head)$y
+logzinc=Head$logp
+id0=seq(length(Head$logp))
+for(i in 1:100)
+{
+  id = sample(id0)
+  hold.perm = data.frame(x=x,y=y,logp=logp[id])
+  coordinates(hold.perm)=c("x","y")
+  hold.vario = variogram(logp~1,hold.perm)
+  lines(gamma~dist,data=hold.vario,col=2)
+}
+lines(gamma~dist,data=logzinc.vario,col=1,type="b")
+#
+# Examining for Anisotropy
+#
+logzinc.vario.dir = variogram(logp~1,Head,alpha=c(0,45,90,135))
+plot(logzinc.vario.dir)
+
+```
+
    - regression exploration 
    - Pat Sullivan's notes - have c&p into word document    
