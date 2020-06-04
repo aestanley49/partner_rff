@@ -118,7 +118,7 @@ CleanData2 <- CleanData[,c(4,1,2,3, 6:21)]
 ## check of which species names to remove is located in 3rd chunk down in CodeforOverviewDoc.Rmd (done elsewhere bc I don't know if you can load a dataset into a function)
 
 CleanData3 <- CleanData2 %>% filter(!(Scientific.name == 'Dalea tentaculoides')) %>% filter(!(Scientific.name == 'Cymopterus deserticola')) %>% filter(!(Scientific.name == 'Cordylanthus nidularius')) %>% filter(!(Scientific.name == 'Calochortus persistens'))
-                                      
+#these species all only have one document so okay to remove by sp name                                       
 
 write.csv(CleanData2,paste0(DataSource,"/PartnersData.csv", sep = ""))
 
