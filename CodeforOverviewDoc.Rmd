@@ -237,11 +237,12 @@ Gwen's note - or use choard diagram - I don't think this lends itself to a high 
 current code source -https://www.mjdenny.com/Preparing_Network_Data_In_R.html
 
 ```{r eval = FALSE, include= FALSE}
-install.packages("statnet")
+#install.packages("statnet")
 library(statnet)
 
 modajdm <- adjmatrix
 
+#this stops matrix from working? 
 rownames(modajdm) <- modajdm$X1 #set partnernames as rownames
 modajdm[,1] <- NULL #then remove column  #need to set first column to rownames
 
@@ -268,6 +269,97 @@ dev.off() # finishes plotting and finalizes pdf
 #so think kind of works? I think the number of partners is going to be an issue no matter what package you use
 #nope, can't open pdf :/ 
 
+
+#see if can be filtered to value > 1
+
+##############  
+#actions network 
+
+
+## note, need to go back and check when vectors were created 
+
+rawdf <- condense # take datafram of 0s and 1s without multi species strings 
+#remove extra columns 
+rawdf <- rawdf[,-c(1,2)] #remove non numeric columns
+trn <- t(rawdf)   #transform
+rawdf <- t(trn)  #rawdf was coming up as non numeric so tranformed again to overwrite
+
+trial1 <- trn %*%  rawdf
+
+#double check numbers 
+colSums(rawdf) #checks out!! 
+
+
+########### put into network analysis code 
+
+
+
+newaction <- as.network(x = trial1, # the network object
+                  directed = TRUE, # specify whether the network is directed
+                  loops = FALSE, # do we allow self ties (should not allow them)
+                  matrix.type = "adjacency" # the type of input
+                  )
+
+pdf("Network_Plot_1.pdf", # name of pdf (need to include .pdf)
+    width = 100, # width of resulting pdf in inches
+    height = 100 # height of resulting pdf in inches
+    ) 
+plot.network(newaction, # our network object
+             #vertex.col = node_colors, # color nodes by gender
+             #vertex.cex = (age)/5, # size nodes by their age
+             displaylabels = T, # show the node names
+             label.pos = 5 # display the names directly over nodes
+             )
+dev.off() # finishes plotting and finalizes pdf
+
+
+
+################### for threats 
+
+tdf <- threats #df made somewhere else in script 
+#take away excess columns 
+tdf <- tdf[,c(13:18)]
+tdf <- tdf[-which(is.na(tdf$env_x_x)),]  #remove nas
+trantdf <- t(tdf)
+is.numeric(tdf)
+tdf <- t(trantdf)
+
+threatmat <- trantdf %*% tdf
+
+
+#double check numbers
+colSums(tdf) #yay! All good 
+
+
+
+########### make network 
+
+
+newthreat <- as.network(x = threatmat, # the network object
+                  directed = TRUE, # specify whether the network is directed
+                  loops = FALSE, # do we allow self ties (should not allow them)
+                  matrix.type = "adjacency" # the type of input
+                  )
+
+pdf("Network_Plot_1.pdf", # name of pdf (need to include .pdf)
+    width = 100, # width of resulting pdf in inches
+    height = 100 # height of resulting pdf in inches
+    ) 
+plot.network(newthreat, # our network object
+             #vertex.col = node_colors, # color nodes by gender
+             #vertex.cex = (age)/5, # size nodes by their age
+             displaylabels = T, # show the node names
+             label.pos = 5 # display the names directly over nodes
+             )
+dev.off() # finishes plotting and finalizes pdf
+
+
+#trying with chordDiagram 
+library(circlize)
+
+chordDiagram(threatmat)
+
+
 ```
 
 
@@ -293,7 +385,7 @@ eachsp <- species %>% group_by(Scientific.name) %>% summarise_each(funs(sum))
 
 onesandzeros <- eachsp %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
 
-noactionswithpartner <- eachsp %>% mutate(actpartsum = rowSums(onesandzeros[,c(2:12)]))
+noactionswithpartner <- eachsp %>% mutate("actpartsum" = rowSums(onesandzeros[,c(2:12)]))
 
 totalno <- onesandzeros %>% mutate("actionsum" = rowSums(onesandzeros[,c(2:12)])) #added column "actionsum" that took the row sums for each species to give count of how many actions each species receives 
 
