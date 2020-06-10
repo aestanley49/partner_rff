@@ -2,7 +2,9 @@
 title: "Code for Overview Doc"
 author: "Annabelle Stanley, Gwen Iacona, Becky Epanchin-Niell"
 date: "June 1, 2020"
-output: html_document
+output:
+  html_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -109,9 +111,12 @@ names <- data[c(10,14,27,41,44,48,59,68,77,78,91,92,97,102,109,121,134,155),1]
 
 <br>
 
+***
+
+#Information from Partner dataset (previous seen in thesis and from larger dataset that salafsky is a subset of)
+
 <br>
 
-#we use this data to answer 
 ##1)	what are the characteristics of partnership for species that are precluded from listing?
 ### a. How many partners are there?
 ####  - i) **Total number of partners**
@@ -121,7 +126,7 @@ length(names(PartnerData[,-c(1:3)])) # I counted how many columns there were if 
 #length(unique(names(PartnerData[,-c(1:3)]))) # just making sure that there are no repeats. ## 197 so its ok
 ```
 #### - ii) **Histogram of # partners/species**
-```{r, echo= FALSE, size='tiny'}
+```{r, echo= FALSE, size='tiny', include=FALSE}
 # the number of partners working on each species:
 rowSums(PartnerData[,-c(1:3)]) # this gives a not very intuitive vector so I put it in the dataset
 
@@ -132,49 +137,15 @@ PartnerData[,c(2,201)] # this is the dataset with names and numbers of species. 
 hist(PartnerData$TotalPartners,
      xlab ="number of partners working on a species",
      breaks = 60,
-     main = NULL)
+     main = "Histogram of partners per species")
 ```
+Graph thought - most species have very few partners working on them with one outlier in this dataset
+
 
 ####  -  iii) **Max, min, median, and 1st and 3rd quantiles across species**
 ```{r}
 summary(PartnerData$TotalPartners)
 ```
-
-<br>
-
-<br>
-
-<br>
-
-
-####  -  i) **Total number of partners**
-```{r, echo = FALSE, size='tiny'}
-#Total number of partners
-length(names(PartnerData[,-c(1:3)])) # I counted how many columns there were if i didn't look at columns 1 and 2 ## 197 unique partners
-#length(unique(names(PartnerData[,-c(1:3)]))) # just making sure that there are no repeats. ## 197 so its ok
-```
-####  -  ii) **Histogram of # partners/species**
-```{r, echo= FALSE, size='tiny'}
-# the number of partners working on each species:
-rowSums(PartnerData[,-c(1:3)]) # this gives a not very intuitive vector so I put it in the dataset
-
-PartnerData$TotalPartners <- rowSums(PartnerData[,-c(1:3)])
-PartnerData[,c(2,201)] # this is the dataset with names and numbers of species. It does not print out in a convenient format. probably should save and make a better table.
-
-# Histogram of partners per species
-hist(PartnerData$TotalPartners,
-     xlab ="number of partners working on a species",
-     breaks = 60,
-     main = NULL)
-```
-
-####  -  iii) **Max, min, median, and 1st and 3rd quantiles across species**
-```{r}
-summary(PartnerData$TotalPartners)
-```
-
-<br>
-
 <br>
 
 <br>
@@ -188,31 +159,33 @@ summary(PartnerData$TotalPartners)
 ```{r}
 lm2 <- lm(log(total) ~ taxa + percentpublic + area_x + nsumemploy + total_x_x, data=RegData)
 summary(lm2)
-plot(lm2)
+#plot(lm2) #don't need so many plots
 
 qqPlot(residuals(lm2))
 AIC(lm2)
 ```
+qqPlot looks normal!
 Most of this code ^ was taken from regressionmodelforthesis.Rmd
 
 <br>
         
 ##b) who are the organizations partnering with FWS?  
 ### a. List of all the organizations involved
-```{r}
+```{r include=FALSE}
 PartnerData <- FormatData(RawData) #reload data to avoid sum(colsums) glitch
 #kable(table(colSums(PartnerData[,-c(1:3)])))
 
 #also includes number of species each partner is working on
 name <- colSums(PartnerData[,-c(1:3)])
-name %>% kable()
+name <- name %>% kable()
+#kable(name, col.names = c("Partner Name","Number of species a partner works on"))
  # kable("html") %>% 
  # kable_styling(font_size = 7)
 ```
 
 ### b. Which partners are most commonly working with others
 ####  -  **i) Histogram of partnerships/partner**
-```{r no partnerships for each partner}
+```{r no partnerships for each partner, echo = FALSE}
 #going to convert all values that are greater than 1 to one so not double counting 
 # then subtract diagonal 
 #then add 
@@ -247,6 +220,8 @@ ggplot(data = explore, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous
 filt <- explore %>% filter(rssum < 50) 
 ggplot(data = filt, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partners", limits=c(-1,40)) + scale_y_continuous(name ="Frequency", limits=c(0,20))
 ```
+Graph takeaway – most partners are working with a number of other partner, but not an excessive amount (couple of outliers here)
+(second graphi is just zoomed in on the x-axis)
 
 ####  -  **ii) Max, min, median, and 1st and 3rd quantiles partners/partner**
 ```{r}
@@ -264,15 +239,141 @@ PartnerData <- FormatData(RawData) #reload data to avoid sum(colsums) glitch
 hist(colSums(PartnerData[,-c(1:3)]),
      xlab ="number of species that a partner works on",
      breaks = 50, 
-     main = NULL)
+     main = "Count of the number of speies partners work on")
 
 # table of this info seems more useful
 table(colSums(PartnerData[,-c(1:3)]))
 
 # summary of species/partner
 summary(colSums(PartnerData[,-c(1:3)])) # 372 Max seems wrong - this is a sum of the colsums, unclear why this is being added | if data is reloaded at begining of section, don't have this problem
+```
+Caption - most partners only work on one species and the outliers tend to be federal agency (biggest outlier is FWS)
+
+<br> 
+
+<br> 
+***
+<br>
+
+#We use this data to answer 
+## All the following is applicable for Salafsky 
+
+<br>
+ **************************************************
+ 
+ The following information is calculated without using the multi partner stings 
+
+####  -  i) **Salafsky Total number of partners**
+```{r, echo = FALSE, size='tiny'}
+#Total number of partners
+noM <- sdata[-which(sdata$type.of.partners == "M"),]
+
+length((unique(noM$partner.in.agreement)))
+#89 unique partner names
+```
+####  -  ii) **Salafsky Histogram of # partners/species**
+```{r, echo= FALSE, size='tiny'}
+
+nopartners_noM <- (noM %>% group_by(Scientific.name)   #selecting  each species
+%>% distinct(partner.in.agreement)    #count how many partners are distinct 
+%>% summarise(n())) 
+
+nopartners_noM <- rename(nopartners_noM, tally = 'n()')
+
+hist(nopartners_noM$tally,
+     xlab ="number of partners per species",
+     breaks = 15,
+     main = "Historgram of the number of partners per species") 
+
+#nopartners_noM %>% ggplot() + geom_histogram(mapping = aes(x = tally, stat = "count"))
+#aes(fct_infreq(class)?? 
 
 ```
+
+####  -  iii) **Salafsky Max, min, median, and 1st and 3rd quantiles across species**
+```{r}
+summary(nopartners_noM)
+```
+<br>
+
+
+### b. How does number of partners relate to species/recovery programs characteristics?
+- regression for salafsky found below
+
+<br>
+        
+##b) Salafsky who are the organizations partnering with FWS?  
+### a. Salafsky List of all the organizations involved
+```{r include=FALSE}
+orglist <- (noM %>% group_by(partner.in.agreement)   #selecting  each species
+%>% distinct(Scientific.name)    #count how many partners are distinct 
+%>% summarise(n()))                   
+
+#also includes number of species each partner is working on
+org <- orglist %>% kable()
+dim(org)
+head(org)
+```
+
+### b. Salafsky Which partners are most commonly working with others
+####  -  ** Salafsky i) Histogram of partnerships/partner**
+```{r Salafsky no partnerships for each partner, echo = FALSE}
+#might be a few 
+
+modno <- noM
+modno <- noM[,c(1:3)]
+
+orglist <- rename(orglist, countspno = `n()`) #change name of variable that has total number of species an organization is working on 
+
+orglist$partner.in.agreement
+
+modno_orglist <- modno %>% full_join(orglist, by = "partner.in.agreement")
+nopartners_noM$Scientific.name
+modno_orglist_noparnters_noM <- modno_orglist %>% full_join(nopartners_noM, by = "Scientific.name")
+modno_orglist_noparnters_noM <- rename(modno_orglist_noparnters_noM, nopartpersp= tally)
+
+#now want to add up variable name nopartpersp for each 
+
+modno_orglist_noparnters_noM <- modno_orglist_noparnters_noM %>% mutate("adjustednumberofpartnersperspec" = nopartpersp -1 )
+#now doesn't include that partner in overall partner count 
+
+modno_orglist_noparnters_noM <- modno_orglist_noparnters_noM %>% group_by(partner.in.agreement) %>% summarise(sum(adjustednumberofpartnersperspec))
+
+modno_orglist_noparnters_noM <- rename(modno_orglist_noparnters_noM, nopartersperpartner = `sum(adjustednumberofpartnersperspec)`)
+
+ggplot(data = modno_orglist_noparnters_noM, mapping = aes(x=nopartersperpartner)) + geom_bar() + scale_x_continuous(name ="Number of Partners", limits=c(-1,140)) + scale_y_continuous(name ="Frequency", limits=c(0,17))
+
+```
+
+
+####  -  **ii) Salafsky Max, min, median, and 1st and 3rd quantiles partners/partner**
+```{r}
+summary(modno_orglist_noparnters_noM)
+```
+
+### c. Salafsky How many species each partner is involved in projects on
+####  -  **i)	Histogram of species /partner**	
+####  -  **ii)	Max, min, median, and 1st and 3rd quantiles species/partner**
+```{r, echo = FALSE}
+#already calculated in b/a a couple of lines of code above (produced variable orglist) but copying code here 
+
+orglist <- (noM %>% group_by(partner.in.agreement)   #selecting  each species
+%>% distinct(Scientific.name)    #count how many partners are distinct 
+%>% summarise(n()))  
+orglist <- rename(orglist, countspno = `n()`) #change name of variable that has total number of species an organization is working on 
+
+#put into histogram 
+
+hist(orglist$countspno,
+     xlab ="number of species per partner",
+     breaks = 15,
+     main = "Historgram of the number of species per partner") 
+
+
+
+```
+
+<br> 
 
 
 ### d. Network representation of who works with who. Partners as nodes (weighted by number of species they work on), edges between partners weighted by number of species they work on together
@@ -417,7 +518,7 @@ chordDiagram(threatmat)
 - note to self - this might not knit if vector is produced lower in script so repeating code here to find no actions per species 
 - decided to try two new predictors (the addition is the number of actions increased by each partner doing that action (might make sense to change this to a weighted value later on))
 
-```{r}
+```{r setup regression}
 ####copied text to find new variable 
 alldf <- sdata #change variable name 
 
@@ -435,7 +536,26 @@ noactionswithpartner <- eachsp %>% mutate("actpartsum" = rowSums(onesandzeros[,c
 
 totalno <- onesandzeros %>% mutate("actionsum" = rowSums(onesandzeros[,c(2:12)])) #added column "actionsum" that took the row sums for each species to give count of how many actions each species receives 
 
+hist(noactionswithpartner$actpartsum,
+     xlab ="number of partners working on a species",
+     main = "Histogram of partners per species")
+summary(noactionswithpartner$actpartsum)
 
+hist(totalno$actionsum,
+     xlab ="number of partners working on a species",
+     main = "Histogram of partners per species")
+summary(totalno$actionsum)
+
+need to change labels
+
+```
+
+changes made to the regression 
+- removed employment variable 
+- adding vert (1 = y, 0 = no) predictor from tdata 
+- Need access to fed land manager 
+
+```{r regression}
 #add to regression predictor df with join()
 
 newregdata <- RegData #doesn't work because nothing to join by 
@@ -632,11 +752,28 @@ ggplot(colsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identit
 #same graph, just expanded with text shifted
 ggplot(colsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 30))  + scale_x_discrete(name ="Name of Action")
 
+#compared to noM 
+
+noM[,c(10:20)] <- sapply(noM[ ,c(10:20)], as.numeric)
+
+colsum_noM <- (as.data.frame(colSums(noM[,c(10:20)])) #creating dataframe so can plot
+  %>% rownames_to_column()) #making sure that dataframe has rownames to set as x and y 
+ 
+  
+colsum_noM <- colsum_noM  %>% rename(count = `colSums(noM[, c(10:20)])`) #renaming column produced by colsums
+  
+
+#ggplot(colsum) + geom_point(mapping = aes(x = rowname, y = count))
+
+ggplot(colsum_noM) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 30)) + scale_x_discrete(name ="Name of Action")
+#made with noM so doesn't have partner strings included in the calculation 
+
+
 ```
 
 ### b. For each species 
 ####  -  **i) For each species: how many different actions are applied (and how many of each action).**
-```{r}
+```{r include = FALSE}
 # loop 
   #filter by scientific names
   # For each unique value 
@@ -677,6 +814,14 @@ nopartners <- (alldf %>% group_by(Scientific.name)   #selecting  each species
 
 kable(nopartners)
 
+nopartners <- rename(nopartners, tally = 'n()')
+
+#reset as bar plot with each species name as value on x-axis 
+
+ordered <- nopartners %>% arrange(tally)
+ordered$Scientific.name
+
+ggplot(ordered) + geom_bar(mapping = aes(x = reorder(Scientific.name, tally), y = tally), stat = "identity") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Species") + scale_y_continuous(name ="# of partners working on species")
 
 #part two of question 
 ```
@@ -686,7 +831,7 @@ kable(nopartners)
       
 ####  -  **iv)	How many threats does each species face**    
          - information found in regression prep script 
-```{r}
+```{r include=FALSE}
 
 allspindf <- eachsp
 new <- tdata #need to join with tdata (renamed here)
@@ -786,6 +931,7 @@ action <- t(partnerapptosp)
 #trying not to loose rownames when convert
 
 actiondf <- data.frame(action = row.names(action),action) #changed to df and set column names 
+rownames(actiondf) <- NULL
 
 kable(actiondf)
 
@@ -1067,3 +1213,19 @@ plot(logzinc.vario.dir)
 
    - regression exploration 
    - Pat Sullivan's notes - have c&p into word document    
+   
+   
+   
+Putting together map of species in salafsky subset 
+
+```{r}
+center <- read_excel(paste0(DataSource, "/mean_center_range_subsetofprecluded_with_partnerdata.xlsx"))
+sub <- sdata %>% select(Scientific.name) %>% rename("scientific_name" = Scientific.name)
+
+
+sub <- sub %>% left_join(center, by = c("scientific_name"))
+
+plot(sub$YCoord ~ sub$XCoord)
+
+```
+
