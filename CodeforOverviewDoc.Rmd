@@ -440,24 +440,60 @@ colSums(rawdf) #checks out!!
 ########### put into network analysis code 
 
 
+tactadjmat <- trial1
 
-newaction <- as.network(x = trial1, # the network object
-                  directed = TRUE, # specify whether the network is directed
-                  loops = FALSE, # do we allow self ties (should not allow them)
-                  matrix.type = "adjacency" # the type of input
-                  )
+tactadjmat[lower.tri(tactadjmat)] <- NA
+diag(tactadjmat) <- NA
 
-pdf("Network_Plot_1.pdf", # name of pdf (need to include .pdf)
-    width = 100, # width of resulting pdf in inches
-    height = 100 # height of resulting pdf in inches
-    ) 
-plot.network(newaction, # our network object
-             #vertex.col = node_colors, # color nodes by gender
-             #vertex.cex = (age)/5, # size nodes by their age
-             displaylabels = T, # show the node names
-             label.pos = 5 # display the names directly over nodes
-             )
-dev.off() # finishes plotting and finalizes pdf
+actlist <- tactadjmat %>% melt() 
+actlist <- actlist[-which(is.na(actlist$value)),]
+
+#nsize <- tolist %>% filter((Var1 == Var2)) #set new vector with diag values
+#tolist <- tolist %>% filter((Var1 != Var2)) 
+
+#allthreat <- tolist %>% right_join(nsize, by = c("Var1"))
+#allthreat <- allthreat[,-c(4)]
+
+library(igraph)
+
+actnet <- graph_from_data_frame(d=actlist, directed=T) 
+
+
+#plot(net, edge.arrow.size=.2, edge.curved=0,
+
+  #   vertex.color="orange", vertex.frame.color="#555555",
+
+   #  vertex.label=V(net)$Var1, vertex.label.color="black",
+
+   #  vertex.label.cex=.7, vertex.size = net$value.y)
+
+E(actnet)$arrow.size <- .2 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(66,35,10,2,4,48,34,54,19,62,33), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+ 
+
+#so not setting in the same order 
+
+
+E(actnet)$width <- E(actnet)$value*.35 
+
+plot(actnet, vertex.size=node.size*.5)
+
+
+#plot(net, edge.arrow.size=0.01,vertex.label.color = "black", vertex.size=node.size)
+
+
+node.size<-setNames(c(66,35,10,2,4,48,34,54,19,62,33), c("LandWaterMan" ,"SpeciesMan", "AwarRaise", "law.enforce" , "livelihood_economic_moral", "Conservation.D&P","Legal.and.Policy","Research.and.monitoring" ,"Edu_Training","Institutional.Dev","funding")) #tried resetting names but nothing happened 
+ 
+
+l <- layout_with_fr(actnet)
+plot(actnet, layout = l, vertex.size=node.size*.5)
+
+
+l <- layout_on_grid(actnet)
+plot(actnet, vertex.label=NA, layout = l, vertex.size=node.size*.75)
+
 
 
 
@@ -482,29 +518,46 @@ colSums(tdf) #yay! All good
 ########### make network 
 
 
-newthreat <- as.network(x = threatmat, # the network object
-                  directed = TRUE, # specify whether the network is directed
-                  loops = FALSE, # do we allow self ties (should not allow them)
-                  matrix.type = "adjacency" # the type of input
-                  )
+tadjmat <- threatmat
 
-pdf("Network_Plot_1.pdf", # name of pdf (need to include .pdf)
-    width = 100, # width of resulting pdf in inches
-    height = 100 # height of resulting pdf in inches
-    ) 
-plot.network(newthreat, # our network object
-             #vertex.col = node_colors, # color nodes by gender
-             #vertex.cex = (age)/5, # size nodes by their age
-             displaylabels = T, # show the node names
-             label.pos = 5 # display the names directly over nodes
-             )
-dev.off() # finishes plotting and finalizes pdf
+tadjmat[lower.tri(tadjmat)] <- NA
+diag(tadjmat) <- NA
+
+tolist <- tadjmat %>% melt() 
+tolist <- tolist[-which(is.na(tolist$value)),]
+
+#nsize <- tolist %>% filter((Var1 == Var2)) #set new vector with diag values
+#tolist <- tolist %>% filter((Var1 != Var2)) 
+
+#allthreat <- tolist %>% right_join(nsize, by = c("Var1"))
+#allthreat <- allthreat[,-c(4)]
+
+library(igraph)
+
+net <- graph_from_data_frame(d=tolist, directed=T) 
 
 
-#trying with chordDiagram 
-library(circlize)
+#plot(net, edge.arrow.size=.2, edge.curved=0,
 
-chordDiagram(threatmat)
+  #   vertex.color="orange", vertex.frame.color="#555555",
+
+   #  vertex.label=V(net)$Var1, vertex.label.color="black",
+
+   #  vertex.label.cex=.7, vertex.size = net$value.y)
+
+E(net)$arrow.size <- .2 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(30,5,3,17,8,11), c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x"))
+  #so not setting in the same order 
+V(net)$label <- NA
+E(net)$width <- E(net)$value
+
+plot(net, vertex.size=node.size)
+
+
+#plot(net, edge.arrow.size=0.01,vertex.label.color = "black", vertex.size=node.size)
+
 
 
 ```
@@ -532,7 +585,7 @@ eachsp <- species %>% group_by(Scientific.name) %>% summarise_each(funs(sum))
 
 onesandzeros <- eachsp %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
 
-noactionswithpartner <- eachsp %>% mutate("actpartsum" = rowSums(onesandzeros[,c(2:12)]))
+noactionswithpartner <- eachsp %>% mutate("actpartsum" = rowSums(eachsp[,c(2:12)]))
 
 totalno <- onesandzeros %>% mutate("actionsum" = rowSums(onesandzeros[,c(2:12)])) #added column "actionsum" that took the row sums for each species to give count of how many actions each species receives 
 
@@ -986,9 +1039,38 @@ condensep[which(condensep$X1..Land.Water.Management > .5),] <- rownames(condense
 ```
   
 ####  -  **ii) Can we group partners base on type of organization (fed agency, wildlife agency, private landowner, ngo, researchers?)**
-   
+```{r}
+#putting draft of excel sheet in here straight from wd beacuse will need to update
+
+orgtyp <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmanedited.csv"), stringsAsFactors = FALSE, na = "") #issue was that "" is coming up instead of NA
+
+#filter out all rows that don't have values 
+orgtyp <- orgtyp[-which(is.na(orgtyp$type_of_org)),] #this isn't doing anything, lets try again
+
+ggplot(orgtyp) + geom_histogram(mapping = aes(x = type_of_org), stat = "count") + ggtitle("Histogram of the different types of organizations")
+
+```
+Key (note, currently unsure how to reorder but will keep trying to this may change)
+- BLM = Bureau of Land Management
+- C = Cooporation
+- FO = Federal Other
+- M = Military 
+- N = NGO
+- NA
+- O = Other
+- P = Private landowner
+- R = Reserach 
+- SB = State Both (land and wildlife)
+- SG = State Governmnet
+- SL = State Land Managemetn
+- SW = State Wildlife
+- USFS = US Forest Service
+- USFWS = US Fish and Wildlife Service 
+
+
+
 ####  -  **iii) Can we group species based on the sets of threats that they face?**
-   
+   insert network here? 
 ```{r}
 
 ```
@@ -999,7 +1081,41 @@ condensep[which(condensep$X1..Land.Water.Management > .5),] <- rownames(condense
 
 ```
 
+####  -  **v) Taxa   **
    
+```{r}
+#code taken from regression section, just need to pull out the taxa variable
+
+
+modtdata <- tdata
+newregdata <- RegData #doesn't work because nothing to join by 
+
+#first going to join totalno and noactionswithpartner
+
+predictors <- noactionswithpartner %>% full_join(totalno, by = "Scientific.name") #join two new predictors together
+#predictors1 <- predictors %>% select(Scientific.name, actionsum, actpartsum)
+predictors1 <- predictors[,c(1,13,25)] #unable to knit with select so indexed 
+predictors2 <- rename(predictors1, scientific_name = Scientific.name) #renamed predictors vector so would have something to join by 
+
+#so if select values that don't change from tdata with somes that weren't modified in RegData, should be able to join
+#modtdata <- modtdata %>% select(scientific_name, total_x_x, area_x) #select relevant predictors from tdata 
+modtdata <- modtdata[,c(3,19,26,32)] #Added column 19 for Plants, Inverts and verts 
+newregdata <- newregdata %>% left_join(modtdata, by = c("total_x_x", "area_x")) #note 1 name is missing, but will see if that is an issue based on names in action dataset 
+
+# now going to join with predictors 
+
+regdf <- predictors2 %>% left_join(newregdata, by = "scientific_name")
+#so issue now isn't the missing name, but the number of species that have missing na values 
+
+#now sort through 1s and 0s for plants, verts and inverts 
+
+ggplot(regdf) + geom_histogram(mapping = aes(x = vertebrate_invertebrate_plant_x_x), stat = "count")+ ggtitle("Histogram of the taxa: vertebrate_invertebrate_plant")
+                       
+
+
+```
+
+
    
 ## Questions we want to answer 
 
