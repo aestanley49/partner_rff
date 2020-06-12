@@ -740,10 +740,9 @@ cor(regdf2, method = "pearson", use = "complete.obs")
 
 ######### VIFs
 
-vif(lm(actionsum ~ area_x +percentpublic + taxa + total_x_x + fed_shannon_h,data = regdf1))
+vif(lm(actionsum ~ area_x +percentpublic + taxa + total_x_x + fed_shannon_h,data = regdf2))
 #looks good 
 
-regdf2$actionsum
 ######## Run the model for actpartsum 
 
 lm_actionsum <- lm(actionsum ~ area_x +percentpublic + taxa + total_x_x + fed_shannon_h,data = regdf2)
@@ -756,7 +755,7 @@ summary(lm_actionsum)
 
 
 Old regression 
-```{r OLD regression eval = FALSE, include=FALSE, echo=FALSE}
+```{r eval = FALSE, include=FALSE, echo=FALSE}
 #add to regression predictor df with join()
 
 newregdata <- RegData #doesn't work because nothing to join by 
@@ -1009,10 +1008,30 @@ totalno <- onesandzeros %>% mutate("actionsum" = rowSums(onesandzeros[,c(2:12)])
 
 
 ####  -  **ii) Action richness and diversity for each species?**
-How is this measured? 
+
+Source - http://www.colby.edu/biology/BI131/Lab/Lab09CalcBiodivers.pdf
+-  D, the Menhinick's index = s/sqrt(N)
+- So higher number = more richness 
 ```{r richness}
+#done with summed actions
+noactionswithpartner <- eachsp %>% mutate("actpartsum" = rowSums(eachsp[,c(2:12)]))
+
+richness1 <- noactionswithpartner %>%
+  mutate_at(vars(actpartsum), funs(./sqrt(sum(.))))  ##D = actionsum colum (unsure how to change the name)
+#quick check of numbers 
+##colSums(noactionswithpartner[,13] )
+##15/sqrt(446)
+#math worked!
+
+#done with all partner actions
+totalno <- onesandzeros %>% mutate("actionsum" = rowSums(onesandzeros[,c(2:12)])) #added column "actionsum" that 
+richness2 <- totalno %>%
+  mutate_at(vars(actionsum), funs(./sqrt(sum(.))))  ##D = actionsum colum (unsure how to change the name)
 
 ```
+Other options for richness: Margalef's index is the number of species (n) minus 1 divided by the natural logarithm of the total number of individuals (N). D=n−1/lnN
+
+
 
 Shannon Diversity Index Calc
 ```{r diversity}
@@ -1059,13 +1078,30 @@ ordered <- nopartners %>% arrange(tally)
 
 ggplot(ordered) + geom_bar(mapping = aes(x = reorder(Scientific.name, tally), y = tally), stat = "identity") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Species") + scale_y_continuous(name ="# of partners working on species") + ggtitle("The number of partners per species")
 
-#part two of question 
 ```
 Caption: The number of distinct partners working on a species
 
     - Can find number of partners but unsure how to answer second part of Q
       - "Do partners conduct same or different actions.." for same partner working on each species or across different species? 
-  
+      
+Dissimilarity 
+https://www.researchgate.net/post/What_is_the_difference_between_Bray-Curtis_Similarity_Sorensen_Distance_and_Bray-Curtis_Index
+- So Bray-Curtis index seems most relevant here
+https://www.statisticshowto.com/bray-curtis-dissimilarity/#:~:text=The%20Bray%2DCurtis%20dissimilarity%20is,don't%20share%20any%20species.&text=But%20the%20Bray%20Curtis%20index,%C2%B7%20100%2C%20or%2061%25.
+- for two sites i and j 
+  BCij = 1 - ((2Cij)/(Si + Sj))
+Where:
+- i & j are the two sites,
+- Si is the total number of specimens counted on site i,
+- Sj is the total number of specimens counted on site j,
+- Cij is the sum of only the lesser counts for each species found in both sites.
+To compare multiple sites, seems like need to put together a matrix and then eyeball which values differ?
+http://www.econ.upf.edu/~michael/stanford/maeb5.pdf
+
+```{r dissimilarity}
+
+```
+
       
 ####  -  **iv)	How many threats does each species face**    
          - information found in regression prep script 
