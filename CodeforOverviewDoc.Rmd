@@ -56,6 +56,9 @@ tdata <- read.csv(paste0(DataSource,"/Updated_variables.csv"), stringsAsFactors 
 tdata <- tdata %>%  as_tibble() #now can use stringr packages 
 tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
                   clean_names()
+######need to add to regression later
+tdata2 <- read.csv(paste0(DataSource,"/tyler_merged_shannon_federal_variables_june.csv"), stringsAsFactors = FALSE) #data provided by tyler 
+
 ```
 
 <br>
@@ -614,7 +617,146 @@ changes made to the regression
 - adding vert (1 = y, 0 = no) predictor from tdata 
 - Need access to fed land manager 
 
-```{r regression}
+```{r}
+tdata3 <- tdata2
+
+tdata3 <- tdata3[,-c(1:4,7,8,12,14:16)]
+
+#reorder so that predictors are at end of df 
+tdata3 <- tdata3[,c(3:7,1,2)] 
+
+
+regdf1 <- tdata3[,-c(7)] #so this is with actionpartsum
+
+############### 
+
+
+#set up
+PredictorsOnlyPixel <- regdf1[,c(6)]
+PredictAndResponsePixel <- regdf1
+PredictAndResponseGrid <- regdf1
+  
+# put histograms on the diagonal panel	
+panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
+{
+  usr <- par("usr"); on.exit(par(usr))			# not sure what usr is for?
+  par(usr = c(usr[1:2],0,1.5))
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)			# make the hist 
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col="grey", ...)  # defines what the histogram is going to look like
+}
+
+# put correlations on the upper panels,
+panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- cor(x, y,use="everything")				
+  txt <- format(c(r, 0.123456789), digits=digits)[1]
+  prefix <- "r = "
+  rc <- cor.test(x,y,method = c("pearson"))				## calculate pearsons rho for upper grid
+  txt <- paste(prefix,txt,sep="")
+  text(0.5, 0.5, txt, cex = 1)
+}
+
+## plot a correlation matrix plot that uses the functions specified above to say what to plot where
+      ## this was taken directly from website and still not plotting r values for all 
+#pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+
+pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+
+#double check cor
+
+cor(regdf1, method = "pearson", use = "complete.obs")
+
+
+# so still having some issues with getting r values to print out 
+
+######### VIFs
+
+vif(lm(actpartsum ~ area_x +percentpublic + taxa + total_x_x + fed_shannon_h,data = regdf1))
+#looks good 
+
+
+######## Run the model for actpartsum 
+
+lm_actpartsum <- lm(actpartsum ~ area_x +percentpublic + taxa + total_x_x + fed_shannon_h,data = regdf1)
+summary(lm_actpartsum)
+#lose significance of threats
+#plot(lm_actionsum)
+
+
+############### ############### second regression with new predictors 
+
+
+
+regdf2 <- tdata3[,-c(6)] #so this is with actionsum
+
+############### 
+
+
+#set up
+PredictorsOnlyPixel <- regdf2[,c(6)]
+PredictAndResponsePixel <- regdf2
+PredictAndResponseGrid <- regdf2
+  
+# put histograms on the diagonal panel	
+panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
+{
+  usr <- par("usr"); on.exit(par(usr))			# not sure what usr is for?
+  par(usr = c(usr[1:2],0,1.5))
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)			# make the hist 
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col="grey", ...)  # defines what the histogram is going to look like
+}
+
+# put correlations on the upper panels,
+panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- cor(x, y,use="everything")				
+  txt <- format(c(r, 0.123456789), digits=digits)[1]
+  prefix <- "r = "
+  rc <- cor.test(x,y,method = c("pearson"))				## calculate pearsons rho for upper grid
+  txt <- paste(prefix,txt,sep="")
+  text(0.5, 0.5, txt, cex = 1)
+}
+
+## plot a correlation matrix plot that uses the functions specified above to say what to plot where
+      ## this was taken directly from website and still not plotting r values for all 
+#pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+
+pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+
+#double check cor
+
+cor(regdf2, method = "pearson", use = "complete.obs")
+
+
+# so still having some issues with getting r values to print out 
+
+######### VIFs
+
+vif(lm(actionsum ~ area_x +percentpublic + taxa + total_x_x + fed_shannon_h,data = regdf1))
+#looks good 
+
+regdf2$actionsum
+######## Run the model for actpartsum 
+
+lm_actionsum <- lm(actionsum ~ area_x +percentpublic + taxa + total_x_x + fed_shannon_h,data = regdf2)
+summary(lm_actionsum)
+#lose significance of threats
+#plot(lm_actionsum)
+
+```
+
+
+
+Old regression 
+```{r OLD regression eval = FALSE, include=FALSE, echo=FALSE}
 #add to regression predictor df with join()
 
 newregdata <- RegData #doesn't work because nothing to join by 
@@ -860,7 +1002,7 @@ eachsp <- species %>% group_by(Scientific.name) %>% summarise_each(funs(sum))
 
 #get count of total number of actions for each 
 onesandzeros <- eachsp %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
-totalno <- onesandzeros %>% mutate(actionsum = rowSums(onesandzeros[,c(2:12)])) #added column "actionsum" that took the row sums for each species to give count of how many actions each species receives 
+totalno <- onesandzeros %>% mutate("actionsum" = rowSums(onesandzeros[,c(2:12)])) #added column "actionsum" that took the row sums for each species to give count of how many actions each species receives 
 # kable(totalno) #this prints out weird # kable is actually working in markdown
 # totalno  #this is working 
 ```
@@ -868,6 +1010,37 @@ totalno <- onesandzeros %>% mutate(actionsum = rowSums(onesandzeros[,c(2:12)])) 
 
 ####  -  **ii) Action richness and diversity for each species?**
 How is this measured? 
+```{r richness}
+
+```
+
+Shannon Diversity Index Calc
+```{r diversity}
+
+#done with summed actions
+noactionswithpartner <- eachsp %>% mutate("actpartsum" = rowSums(eachsp[,c(2:12)]))
+pi <- noactionswithpartner %>%
+  mutate_at(vars(actpartsum), funs(./sum(.)))  ##pi = actionsum colum (unsure how to change the name)
+lnpi <- pi %>% mutate("log_pi" = log(actpartsum))
+pilnpi <- lnpi %>% mutate("pilnpi" = log_pi*actpartsum)
+
+H <- -1 * colSums(pilnpi[,15])
+H
+
+
+#done with all partner actions
+totalno <- onesandzeros %>% mutate("actionsum" = rowSums(onesandzeros[,c(2:12)])) #added column "actionsum" that 
+
+pi2 <- totalno %>%
+  mutate_at(vars(actionsum), funs(./sum(.)))  ##pi = actionsum colum (unsure how to change the name)
+lnpi2 <- pi2 %>% mutate("log_pi2" = log(actionsum))
+pilnpi2 <- lnpi2 %>% mutate("pilnpi" = log_pi2*actionsum)
+
+H2 <- -1 * colSums(pilnpi2[,15])
+H2
+
+```
+
 
 ####  -  **iii) How many partners  does each species have and do partners conduct the same or different actions from each other**
 ```{r}
