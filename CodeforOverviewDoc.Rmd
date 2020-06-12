@@ -1,10 +1,10 @@
 ---
 title: "Code for Overview Doc"
 author: "Annabelle Stanley, Gwen Iacona, Becky Epanchin-Niell"
-date: "June 1, 2020"
+date: "June 12, 2020"
 output:
-  html_document: default
   word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -31,6 +31,7 @@ library(stringr)
 library(car) #for function qqplot 
 library(knitr) #for making tables form kable 
 library(data.table) #function setnames() allows to set multiple column names in one line of code 
+library(igraph)
 ```
 
 ##load in different datasets
@@ -214,11 +215,11 @@ explore <- explore %>% arrange(-rssum)
 #still feeds mis-represented 
 
 #summary count of the number of partnership for each partner (how many partner have 2 parnters, 3 etc? ) 
-ggplot(data = explore, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partners", limits=c(-1,175)) + scale_y_continuous(name ="Frequency", limits=c(0,50))
+ggplot(data = explore, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partners", limits=c(-1,175)) + scale_y_continuous(name ="Frequency", limits=c(0,50)) + ggtitle("Histogram of the number of partnerships/parnter original data")
 
 #because data is scewed with giant outlier, have recalibrated to show what majority of the data looks like 
 filt <- explore %>% filter(rssum < 50) 
-ggplot(data = filt, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partners", limits=c(-1,40)) + scale_y_continuous(name ="Frequency", limits=c(0,20))
+ggplot(data = filt, mapping = aes(x=rssum)) + geom_bar() + scale_x_continuous(name ="Number of Partners", limits=c(-1,40)) + scale_y_continuous(name ="Frequency", limits=c(0,20)) + ggtitle("(Zoomed) Histogram of the number of partnerships/parnter original data")
 ```
 Graph takeaway – most partners are working with a number of other partner, but not an excessive amount (couple of outliers here)
 (second graphi is just zoomed in on the x-axis)
@@ -249,13 +250,17 @@ summary(colSums(PartnerData[,-c(1:3)])) # 372 Max seems wrong - this is a sum of
 ```
 Caption - most partners only work on one species and the outliers tend to be federal agency (biggest outlier is FWS)
 
+
 <br> 
 
 <br> 
+
 ***
+
 <br>
 
 #We use this data to answer 
+<br>
 ## All the following is applicable for Salafsky 
 
 <br>
@@ -289,6 +294,7 @@ hist(nopartners_noM$tally,
 #aes(fct_infreq(class)?? 
 
 ```
+Caption: Still highly skewed – most species don’t have more than 6 partners with two minor outliers
 
 ####  -  iii) **Salafsky Max, min, median, and 1st and 3rd quantiles across species**
 ```{r}
@@ -325,8 +331,6 @@ modno <- noM[,c(1:3)]
 
 orglist <- rename(orglist, countspno = `n()`) #change name of variable that has total number of species an organization is working on 
 
-orglist$partner.in.agreement
-
 modno_orglist <- modno %>% full_join(orglist, by = "partner.in.agreement")
 nopartners_noM$Scientific.name
 modno_orglist_noparnters_noM <- modno_orglist %>% full_join(nopartners_noM, by = "Scientific.name")
@@ -341,10 +345,10 @@ modno_orglist_noparnters_noM <- modno_orglist_noparnters_noM %>% group_by(partne
 
 modno_orglist_noparnters_noM <- rename(modno_orglist_noparnters_noM, nopartersperpartner = `sum(adjustednumberofpartnersperspec)`)
 
-ggplot(data = modno_orglist_noparnters_noM, mapping = aes(x=nopartersperpartner)) + geom_bar() + scale_x_continuous(name ="Number of Partners", limits=c(-1,140)) + scale_y_continuous(name ="Frequency", limits=c(0,17))
+ggplot(data = modno_orglist_noparnters_noM, mapping = aes(x=nopartersperpartner)) + geom_bar() + scale_x_continuous(name ="Number of Partners", limits=c(-1,140)) + scale_y_continuous(name ="Frequency", limits=c(0,17)) + ggtitle("Histogram of the number of partnerships/partner Salafsky")
 
 ```
-
+Caption: This is a histogram of the number of partnerships per partner. Most partners don’t have very many other partners with the exception of FWS and BLM
 
 ####  -  **ii) Salafsky Max, min, median, and 1st and 3rd quantiles partners/partner**
 ```{r}
@@ -372,6 +376,7 @@ hist(orglist$countspno,
 
 
 ```
+Caption: The number of species a partner is working on. Similarly to bigger dataset, most partners only work on one species
 
 <br> 
 
@@ -382,46 +387,20 @@ Gwen's note - or use choard diagram - I don't think this lends itself to a high 
 
 current code source -https://www.mjdenny.com/Preparing_Network_Data_In_R.html
 
-```{r eval = FALSE, include= FALSE}
-#install.packages("statnet")
-library(statnet)
+```{r}
 
-modajdm <- adjmatrix
+condense <- sdata[,c(1,2,6,10:20)] #select relevant columns
 
-#this stops matrix from working? 
-rownames(modajdm) <- modajdm$X1 #set partnernames as rownames
-modajdm[,1] <- NULL #then remove column  #need to set first column to rownames
+condense <- condense[-which(condense$type.of.partners == "M"),] #remove ones with multiple partners in string 
+#this is avoiding the data issue instead of addressing it
 
-net <- as.network(x = modajdm, # the network object
-                  directed = TRUE, # specify whether the network is directed
-                  loops = FALSE, # do we allow self ties (should not allow them)
-                  matrix.type = "adjacency" # the type of input
-                  )
+condense <- condense %>% select(Scientific.name, partner.in.agreement, X1..Land.Water.Management:funding) %>% group_by(Scientific.name)
+#losing scientific_name so will add with join 
+#con <- condense2 %>% left_join(condense, by = c("X1..Land.Water.Management" ,                    "X2..Species.Management"            ,             "X3..Awareness.raising"   ,                      "X4..law.enforcement.and.prosecution"      ,      "X5..livelihood..economic.and.moral.incentrives","X6..Conservation.Design.and.Planning"    ,       "X7..Legal.and.Policy.frameworks"     ,          "X8..Research.and.monitoring"           ,         "X9..Education.and.Training"  ,                  "X10..Institutional.Development"        ,         "funding"))
 
 
-pdf("Network_Plot_1.pdf", # name of pdf (need to include .pdf)
-    width = 100, # width of resulting pdf in inches
-    height = 100 # height of resulting pdf in inches
-    ) 
-plot.network(net, # our network object
-             #vertex.col = node_colors, # color nodes by gender
-             #vertex.cex = (age)/5, # size nodes by their age
-             displaylabels = T, # show the node names
-             label.pos = 5 # display the names directly over nodes
-             )
-dev.off() # finishes plotting and finalizes pdf
-
-#
-
-#so think kind of works? I think the number of partners is going to be an issue no matter what package you use
-#nope, can't open pdf :/ 
-
-
-#see if can be filtered to value > 1
-
-##############  
 #actions network 
-
+#does not include multipartner strings 
 
 ## note, need to go back and check when vectors were created 
 
@@ -454,8 +433,6 @@ actlist <- actlist[-which(is.na(actlist$value)),]
 #allthreat <- tolist %>% right_join(nsize, by = c("Var1"))
 #allthreat <- allthreat[,-c(4)]
 
-library(igraph)
-
 actnet <- graph_from_data_frame(d=actlist, directed=T) 
 
 
@@ -487,15 +464,44 @@ plot(actnet, vertex.size=node.size*.5)
 node.size<-setNames(c(66,35,10,2,4,48,34,54,19,62,33), c("LandWaterMan" ,"SpeciesMan", "AwarRaise", "law.enforce" , "livelihood_economic_moral", "Conservation.D&P","Legal.and.Policy","Research.and.monitoring" ,"Edu_Training","Institutional.Dev","funding")) #tried resetting names but nothing happened 
  
 
+#changed label names and layout
 l <- layout_with_fr(actnet)
-plot(actnet, layout = l, vertex.size=node.size*.5)
+plot(actnet, vertex.label = c("LandWaterMan" ,"SpeciesMan", "AwarRaise", "law.enforce" , "livelihood_economic_moral", "Conservation.D&P","Legal.and.Policy","Research.and.monitoring" ,"Edu_Training","Institutional.Dev","funding"), layout = l, vertex.size=node.size*.5)
 
 
+#trying to show edge lengths without distraction of labels
 l <- layout_on_grid(actnet)
 plot(actnet, vertex.label=NA, layout = l, vertex.size=node.size*.75)
 
+```
 
 
+### Network for threats 
+```{r}
+### set up (taken from lower in script)
+#this is species specific so ==M not relevant 
+
+alldf <- sdata #change variable name 
+
+species <- alldf[,c(2,10:20)] #unable to knit with select so indexed 
+
+eachsp <- species %>% group_by(Scientific.name) %>% summarise_each(funs(sum)) 
+
+
+allspindf <- eachsp
+new <- tdata #need to join with tdata (renamed here)
+###new$scientific_name
+#select relevant columns
+tthreats <- select(new, scientific_name, hab_x_x:threats_addressed_by_conservation_x_x)
+
+###tthreats$scientific_name
+#need to join with tdata 
+#to do so need to change col name so match 
+
+tthreats <- rename(tthreats, Sciname = scientific_name)
+allspindf <- rename(allspindf, Sciname = Scientific.name)
+
+threats <- left_join(allspindf, tthreats, join_by = Sciname)
 
 ################### for threats 
 
@@ -532,8 +538,6 @@ tolist <- tolist[-which(is.na(tolist$value)),]
 #allthreat <- tolist %>% right_join(nsize, by = c("Var1"))
 #allthreat <- allthreat[,-c(4)]
 
-library(igraph)
-
 net <- graph_from_data_frame(d=tolist, directed=T) 
 
 
@@ -550,7 +554,6 @@ E(net)$arrow.size <- .2 #determine size of arrows (this makes the heads real sma
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
 node.size<-setNames(c(30,5,3,17,8,11), c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x"))
   #so not setting in the same order 
-V(net)$label <- NA
 E(net)$width <- E(net)$value
 
 plot(net, vertex.size=node.size)
@@ -561,7 +564,7 @@ plot(net, vertex.size=node.size)
 
 
 ```
-
+Caption: While not super clear, there is actually a link missing between two points (location changes everytime I print it out) - should be missing btw poll and demo
 
 
 <br>
@@ -590,17 +593,20 @@ noactionswithpartner <- eachsp %>% mutate("actpartsum" = rowSums(eachsp[,c(2:12)
 totalno <- onesandzeros %>% mutate("actionsum" = rowSums(onesandzeros[,c(2:12)])) #added column "actionsum" that took the row sums for each species to give count of how many actions each species receives 
 
 hist(noactionswithpartner$actpartsum,
-     xlab ="number of partners working on a species",
-     main = "Histogram of partners per species")
+     xlab ="number of actions",
+     main = "Histogram of the number of actions done on a species by all partners")
+
+#### Caption: calculated taking each species and adding up any actions the partners working on that species were doing.  (So if two partners were working on land management and a third on funding, then values would be 2 and 1 for those column). All columns for a species were added by each species (so for the example above the row sum would be three). This graph represents the number of actions being done by all partners per species.
+
 summary(noactionswithpartner$actpartsum)
 
 hist(totalno$actionsum,
-     xlab ="number of partners working on a species",
-     main = "Histogram of partners per species")
+     xlab ="number of actions",
+     main = "Adjusted number of actions done to species")
+
+###Caption: The calculation here is slightly different from previous one as it changes all values back to 1s and 0s. (So for previous example instead of columns having a 2 and a 1 they would be converted back to 1 and 1). These 1s and 0s were then added by each species so the rowsum is the total number of actions done per species. No species had all actions done to it. Also no less than 2 actions per species even though there could have been
+
 summary(totalno$actionsum)
-
-need to change labels
-
 ```
 
 changes made to the regression 
@@ -803,7 +809,9 @@ colsum <- colsum  %>% rename(count = `colSums(df[, c(10:20)])`) #renaming column
 
 ggplot(colsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Name of Action")
 #same graph, just expanded with text shifted
-ggplot(colsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 30))  + scale_x_discrete(name ="Name of Action")
+#ggplot(colsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 30))  + scale_x_discrete(name ="Name of Action") + ggtitle("Number of partners per action")
+
+#### caption:  The number of partners participating in each action (not this is including multi species partner strings as an additional count
 
 #compared to noM 
 
@@ -818,11 +826,13 @@ colsum_noM <- colsum_noM  %>% rename(count = `colSums(noM[, c(10:20)])`) #renami
 
 #ggplot(colsum) + geom_point(mapping = aes(x = rowname, y = count))
 
-ggplot(colsum_noM) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 30)) + scale_x_discrete(name ="Name of Action")
+ggplot(colsum_noM) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 30)) + scale_x_discrete(name ="Name of Action") +ggtitle("Number of partners per action without multipartner strings")
 #made with noM so doesn't have partner strings included in the calculation 
 
 
 ```
+Caption: This is the graph without the additional partner strings which seems to be a similar distribution
+
 
 ### b. For each species 
 ####  -  **i) For each species: how many different actions are applied (and how many of each action).**
@@ -845,13 +855,13 @@ species <- select(alldf, Scientific.name, X1..Land.Water.Management ,X2..Species
 eachsp <- species %>% group_by(Scientific.name) %>% summarise_each(funs(sum)) 
 
 #eachsp #for each species, summed actions done by each partner
-kable(eachsp) #prints out weird # this is actually working in markdown
+###  kable(eachsp) # don't need to print if presented in hist below 
 
 
 #get count of total number of actions for each 
 onesandzeros <- eachsp %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
 totalno <- onesandzeros %>% mutate(actionsum = rowSums(onesandzeros[,c(2:12)])) #added column "actionsum" that took the row sums for each species to give count of how many actions each species receives 
-kable(totalno) #this prints out weird # kable is actually working in markdown
+# kable(totalno) #this prints out weird # kable is actually working in markdown
 # totalno  #this is working 
 ```
 
@@ -865,19 +875,21 @@ nopartners <- (alldf %>% group_by(Scientific.name)   #selecting  each species
 %>% distinct(partner.in.agreement)    #count how many partners are distinct 
 %>% summarise(n()))                   # Count the number of distinct 
 
-kable(nopartners)
+#kable(nopartners)
 
 nopartners <- rename(nopartners, tally = 'n()')
 
 #reset as bar plot with each species name as value on x-axis 
 
 ordered <- nopartners %>% arrange(tally)
-ordered$Scientific.name
+#ordered$Scientific.name
 
-ggplot(ordered) + geom_bar(mapping = aes(x = reorder(Scientific.name, tally), y = tally), stat = "identity") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Species") + scale_y_continuous(name ="# of partners working on species")
+ggplot(ordered) + geom_bar(mapping = aes(x = reorder(Scientific.name, tally), y = tally), stat = "identity") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Species") + scale_y_continuous(name ="# of partners working on species") + ggtitle("The number of partners per species")
 
 #part two of question 
 ```
+Caption: The number of distinct partners working on a species
+
     - Can find number of partners but unsure how to answer second part of Q
       - "Do partners conduct same or different actions.." for same partner working on each species or across different species? 
   
@@ -922,8 +934,9 @@ kable(actionsums)
 
 ggplot(actionsums) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Name of Action")
 #same graph, just expanded with text shifted
-ggplot(colsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 30))  + scale_x_discrete(name ="Name of Action")
+ggplot(colsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 30))  + scale_x_discrete(name ="Name of Action") + ggtitle("Count of the number of species with each action")
 ```
+   Caption: Number of species that are part of each action
    
 ####  -  **ii) For each action – how many times is it applied total (counting each speciesXpartner separately) information contained in csum output**
 ```{r}
@@ -942,11 +955,13 @@ newcsum <- (colSums(noM[,c(10:20)]))
 
 newcsum <- as.data.frame(actionsums) #had to change to df
                
-ggplot(newcsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Name of Action")
+ggplot(newcsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Name of Action") + ggtitle("Count of the number of species with each action (without multiparnter strings)")
 #same graph, just expanded with text shifted
-ggplot(newcsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 30))  + scale_x_discrete(name ="Name of Action")
+ggplot(newcsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 30))  + scale_x_discrete(name ="Name of Action")+ ggtitle("(Zoomed)Count of the number of species with each action (without multiparnter strings)")
 
 ```
+Caption: Same as above but not counting multipartner strings as partners
+
 
 ####  -  **iii )For each action – how many partners apply that action to at least 1 species**
 ```{r}
@@ -991,7 +1006,7 @@ kable(actiondf)
 ggplot(actiondf) + geom_bar(mapping = aes(x = action, y = X2), stat = "identity")+ scale_y_continuous(name ="Count")
 
 #same graph with names rotated 
-ggplot(actiondf) + geom_bar(mapping = aes(x = action, y = X2), stat = "identity") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Name of Action") + scale_y_continuous(name ="Count")
+ggplot(actiondf) + geom_bar(mapping = aes(x = action, y = X2), stat = "identity") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Name of Action") + scale_y_continuous(name ="Count") + ggtitle("Number of partners that apply an action to at least one species")
 
 
 #col_list <- partners[,c(3:13)]
@@ -999,6 +1014,8 @@ ggplot(actiondf) + geom_bar(mapping = aes(x = action, y = X2), stat = "identity"
 #  partners %>% group_by(partner.in.agreement) %>% summarise(sum(partners[,coln]))
 #} ## Got error 
 ```
+Caption: Number of partners that apply an action to at least one species. This is a modification of previous chart). 
+
 
 ### d. Thoughts about typologies/groupings
 
@@ -1051,21 +1068,21 @@ ggplot(orgtyp) + geom_histogram(mapping = aes(x = type_of_org), stat = "count") 
 
 ```
 Key (note, currently unsure how to reorder but will keep trying to this may change)
-- BLM = Bureau of Land Management
-- C = Cooporation
-- FO = Federal Other
-- M = Military 
-- N = NGO
-- NA
-- O = Other
-- P = Private landowner
-- R = Reserach 
-- SB = State Both (land and wildlife)
-- SG = State Governmnet
-- SL = State Land Managemetn
-- SW = State Wildlife
-- USFS = US Forest Service
-- USFWS = US Fish and Wildlife Service 
+* BLM = Bureau of Land Management
+* C = Cooporation
+* FO = Federal Other
+* M = Military 
+* N = NGO
+* NA
+* O = Other
+* P = Private landowner
+* R = Reserach 
+* SB = State Both (land and wildlife)
+* SG = State Governmnet
+* SL = State Land Managemetn
+* SW = State Wildlife
+* USFS = US Forest Service
+* USFWS = US Fish and Wildlife Service 
 
 
 
