@@ -262,3 +262,21 @@ plot(actnet, vertex.label=NA, layout = l, vertex.size=node.size*.75)
 
 ```
 
+
+
+
+Want to try a three-d thing 
+
+```{r}
+library(scatterplot3d)
+#remove eastern cottentail 
+nobunny <- regdf
+nobunny <- nobunny[-c(35),]
+x <- nobunny$total_x_x #total number of threats for each species
+y <- nobunny$actionsum
+z <- nobunny$total
+
+G  <- scatterplot3d(z, y, x, highlight.3d = FALSE, type = "h", grid=TRUE, ylim = c(10,0), zlab="threats count", ylab="actions count", xlab="partners count")
+
+```
+
