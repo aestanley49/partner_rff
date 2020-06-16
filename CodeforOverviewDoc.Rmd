@@ -1087,6 +1087,7 @@ Caption: The number of distinct partners working on a species
 Dissimilarity 
 https://www.researchgate.net/post/What_is_the_difference_between_Bray-Curtis_Similarity_Sorensen_Distance_and_Bray-Curtis_Index
 - So Bray-Curtis index seems most relevant here
+- 
 https://www.statisticshowto.com/bray-curtis-dissimilarity/#:~:text=The%20Bray%2DCurtis%20dissimilarity%20is,don't%20share%20any%20species.&text=But%20the%20Bray%20Curtis%20index,%C2%B7%20100%2C%20or%2061%25.
 - for two sites i and j 
   BCij = 1 - ((2Cij)/(Si + Sj))
