@@ -49,7 +49,7 @@ RawData[RawData$scientific_name == "Astragalus cusickii var. packardiae", 5] <- 
 RawData[RawData$scientific_name == "Thymallus arcticus", 5] <- "Montana Department of Fish Wildlife and Parks, USFWS, BLM"
 RawData[RawData$scientific_name == "Cimicifuga arizonica", 5] <- "USFS, USFWS"
 RawData[RawData$scientific_name == "Lupinus aridus ssp. ashlandensis", 5] <- "USFS, USFWS"
-RawData[RawData$scientific_name == "Erigeron basalticuss", 5] <- "Rare Care, NPS"
+RawData[RawData$scientific_name == "Erigeron basalticus", 5] <- "Rare Care, NPS"
 RawData[RawData$scientific_name == "Pseudanophthalmus major", 5] <- "Kentucky Ecological Services Field Office, Owner of the Beaver Cave property,  Kentucky Department of Fish and Wildlife Resources,  NRCS,  Farm Service Agency,  Kentucky State Nature Preserves Commission,  Kentucky Division of Forestry"
 RawData[RawData$scientific_name == "Opuntia X multigeniculata", 5] <- "BLM"
 RawData[RawData$scientific_name == "Phacelia stellaris", 5] <- "California Department of Fish and Game, California Department of Forestry and Fire Protection, California Department of Parks and Recreation, Center for Natural Lands Management, City of Riverside Park and Recreation Department, Metropolitan Water District, Riverside County Environmental Programs Department, Riverside County Habitat Conservation Agency, Riverside County Regional Park and Open-Space District, Riverside Land Conservancy, San Diego State University Field Stations Program, The Nature Conservancy, University of California Riverside, BLM, USFWS, USFS, US Navy, US Marine Corps, US Customs and Border Protection, California State Parks"
