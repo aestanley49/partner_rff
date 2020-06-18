@@ -231,14 +231,14 @@ x=data.frame(Head)$x
 y=data.frame(Head)$y
 logzinc=Head$logp
 id0=seq(length(Head$logp))
-for(i in 1:100)
-{
-  id = sample(id0)
-  hold.perm = data.frame(x=x,y=y,logp=logp[id])
-  coordinates(hold.perm)=c("x","y")
-  hold.vario = variogram(logp~1,hold.perm)
-  lines(gamma~dist,data=hold.vario,col=2)
-}
+#for(i in 1:100)
+#{
+#  id = sample(id0)
+#  hold.perm = data.frame(x=x,y=y,logp=logp[id])
+#  coordinates(hold.perm)=c("x","y")
+#  hold.vario = variogram(logp~1,hold.perm)
+#  lines(gamma~dist,data=hold.vario,col=2)
+#}
 lines(gamma~dist,data=logzinc.vario,col=1,type="b")
 #
 # Examining for Anisotropy
@@ -479,12 +479,12 @@ as.matrix(dis) #have matrix of distances between points
 #View(gdis)
 #
 #xandy <- center[,c(6,7)]
-gdis <- pointDistance(xandy, lonlat=TRUE) ##this ran without producing any NaNs so correct? 
+#gdis <- pointDistance(xandy, lonlat=TRUE) ##this ran without producing any NaNs so correct? 
 #View(gdis)
-gdis[48,27] #this is eastern cottontail and weki bug [distance from hawaii to New england] ## check
+#gdis[48,27] #this is eastern cottontail and weki bug [distance from hawaii to New england] ## check
 #View(t(gdis))
 ##need to combine?? 
-as.matrix(gdis) #have matrix of distances between points 
+#as.matrix(gdis) #have matrix of distances between points 
 
 #good source - https://rspatial.org/raster/analysis/analysis.pdf
 # decay function 
