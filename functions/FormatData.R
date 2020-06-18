@@ -102,7 +102,7 @@ RawData[RawData$scientific_name == "Urocitellus washingtoni", 5] <- "Foster Cree
 RawData[RawData$scientific_name == "Nysius wekiuicola", 5] <- "University of Hawaii"
 RawData[RawData$scientific_name == "Sonorella macrophallus", 5] <- "USFS,  USFWS,  Arizona Game and Fish Department"
 RawData[RawData$scientific_name == "Penstemon scariosus albifluvis", 5] <- "Uintah County, Rio Blanco County,  Utah School and Institutional Trust Lands Administration, Utah Governors Public Lands Policy Coordination Office, Utah Division of Wildlife Resources, BLM, USFWS"
-RawData[RawData$scientific_name == "Aliciella caespitosa", 5] <- "USFS, NPS,  Utah State Office, USFWS, BLM"
+RawData[RawData$scientific_name == "Aliciella caespitosa", 5] <- "USFS, NPS, USFWS, BLM"
 RawData[RawData$scientific_name == "Solidago plumosa", 5] <- "Alcoa Power Generating Inc, USFWS"
 
 #need to change scientific name because currenlty has \n at beginning 
