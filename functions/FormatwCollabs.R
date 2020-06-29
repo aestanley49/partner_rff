@@ -16,7 +16,7 @@ library(tidyverse)
 PartnersDataModified <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/PartnersDataModified.csv"), 
                                  stringsAsFactors = FALSE, na = c("", " ", "NA"))
 
-FormatDataPartTwo <- function(){ 
+FormatwCollabs <- function(PartnersDataModified){ 
   
   ## 1. Remove columns with extra information 
   PartnersDataModified <- PartnersDataModified[,-c(1, 4,5, 11:15)]
@@ -28,7 +28,7 @@ FormatDataPartTwo <- function(){
   PartnersDataModified <- add_column(PartnersDataModified, count_w_FedAg_wo_collab) #add column to dataframe 
     #Original partner list with slight alteration withou federal agency offices 
   count_wo_FedAg_wo_collab <- str_count(PartnersDataModified$partner_names_changed_back, ",") #counting the number of commas in each row
-  count_wo_FedAg_wo_collab <- (count_w_FedAg + 1) #because partners are seperated by a , need to add 1 to each 
+  count_wo_FedAg_wo_collab <- (count_wo_FedAg_wo_collab + 1) #because partners are seperated by a , need to add 1 to each 
   PartnersDataModified <- add_column(PartnersDataModified, count_wo_FedAg_wo_collab) #add column to dataframe 
     # Count of number of collaborators for each 
   count_collab <- str_count(PartnersDataModified$collaborators.to.add.in.code, ",") #counting the number of commas in each row
@@ -56,13 +56,19 @@ FormatDataPartTwo <- function(){
    PartnersDataModified$count_wo_FedAg_wo_collab
   
    PartnersDataModified$count_w_FedAg_w_collab <- rowSums(PartnersDataModified[,c("count_collab", "count_w_FedAg_wo_collab")], na.rm=TRUE)
-   
    #count_w_FedAg_w_collab <- (count_w_FedAg_wo_collab + count_collab, na.rm = TRUE) #because partners are seperated by a , need to add 1 to each 
   # PartnersDataModified <- add_column(PartnersDataModified, count_w_FedAg_w_collab) #add column to dataframe 
    
   # Counting Original with Collab
-  
+   
    PartnersDataModified$count_wo_FedAg_w_collab <- rowSums(PartnersDataModified[,c("count_collab", "count_wo_FedAg_wo_collab")], na.rm=TRUE)
+
+   #write to csv 
+   write.csv(PartnersDataModified,paste(DataSource,"/ProcessedPartnersDataModified.csv", sep = ""))
+
+   newpdata <- PartnersDataModified
+   
+   return(newpdata) # return indicates what will get spit out of the function and what will be accessible in the MD doc
    
    
 }
