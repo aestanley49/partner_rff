@@ -1038,25 +1038,58 @@ Shannon Diversity Index Calc
 
 #done with summed actions
 noactionswithpartner <- eachsp %>% mutate("actpartsum" = rowSums(eachsp[,c(2:12)]))
-pi <- noactionswithpartner %>%
-  mutate_at(vars(actpartsum), funs(./sum(.)))  ##pi = actionsum colum (unsure how to change the name)
-lnpi <- pi %>% mutate("log_pi" = log(actpartsum))
-pilnpi <- lnpi %>% mutate("pilnpi" = log_pi*actpartsum)
+pi <- noactionswithpartner %>% mutate_at(.funs = funs(new = ./actpartsum), .vars = vars(X1..Land.Water.Management:funding))
+pi[pi == 0] <- NA #did this to stop the logs from getting funky 
+lnpi <- pi %>% mutate_at(.funs = funs(log(.)), .vars = vars(X1..Land.Water.Management_new:funding_new))
+H <-  lnpi %>%  mutate(x1 = X1..Land.Water.Management*X1..Land.Water.Management_new,
+                       x2 = X2..Species.Management  *X2..Species.Management_new,
+                       x3 = X3..Awareness.raising *X3..Awareness.raising_new,
+                       x4 = X4..law.enforcement.and.prosecution *X4..law.enforcement.and.prosecution_new,
+                       x5 = X5..livelihood..economic.and.moral.incentrives * X5..livelihood..economic.and.moral.incentrives_new,
+                       x6 = X6..Conservation.Design.and.Planning * X6..Conservation.Design.and.Planning_new,
+                       x7 = X7..Legal.and.Policy.frameworks * X7..Legal.and.Policy.frameworks_new,
+                       x8 = X8..Research.and.monitoring*X8..Research.and.monitoring_new,
+                       x9 = X9..Education.and.Training * X9..Education.and.Training_new,
+                       x10 = X10..Institutional.Development*X10..Institutional.Development_new,
+                       f = funding_new * funding)
+#replace NAs with 0s and then rowsums! 
+H <- H %>% 
+   replace(is.na(.), 0) %>%
+   mutate(sum = -1 * rowSums(.[25:35])) ## suppose to be negative? 
 
-H <- -1 * colSums(pilnpi[,15])
-H
+#remove excess columns 
+H <- H[,c(1:13,36)] ## final calc
+
+
+
+######### do the same calculation with other dataset 
 
 
 #done with all partner actions
 totalno <- onesandzeros %>% mutate("actionsum" = rowSums(onesandzeros[,c(2:12)])) #added column "actionsum" that 
 
-pi2 <- totalno %>%
-  mutate_at(vars(actionsum), funs(./sum(.)))  ##pi = actionsum colum (unsure how to change the name)
-lnpi2 <- pi2 %>% mutate("log_pi2" = log(actionsum))
-pilnpi2 <- lnpi2 %>% mutate("pilnpi" = log_pi2*actionsum)
 
-H2 <- -1 * colSums(pilnpi2[,15])
-H2
+pi2 <- totalno %>% mutate_at(.funs = funs(new = ./actionsum), .vars = vars(X1..Land.Water.Management:funding))
+pi2[pi2 == 0] <- NA #did this to stop the logs from getting funky 
+lnpi2 <- pi2 %>% mutate_at(.funs = funs(log(.)), .vars = vars(X1..Land.Water.Management_new:funding_new))
+H2 <-  lnpi2 %>%  mutate(x1 = X1..Land.Water.Management*X1..Land.Water.Management_new,
+                       x2 = X2..Species.Management  *X2..Species.Management_new,
+                       x3 = X3..Awareness.raising *X3..Awareness.raising_new,
+                       x4 = X4..law.enforcement.and.prosecution *X4..law.enforcement.and.prosecution_new,
+                       x5 = X5..livelihood..economic.and.moral.incentrives * X5..livelihood..economic.and.moral.incentrives_new,
+                       x6 = X6..Conservation.Design.and.Planning * X6..Conservation.Design.and.Planning_new,
+                       x7 = X7..Legal.and.Policy.frameworks * X7..Legal.and.Policy.frameworks_new,
+                       x8 = X8..Research.and.monitoring*X8..Research.and.monitoring_new,
+                       x9 = X9..Education.and.Training * X9..Education.and.Training_new,
+                       x10 = X10..Institutional.Development*X10..Institutional.Development_new,
+                       f = funding_new * funding)
+#replace NAs with 0s and then rowsums! 
+H2 <- H2 %>% 
+   replace(is.na(.), 0) %>%
+   mutate(sum = -1 * rowSums(.[25:35])) ## suppose to be negative? 
+
+#remove excess columns 
+H2 <- H2[,c(1:13,36)] ## final calc
 
 ```
 
@@ -1269,7 +1302,7 @@ condensep[which(condensep$X1..Land.Water.Management > .5),] <- rownames(condense
 ```{r}
 #putting draft of excel sheet in here straight from wd beacuse will need to update
 
-orgtyp <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmanedited.csv"), stringsAsFactors = FALSE, na = "") #issue was that "" is coming up instead of NA
+orgtyp <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "") #issue was that "" is coming up instead of NA
 
 #filter out all rows that don't have values 
 orgtyp <- orgtyp[-which(is.na(orgtyp$type_of_org)),] #this isn't doing anything, lets try again
@@ -1283,7 +1316,6 @@ Key (note, currently unsure how to reorder but will keep trying to this may chan
 * FO = Federal Other
 * M = Military 
 * N = NGO
-* NA
 * O = Other
 * P = Private landowner
 * R = Reserach 
