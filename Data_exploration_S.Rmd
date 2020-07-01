@@ -590,6 +590,8 @@ Edge - number of partnerships that apply both types of actions
 
 
 C = Corporation
+no. species = 4
+no. partners = 9
 ```{r echo=FALSE}
 
 
@@ -630,6 +632,8 @@ plot(Cnet, vertex.size=node.size*2) ## note the node sizes were scaled up
 
 
 M = Military 
+no. species = 4
+no. partners = 7
 ```{r echo=FALSE}
 
 M <- base[which(base$type_of_org == "M"),]
@@ -668,6 +672,8 @@ plot(Mnet, vertex.size=node.size*2) ## note the node sizes were scaled up
 
 
 P = Private landowner
+no. species = 11
+no. partners = 12
 ```{r echo=FALSE}
 
 P <- base[which(base$type_of_org == "P"),]
@@ -706,6 +712,8 @@ plot(Pnet, vertex.size=node.size*2) ## note the node sizes were scaled up
 
 
 SW = State Wildlife (Agency)
+no. species = 14
+no. partners = 17
 ```{r echo=FALSE}
 
 SW <- base[which(base$type_of_org == "SW"),]
@@ -743,6 +751,8 @@ plot(SWnet, vertex.size=node.size*2) ## note the node sizes were scaled up
 
 
 BLM
+no. species = 11
+no. partners = 11
 ```{r echo=FALSE}
 
 BLM <- base[which(base$type_of_org == "BLM"),]
@@ -780,6 +790,8 @@ plot(BLMnet, vertex.size=node.size*2) ## note the node sizes were scaled up
 
 
 USFWS
+no. species = 30
+no. partners = 33
 ```{r echo=FALSE}
 
 USFWS <- base[which(base$type_of_org == "USFWS"),]
@@ -817,6 +829,8 @@ plot(USFWSnet, vertex.size=node.size*2) ## note the node sizes were scaled up
 
 
 FO = Federal Other
+no. species = 7
+no. partners = 9
 ```{r echo=FALSE}
 
 FO <- base[which(base$type_of_org == "FO"),]
@@ -854,6 +868,8 @@ plot(FOnet, vertex.size=node.size*2) ## note the node sizes were scaled up
 
 
 N = NGO
+no. species = 6
+no. partners = 9
 ```{r echo=FALSE}
 
 N <- base[which(base$type_of_org == "N"),]
@@ -896,6 +912,8 @@ plot(Nnet, vertex.size=node.size*2) ## note the node sizes were scaled up
 
 
 O = Other
+no. species = 3 (manually counted)
+no. partners = 3 (dim X)
 ```{r echo=FALSE}
 
 O <- base[which(base$type_of_org == "O"),]
@@ -932,6 +950,8 @@ plot(Onet, vertex.size=node.size*2) ## note the node sizes were scaled up
 ```
 
 R = Reserach 
+no. species = 4
+no. partners = 4
 ```{r echo=FALSE}
 
 R <- base[which(base$type_of_org == "R"),]
@@ -968,6 +988,8 @@ plot(Rnet, vertex.size=node.size*2) ## note the node sizes were scaled up
 ```
 
 SG = State Governmnet
+no. species = 4
+no. partners = 5
 ```{r echo=FALSE}
 
 SG <- base[which(base$type_of_org == "SG"),]
@@ -1004,6 +1026,8 @@ plot(SGnet, vertex.size=node.size*2) ## note the node sizes were scaled up
 ```
 
 USFS
+no. species = 12
+no. partners = 12
 ```{r echo=FALSE}
 
 USFS <- base[which(base$type_of_org == "USFS"),]
@@ -1045,6 +1069,8 @@ plot(USFSnet, vertex.size=node.size*2) ## note the node sizes were scaled up
 <br>
 
 For multi-partner strings 
+no. species = 23
+no. partners = 52
 ```{r echo=FALSE}
 
 multi <- multi[,-c(1:4)] #remove non numeric columns
