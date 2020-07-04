@@ -490,8 +490,11 @@ orgtyp_base3 <- orgtyp_base3[,-c(1)]
         
 #now remove old dataset with SB and join with this new one (rbind should work bc order doesn't matter)
 
-orgtyp_base2 <- orgtyp_base2 %>%  
-        filter(type_of_org !="SB") #removes all rows that have SB 
+orgtyp_base2 <- orgtyp_base2[-which(orgtyp_base2$type_of_org == "SB"),]
+
+#orgtyp_base2 <- orgtyp_base2 %>%  
+  #      filter(type_of_org !="SB") #removes all rows that have SB 
+# so this doesn't actually work because need NAs for other parts of code to work 
 
 #then join 
 orgtyp_base <- rbind(orgtyp_base2, orgtyp_base3)
@@ -500,10 +503,7 @@ orgtyp_base <- rbind(orgtyp_base2, orgtyp_base3)
 
 ```{r echo=FALSE}
 #filter out all rows that don't have values 
-#orgtyp <- orgtyp_base[-which(is.na(orgtyp_base$type_of_org)),] #this isn't doing anything, lets try again
-#remove excess columns
-### with current code above removing SB and adding new SL and SW I don't think there are any nas 
-orgtyp <- orgtyp_base #try this 
+orgtyp <- orgtyp_base[-which(is.na(orgtyp_base$type_of_org)),] #this isn't doing anything, lets try again
 
 
 orgtyp2 <- orgtyp[,c(2,3,8)]
@@ -595,6 +595,7 @@ Caption:
 node = org type
 node size = # of species that all parnters categorized as that org works on
 edge width = # of species two orgs work on together 
+Note: now where there use to be a SB (state both), this category has been duplicated into both SL and SW
 
 <br>
 
@@ -774,7 +775,7 @@ SWnet <- graph_from_data_frame(d=SWlist, directed=T)
 E(SWnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
-node.size<-setNames(c(8,5,3,1,1,5,6,10,2,8,3), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+node.size<-setNames(c(10,6,3,1,1,6,7,11,2,10,5), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
  
 
 
@@ -1096,6 +1097,46 @@ node.size<-setNames(c(10,4,1,0,0,5,4,7,1,3,2), c("X1..Land.Water.Management" ,"X
 E(USFSnet)$width <- E(USFSnet)$value 
 
 plot(USFSnet, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+```
+
+
+SL
+(skipped state land?? )
+no. species = 8 
+no. partners = 11
+```{r echo=FALSE}
+
+SL <- base[which(base$type_of_org == "SL"),]
+
+SL <- SL[,-c(1:4)] #remove non numeric columns
+tSL <- t(SL)   #transform
+SL <- t(tSL)   #was coming up as non numeric so tranformed again to overwrite
+
+matSL <- tSL %*%  SL
+
+########### put into network analysis code 
+
+
+matSL[lower.tri(matSL)] <- NA
+diag(matSL) <- NA
+
+SLlist <- matSL %>% melt() 
+SLlist <- SLlist[-which(is.na(SLlist$value)),]
+
+SLnet <- graph_from_data_frame(d=SLlist, directed=T) 
+
+E(SLnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(6,2,0,0,0,5,2,4,1,5,3), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+ 
+
+
+
+E(SLnet)$width <- E(SLnet)$value 
+
+plot(SLnet, vertex.size=node.size*2) ## note the node sizes were scaled up 
 
 ```
 
