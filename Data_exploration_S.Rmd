@@ -1,9 +1,11 @@
 ---
-title: "Data Exploration Salafsky"
+title: "Data Exploration Salafsky edited"
 author: "Annabelle"
 date: "June 15, 2020"
 output: word_document
 ---
+
+added edited to file name to keep seperate from first round of networks if that is something want to go back to instead of knitting over (could be fine because had doc that was sent to Gwen)
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -626,6 +628,21 @@ node size - number of times action is done
 Edge - number of partnerships that apply both types of actions
 
 
+Node names (full action name -> shortened version for label)
+
+X1..Land.Water.Management", --> "L_W_Man"
+"X2..Species.Management", --> "Sp_Man"
+"X3..Awareness.raising", --> "Awareness"
+"X4..law.enforcement.and.prosecution" , --> "law"
+"X5..livelihood..economic.and.moral.incentrives", --> "livelihood_econ"
+"X6..Conservation.Design.and.Planning", --> "ConD&P"
+"X7..Legal.and.Policy.frameworks", --> "Legal"
+"X8..Research.and.monitoring", --> "R&M"
+"X9..Education.and.Training", --> "Edu"
+"X10..Institutional.Development", -->"IDevelopment"
+"funding --> "funding"
+
+
 C = Corporation
 no. species = 4
 no. partners = 9
@@ -656,7 +673,7 @@ Cnet <- graph_from_data_frame(d=Clist, directed=T)
 E(Cnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
-node.size<-setNames(c(6,2,0,0,0,5,0,4,0,6,3), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+node.size<-setNames(c(6,2,0,0,0,5,0,4,0,6,3), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
  
 
 
@@ -695,7 +712,7 @@ Mnet <- graph_from_data_frame(d=Mlist, directed=T)
 E(Mnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
-node.size<-setNames(c(3,3,0,0,0,0,1,3,0,1,0), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+node.size<-setNames(c(3,3,0,0,0,0,1,3,0,1,0), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
  
 
 
@@ -735,7 +752,7 @@ Pnet <- graph_from_data_frame(d=Plist, directed=T)
 E(Pnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
-node.size<-setNames(c(9,6,1,0,0,2,1,5,0,6,1), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+node.size<-setNames(c(9,6,1,0,0,2,1,5,0,6,1), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
  
 
 
@@ -775,7 +792,7 @@ SWnet <- graph_from_data_frame(d=SWlist, directed=T)
 E(SWnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
-node.size<-setNames(c(10,6,3,1,1,6,7,11,2,10,5), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+node.size<-setNames(c(10,6,3,1,1,6,7,11,2,10,5), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
  
 
 
@@ -814,7 +831,7 @@ BLMnet <- graph_from_data_frame(d=BLMlist, directed=T)
 E(BLMnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
-node.size<-setNames(c(7,3,0,0,0,6,2,4,2,2,1), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+node.size<-setNames(c(7,3,0,0,0,6,2,4,2,2,1), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
  
 
 
@@ -853,7 +870,7 @@ USFWSnet <- graph_from_data_frame(d=USFWSlist, directed=T)
 E(USFWSnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
-node.size<-setNames(c(4,5,2,0,1,5,13,6,7,15,12), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+node.size<-setNames(c(4,5,2,0,1,5,13,6,7,15,12), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
  
 
 
@@ -892,7 +909,7 @@ FOnet <- graph_from_data_frame(d=FOlist, directed=T)
 E(FOnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
-node.size<-setNames(c(4,2,1,0,1,5,1,6,2,6,1), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+node.size<-setNames(c(4,2,1,0,1,5,1,6,2,6,1), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
  
 
 
@@ -931,7 +948,7 @@ Nnet <- graph_from_data_frame(d=Nlist, directed=T)
 E(Nnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
-node.size<-setNames(c(4,0,1,0,1,5,2,3,2,6,2), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+node.size<-setNames(c(4,0,1,0,1,5,2,3,2,6,2), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
  
 
 
@@ -975,7 +992,7 @@ Onet <- graph_from_data_frame(d=Olist, directed=T)
 E(Onet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
-node.size<-setNames(c(2,1,0,0,0,2,1,0,0,2,1), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+node.size<-setNames(c(2,1,0,0,0,2,1,0,0,2,1), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
  
 
 
@@ -1013,7 +1030,7 @@ Rnet <- graph_from_data_frame(d=Rlist, directed=T)
 E(Rnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
-node.size<-setNames(c(0,1,0,0,0,0,0,1,0,1,1), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+node.size<-setNames(c(0,1,0,0,0,0,0,1,0,1,1), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
  
 
 
@@ -1051,7 +1068,7 @@ SGnet <- graph_from_data_frame(d=SGlist, directed=T)
 E(SGnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
-node.size<-setNames(c(1,1,0,0,0,1,0,0,1,1,3), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+node.size<-setNames(c(1,1,0,0,0,1,0,0,1,1,3), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
  
 
 
@@ -1089,7 +1106,7 @@ USFSnet <- graph_from_data_frame(d=USFSlist, directed=T)
 E(USFSnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
-node.size<-setNames(c(10,4,1,0,0,5,4,7,1,3,2), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+node.size<-setNames(c(10,4,1,0,0,5,4,7,1,3,2), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
  
 
 
@@ -1129,7 +1146,7 @@ SLnet <- graph_from_data_frame(d=SLlist, directed=T)
 E(SLnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
-node.size<-setNames(c(6,2,0,0,0,5,2,4,1,5,3), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+node.size<-setNames(c(6,2,0,0,0,5,2,4,1,5,3), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
  
 
 
@@ -1170,7 +1187,7 @@ multinet <- graph_from_data_frame(d=Clist, directed=T)
 E(multinet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
-node.size<-setNames(c(15,3,4,3,1,20,4,12,7,12,7), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+node.size<-setNames(c(15,3,4,3,1,20,4,12,7,12,7), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
  
 
 E(multinet)$width <- E(multinet)$value 
