@@ -465,10 +465,46 @@ Make Network for each type of org
 start from
 - managed to get df where all cells were lists (even though some said NULL?) was trying to unlist everything and then went pear shaped.. try and pick up from there 
 
+want to duplicate rows that are have cells labeled SB
+```{r}
+
+orgtyp_base2 <- orgtyp_base
+
+dummy <- 2
+
+#subset and duplicate rows with SB as orgtype       
+ orgtyp_base3 <-     orgtyp_base2 %>%  
+        filter(type_of_org=="SB") %>% 
+        uncount(dummy) %>% 
+   rownames_to_column() #this is the variable can index on because the rest are the same 
+#change one of each rows to SL and the other to SW  
+ 
+orgtyp_base3[which(orgtyp_base3$rowname == 1),9] <- "SW"
+orgtyp_base3[which(orgtyp_base3$rowname == 1.1),9] <- "SL"
+orgtyp_base3[which(orgtyp_base3$rowname == 2),9] <- "SW"        
+orgtyp_base3[which(orgtyp_base3$rowname == 2.1),9] <- "SL"   
+orgtyp_base3[which(orgtyp_base3$rowname == 3),9] <- "SW"  
+orgtyp_base3[which(orgtyp_base3$rowname == 3.1),9] <- "SL"  
+#then need to remove first column so has same dimensions as original df 
+orgtyp_base3 <- orgtyp_base3[,-c(1)]
+        
+#now remove old dataset with SB and join with this new one (rbind should work bc order doesn't matter)
+
+orgtyp_base2 <- orgtyp_base2 %>%  
+        filter(type_of_org !="SB") #removes all rows that have SB 
+
+#then join 
+orgtyp_base <- rbind(orgtyp_base2, orgtyp_base3)
+```
+
+
 ```{r echo=FALSE}
 #filter out all rows that don't have values 
-orgtyp <- orgtyp_base[-which(is.na(orgtyp_base$type_of_org)),] #this isn't doing anything, lets try again
+#orgtyp <- orgtyp_base[-which(is.na(orgtyp_base$type_of_org)),] #this isn't doing anything, lets try again
 #remove excess columns
+### with current code above removing SB and adding new SL and SW I don't think there are any nas 
+orgtyp <- orgtyp_base #try this 
+
 
 orgtyp2 <- orgtyp[,c(2,3,8)]
 
@@ -544,7 +580,7 @@ E(net)$arrow.size <- .2 #determine size of arrows (this makes the heads real sma
 
 
 
-node.size<-setNames(c(11,5,3,7,11,30,12,4,4,3,6,4,14,4), c("BLM","SL","SB","FO","P","USFWS","USFS","R","M","O","N","SG","SW","C" ))
+node.size<-setNames(c(11,5,7,11,30,12,4,4,3,6,4,14,4), c("BLM","SL","FO","P","USFWS","USFS","R","M","O","N","SG","SW","C" ))
   #so not setting in the same order 
 #V(net)$label <- NA
 E(net)$width <- E(net)$value
