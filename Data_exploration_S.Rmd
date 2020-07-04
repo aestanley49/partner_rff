@@ -9,6 +9,12 @@ output:
 
 added edited to file name to keep seperate from first round of networks if that is something want to go back to instead of knitting over (could be fine because had doc that was sent to Gwen)
 
+note on scaling
+- can over ride the default with "rescale = F" in final plot command 
+can manually manipulate by setting which every layout wanted to l and then multiplying 
+See multi for example of this
+All layouts are currently set to circle to increase readability 
+
 * need to fix scaling and color 
 
 ```{r setup, include=FALSE}
@@ -689,7 +695,7 @@ node.size<-setNames(c(6,2,0,0,0,5,0,4,0,6,3), c("L_W_Man" ,"Sp_Man", "Awareness"
 
 E(Cnet)$width <- E(Cnet)$value 
 
-plot(Cnet, vertex.size=node.size*2) ## note the node sizes were scaled up 
+plot(Cnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
 
 ```
 
@@ -728,7 +734,7 @@ node.size<-setNames(c(3,3,0,0,0,0,1,3,0,1,0), c("L_W_Man" ,"Sp_Man", "Awareness"
 
 E(Mnet)$width <- E(Mnet)$value 
 
-plot(Mnet, vertex.size=node.size*2) ## note the node sizes were scaled up 
+plot(Mnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
 
 ```
 
@@ -768,7 +774,7 @@ node.size<-setNames(c(9,6,1,0,0,2,1,5,0,6,1), c("L_W_Man" ,"Sp_Man", "Awareness"
 
 E(Pnet)$width <- E(Pnet)$value 
 
-plot(Pnet, vertex.size=node.size*2) ## note the node sizes were scaled up 
+plot(Pnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
 
 ```
 
@@ -808,7 +814,7 @@ node.size<-setNames(c(10,6,3,1,1,6,7,11,2,10,5), c("L_W_Man" ,"Sp_Man", "Awarene
 
 E(SWnet)$width <- E(SWnet)$value 
 
-plot(SWnet, vertex.size=node.size*2) ## note the node sizes were scaled up 
+plot(SWnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
 
 ```
 
@@ -847,7 +853,7 @@ node.size<-setNames(c(7,3,0,0,0,6,2,4,2,2,1), c("L_W_Man" ,"Sp_Man", "Awareness"
 
 E(BLMnet)$width <- E(BLMnet)$value 
 
-plot(BLMnet, vertex.size=node.size*2) ## note the node sizes were scaled up 
+plot(BLMnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
 
 ```
 
@@ -886,7 +892,7 @@ node.size<-setNames(c(4,5,2,0,1,5,13,6,7,15,12), c("L_W_Man" ,"Sp_Man", "Awarene
 
 E(USFWSnet)$width <- E(USFWSnet)$value 
 
-plot(USFWSnet, vertex.size=node.size*2) ## note the node sizes were scaled up 
+plot(USFWSnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
 
 ```
 
@@ -925,7 +931,7 @@ node.size<-setNames(c(4,2,1,0,1,5,1,6,2,6,1), c("L_W_Man" ,"Sp_Man", "Awareness"
 
 E(FOnet)$width <- E(FOnet)$value 
 
-plot(FOnet, vertex.size=node.size*2) ## note the node sizes were scaled up 
+plot(FOnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
 
 ```
 
@@ -964,7 +970,7 @@ node.size<-setNames(c(4,0,1,0,1,5,2,3,2,6,2), c("L_W_Man" ,"Sp_Man", "Awareness"
 
 E(Nnet)$width <- E(Nnet)$value 
 
-plot(Nnet, vertex.size=node.size*2) ## note the node sizes were scaled up 
+plot(Nnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
 
 ```
 
@@ -1008,7 +1014,7 @@ node.size<-setNames(c(2,1,0,0,0,2,1,0,0,2,1), c("L_W_Man" ,"Sp_Man", "Awareness"
 
 E(Onet)$width <- E(Onet)$value 
 
-plot(Onet, vertex.size=node.size*2) ## note the node sizes were scaled up 
+plot(Onet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
 
 ```
 
@@ -1046,7 +1052,7 @@ node.size<-setNames(c(0,1,0,0,0,0,0,1,0,1,1), c("L_W_Man" ,"Sp_Man", "Awareness"
 
 E(Rnet)$width <- E(Rnet)$value 
 
-plot(Rnet, vertex.size=node.size*2) ## note the node sizes were scaled up 
+plot(Rnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
 
 ```
 
@@ -1084,7 +1090,7 @@ node.size<-setNames(c(1,1,0,0,0,1,0,0,1,1,3), c("L_W_Man" ,"Sp_Man", "Awareness"
 
 E(SGnet)$width <- E(SGnet)$value 
 
-plot(SGnet, vertex.size=node.size*2) ## note the node sizes were scaled up 
+plot(SGnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
 
 ```
 
@@ -1122,7 +1128,7 @@ node.size<-setNames(c(10,4,1,0,0,5,4,7,1,3,2), c("L_W_Man" ,"Sp_Man", "Awareness
 
 E(USFSnet)$width <- E(USFSnet)$value 
 
-plot(USFSnet, vertex.size=node.size*2) ## note the node sizes were scaled up 
+plot(USFSnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
 
 ```
 
@@ -1162,7 +1168,7 @@ node.size<-setNames(c(6,2,0,0,0,5,2,4,1,5,3), c("L_W_Man" ,"Sp_Man", "Awareness"
 
 E(SLnet)$width <- E(SLnet)$value 
 
-plot(SLnet, vertex.size=node.size*2) ## note the node sizes were scaled up 
+plot(SLnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
 
 ```
 
@@ -1201,7 +1207,11 @@ node.size<-setNames(c(15,3,4,3,1,20,4,12,7,12,7), c("L_W_Man" ,"Sp_Man", "Awaren
 
 E(multinet)$width <- E(multinet)$value 
 
-plot(multinet, vertex.size=node.size*2) ## note the node sizes were scaled up 
+plot(multinet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+l <- layout_in_circle(multinet)
+
+plot(multinet, rescale=F, layout=l*1, vertex.size=node.size*2) ## note the node sizes were scaled up 
 ```
 
 
