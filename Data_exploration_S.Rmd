@@ -2,10 +2,14 @@
 title: "Data Exploration Salafsky edited"
 author: "Annabelle"
 date: "June 15, 2020"
-output: word_document
+output:
+  html_document: default
+  word_document: default
 ---
 
 added edited to file name to keep seperate from first round of networks if that is something want to go back to instead of knitting over (could be fine because had doc that was sent to Gwen)
+
+* need to fix scaling and color 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -619,6 +623,11 @@ base <- base[-which(is.na(base$type_of_org)),] #remove rows with multi-partner s
 
 #general process
 ## subset by unique character in type_of_org column 
+
+#so manual process of c&p didn't work and would be easier to change row names here in parent df than going individually and trying to fix vertex.label 
+#now trying to change rownames 
+
+colnames(base)[5:15] <- c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding") #brackets indicate which columns want to change the names of 
 
 ```
 Caption:
