@@ -571,6 +571,8 @@ orgtype_adjmat <- as.matrix(h) %*% as.matrix(g)
 ################### set up network 
 ```
 
+Note - node labels seem to move every time for this one so need to check 
+might actually be shifting as edit csv and sort various columns in that process 
 ```{r echo=FALSE}
 tadjmat <- orgtype_adjmat
 
@@ -592,15 +594,16 @@ E(net)$arrow.size <- .2 #determine size of arrows (this makes the heads real sma
 
 
 
-node.size<-setNames(c(11,5,7,11,30,12,4,4,3,6,4,14,4), c("BLM","SL","FO","P","USFWS","USFS","R","M","O","N","SG","SW","C" ))
+node.size<-setNames(c(7,31,10,7,6,16,11,5,5,4,12,4), c("SL","USFWS","P","FO","N","SW","BLM","C","R","SG","USFS","M"))
   #so not setting in the same order 
 #V(net)$label <- NA
 E(net)$width <- E(net)$value
 
 plot(net, vertex.size=node.size)
 
-l <- l <- layout_with_fr(net)
-plot(net, vertex.size=node.size, layout = l)
+l <- layout_in_circle(net)
+
+plot(net, rescale=F, vertex.size=node.size, layout = l)
 
 ```
 Caption: 
@@ -659,8 +662,8 @@ X1..Land.Water.Management", --> "L_W_Man"
 
 
 C = Corporation
-no. species = 4
-no. partners = 9
+no. species = 6
+no. partners = 11
 ```{r echo=FALSE}
 
 
@@ -742,7 +745,7 @@ plot(Mnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note 
 
 P = Private landowner
 no. species = 11
-no. partners = 12
+no. partners = 11
 ```{r echo=FALSE}
 
 P <- base[which(base$type_of_org == "P"),]
@@ -859,8 +862,8 @@ plot(BLMnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## not
 
 
 USFWS
-no. species = 30
-no. partners = 33
+no. species = 31
+no. partners = 34
 ```{r echo=FALSE}
 
 USFWS <- base[which(base$type_of_org == "USFWS"),]
@@ -979,11 +982,10 @@ plot(Nnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note 
 #### Skipping SB because there are only 2 state agencies in this category - 
 - Probably makes more sense to add them in both SW and SL
 
-
+##### Other category removed 
 O = Other
-no. species = 3 (manually counted)
-no. partners = 3 (dim X)
-```{r echo=FALSE}
+
+```{r echo=FALSE eval = FALSE}
 
 O <- base[which(base$type_of_org == "O"),]
 
@@ -1019,8 +1021,8 @@ plot(Onet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note 
 ```
 
 R = Reserach 
-no. species = 4
-no. partners = 4
+no. species = 5
+no. partners = 5
 ```{r echo=FALSE}
 
 R <- base[which(base$type_of_org == "R"),]
@@ -1134,12 +1136,50 @@ plot(USFSnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## no
 
 
 SL
-(skipped state land?? )
 no. species = 8 
 no. partners = 11
 ```{r echo=FALSE}
 
 SL <- base[which(base$type_of_org == "SL"),]
+
+#try and add line here that counts number of rows and assigns that as a vector then the number of unique species 
+
+#trying to count number of partners from each species 
+nosp <- SL %>% dplyr::group_by(Common.name) %>%
+  dplyr::summarise(length(Common.name))
+#result is column of species names and a count column
+#want to change the count column back to ones and zeros and then count total 
+
+count <- nosp %>% mutate_if(is.numeric, ~1 * (. > 0)) %>% summarise(sum(`length(Common.name)`))
+
+
+#make into vector
+
+# color loop 
+
+#for #color =  
+#if ( 0<x <= 4) {
+#statement1
+#} else if ( 5 < x <= 9) {
+#statement2
+#} else if ( 10 < x <= 15) {
+#statement3
+#} else if ( 16 < x <= 20) {
+#statement4
+#} else if ( 21 < x <= 25) {
+#statement4  
+#} else if ( 26 < x <= 30) {
+#statement4  
+#} else {
+#statement5
+#}
+
+  
+#  count(distinct(SL$Common.name))
+  
+  
+ # summarise(n = n())
+
 
 SL <- SL[,-c(1:4)] #remove non numeric columns
 tSL <- t(SL)   #transform
