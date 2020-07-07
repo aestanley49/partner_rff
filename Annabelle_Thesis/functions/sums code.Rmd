@@ -1,0 +1,165 @@
+---
+title: "sums code"
+author: "Annabelle"
+date: "January 8, 2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r, echo = FALSE}
+library(readr)
+require(readr)
+other <- read_csv("~/Desktop/Fall 2019/RFF part 2/data11.8a_changed.csv")
+View(trialother)
+trialother <- other
+
+is.character(trialother$`Who the partners are`)
+```
+
+### ### trial and error to put "N/A" values where null.. none of this worked so ended up writing over in excel
+
+        ### when knitting get error that there is no library for X11? 
+
+Manual override of spelling errors on a cell by cell basis 
+
+```{r, include=FALSE}
+View(trialother)
+trialother$`Who the partners are`[4] <- "Montana Department of Fish Wildlife and Parks, USFWS, BLM, Montana Department of Natural Resources and Conservation"
+trialother$`Who the partners are`[8] <- "Kentucky Ecological Services Field Office, Owner of the Beaver Cave property,  Kentucky Department of Fish and Wildlife Resources,  Natural Resources Conservation Service,  Farm Service Agency,  Kentucky State Nature Preserves Commission,  Kentucky Division of Forestry"
+trialother$`Who the partners are`[10] <- "California Department of Fish and Game, California Department of Forestry and Fire Protection, California Department of Parks and Recreation, Center for Natural Lands Management, City of Riverside Park and Recreation Department, Metropolitan Water District, Riverside County Environmental Programs Department, Riverside County Habitat Conservation Agency, Riverside County Regional Park and Open-Space District, Riverside Land Conservancy, San Diego State University Field Stations Program, The Nature Conservancy, University of California Riverside, BLM, USFWS, USFS, US Navy, US Marine Corps, US Customs and Border Protection, California State Parks"
+trialother$`Who the partners are`[11] <- "Mississippi Army National Guard, USFS, Mississippi Department of Wildlife Fisheries and Parks, USFWS"
+trialother$`Who the partners are`[12] <- "Nevada Department of Conservation and Natural Resources, Clark County, USFS, USFWS, BLM, NPS, Nevada Department of Wildlife, Nevada Department of Transportation, Nevada Division of State Parks, U.S. Air Force, Boulder City"
+trialother$`Who the partners are`[14] <- "Nevada Department of Conservation and Natural Resources, Clark County, USFS, USFWS, BLM, NPS, Nevada Department of Wildlife, Nevada Department of Transportation, Nevada Division of State Parks, U.S. Air Force, Boulder City"
+trialother$`Who the partners are`[19] <- "Indiana Coal Council, Indiana Department of Natural Resources, USFWS, Kentucky Department of Fish and Wildlife Resources, Kentucky Coal Association, Kentucky Coal Country Association, Kentucky Farm Bureau, Kentucky Natural Resources and Environmental Cabinet, Western Kentucky Coal Association, Office of Surface Mining reclamation and Enforcement"
+trialother$`Who the partners are`[20] <- "Utah Division of Parks and Recreation, BLM, USFWS, Kane County"
+trialother$`Who the partners are`[21] <- "private landowners of Cow Head Lake, private landowners of Cow Head Slough, private landowners of the California reach of Barrel Creek, California and Modoc County Cattlemen’s Associations, California Farm Bureau Federation, BLM, California Department of Fish and Game"
+trialother$`Who the partners are`[24] <- 
+"USFWS, BLM, Center of Excellence for Hazardous Materials Management, Natural Resources Conservation Service, Texas A&M University, Texas Comptroller of Public Accounts, Texas Interagency Task Force on Economic Growth and Endangered Species, Texas Department of Agriculture, Texas Parks and Wildlife Department, Railroad Commission of Texas, University of Texas System - University Lands, Texas Farm Bureau, Texas Oil and Gas Association, Texas Royalty Council, Texas and Southwestern Cattle Raisers Association, Texas Wildlife Association, Texas Association of Business"
+trialother$`Who the partners are`[26] <- "Nevada Department of Wildlife, NPS, BLM, USFWS, Nevada Natural Heritage Program, The Nature Conservancy, Desert Research Institute"
+trialother$`Who the partners are`[27] <- "Anza-Borrego State Park, Arizona Game and Fish Department, California Department of Fish and Game, California State Parks, Ocotillo Wells, BLM, U.S. Bureau of Reclamation, USFWS, U.S. Marine Corps Air Station, U.S. Naval Air Facility, U.S. Navy SW Division, The Arizona Department of Water Resources, Arizona Electric Power Cooperative Inc., Arizona Game and Fish Commission, Arizona Power Authority, Central Arizona Water Conservation District, Cibola Valley Irrigation and Drainage District, City of Bullhead City, City of Lake Havasu City, City of Mesa, City of Somerton, City of Yuma, Electrical District No. 3 Pinal County Arizona, Golden Shores Water Conservation District, Mohave County Water Authority, Mohave Valley Irrigation and Drainage District, Mohave Water Conservation District, North Gila Valley Irrigation and Drainage District, Salt River Project Agricultural Improvement and Power District, Town of Fredonia, Town of Thatcher, Town of Wickenburg, Unit ‚ÄúB‚Äù Irrigation and Drainage District, Wellton-Mohawk Irrigation and Drainage District, Yuma County Water Users‚Äô Association; Yuma Irrigation District, Yuma Mesa Irrigation and Drainage District, City of Needles, Coachella Valley Water District, Colorado River Board of California, Imperial Irrigation District, Los Angeles Department of Water and Power, Palo Verde Irrigation District, San Diego County Water Authority, Southern California Edison Company, the Southern California Public Power Authority, Bard Water District, Metropolitan Water District of Southern California, NPS, Bureau of Indian Affairs, Western Area Power Administration (Western), Colorado River Commission of Nevada, Nevada Department of Wildlife, Basic Water Company, Southern Nevada Water Authority"
+trialother$`Who the partners are`[29] <- "BLM, Wyoming Natural Diversity Database"
+trialother$`Who the partners are`[31] <- "USFWS, Clemson University, Georgia Department of Natural Resources, Georgia Department of Transportation, Georgia Power, Mecklenburg County Park and Recreation North Carolina, NPS, North Carolina Department of Agriculture & Consumer Services Plant Conservation Program, USFS"
+trialother$`Who the partners are`[32] <- "BLM, USFWS"
+trialother$`Who the partners are`[33] <- "Uintah County, Rio Blanco County, Utah School and Institutional Trust Lands Administration, Utah Governor’s Public Lands Policy Coordination Office, Utah Division of Wildlife Resources, BLM, USFWS"
+trialother$`Who the partners are`[46] <- "USFWS,  USFS,  California Department of Fish and Game,  John Hancock Mutual Life Insurace Company,  Bob McIntsh (Private landowner),  Sierra Pacific Industries, Hearest Corporation,  Siskiyou County Board of Supervisors"
+trialother$`Who the partners are`[47] <- "USFS, BLM, California Department of Transportation (caltrans), California Department of Fish and Wildlife, Pacific Gas and Electric"
+##NPS sign or this park?   
+trialother$`Who the partners are`[49] <- "Department of Forest and Rangeland Stewardship Colorado State University, Desert Research Institute, U.S. National Park Service Death Valley National Park"
+trialother$`Who the partners are`[50] <- "USGS, Natural Resources Conservation Service, USFWS, Mashpee Wampanoag Tribe, Lyme Land Conservation Trust, American Forest Foundation, Woodcock Limited, WCS Queens Zoo, Wells National Esturarine Research Reserve, Roger Williams Park Zoo, Audubon Connecticut, Connecticut Audubon Society, Open Space Institute, Audubon New York, Quail Forever, Pheasants Forever, Doris Duke Charitable Foundation, Wildlife Conservation Society, Amrican Bird Conservancy, Quality Deer Management Association, Sustainable Forestry Initiative, White Memorial Foundation, National Fish and Wildlife Foundation, Ruffed Grouse Society/American Woodcock Society, National Wild Turkey Federation, Wildlife Management Institute, New Engalnd Cottontail Conservation Initiative, Northeast Forest and Fire Management, Lyme Timber Company, Monterey Preservation Land Trust, Narrow River Land Trust, Nantucket Conservation Foundation, Scarborough Land Trust, Avalonia Land Conservancy, Orenda Wildlife Land Trust, Trustees of Reservations, Berkshire Natural Resources Council, York Land Trust, Becket Land Trust, Trust for Public Land, Massachusetts National Guard, New York Division of Fish Wildlife and Marine Resources, Northeast Association of Fish and Wildlife Agencies, Rhode Island Division of Fish and Wildlife, Connecticute Department of Energy and Environmental Protection, Massachusetts Division of Fisheries and Wildlife, New Hampshire Fish and Game Department, Maine Department of Inland Fisheries and Wildlife, University of Rhode Island College of Envionment and Life Sciences, University of New Hampshire, University of New Hampshire Cooperative Extenson, New Hampshire Fish and Game Department"
+## City of NCCP??  
+trialother$`Who the partners are`[52] <- "City of NCCP, USFWS, California Department of Fish and Game, California Resources Agency"
+trialother$`Who the partners are`[60] <- "Colorado Parks and Wildlife, New Mexico Department of Game and Fish, USFS, USFWS, Mescalero Apache Nation, Jicarilla Apache Nation, Taos Pueblo, NPS, BLM,  Trout Unlimited, Vermejo Park Ranch, Colorado Division of Parks and Wildlife"
+trialother$`Who the partners are`[66] <- "California Department of Fish and Game, San Diego Gas and Electric Company, USFWS"
+trialother$`Who the partners are`[68] <- "Office of Species Conservation,  Idaho Department of Fish and Game,  Idaho Department of Lands,  Idaho Army National Guard,  Nongovernmental Cooperator Representative,  Nongovernmental Cooperator Representative, BLM"
+trialother$`Who the partners are`[70] <- "Idaho Department of Fish and Game, Idaho Governor's Office of Species Conservation, USFWS, Soulen Livestock Company Inc. (Soulen Livestock)."
+trialother$`Who the partners are`[77] <- "California Department of Fish and Wildlife, California State Lands Commission, California Department of Parks and Recreation, California Tahoe Conservancy, League to Save Lake Tahoe, Nevada Division of Forestry, Nevada Division of State Lands, Nevada Division of State Parks, Nevada Natural Heritage Program, Tahoe Lakefront Owners’ Association, Tahoe Regional Planning Agency, USFWS, USFS, California Department of Fish and Wildlife, California State Lands Commission, California Department of Parks and Recreation, California Tahoe Conservancy, League to Save Lake Tahoe"
+trialother$`Who the partners are`[80] <- "USDA, USFWS, BLM"
+trialother$`Who the partners are`[81] <- "USFWS,  Montana State University,  Montana Fish Wildlife and Parks"
+trialother$`Who the partners are`[82] <- "Foster Creek Conservation District, Threemile Canyon Farms, The Nature Conservancy,  General Electric, USFWS"
+trialother$`Who the partners are`[86] <- "USFS,  USFWS,  Arizona Game and Fish Department"
+trialother$`Who the partners are`[87] <- "Uintah County, Rio Blanco County,  Utah School and Institutional Trust Lands Administration, Utah Governor’s Public Lands Policy Coordination Office, Utah Division of Wildlife Resources, BLM, USFWS"
+trialother$`Who the partners are`[88] <- "USFS, NPS,  Utah State Office , USFWS, BLM"
+write.csv(trialother, "~/Desktop/Fall 2019/RFF part 2/testme.csv")
+edited <- trialother 
+```
+
+
+string to create individual columns for each partner  
+
+```{r, include=FALSE}
+
+as.character(edited$`Who the partners are`)
+for (i in 1:nrow(edited)) {
+##for (i in c(1,27)) {
+  #cat(i, "\n")
+  dvec <- trimws(strsplit(edited$`Who the partners are`[i],split=",")[[1]])
+  for (dname in dvec) {
+    if (dname%in%colnames(edited)) {
+      edited[i, dname] <- 1              
+    } else {
+      edited[dname] <- 0
+      edited[i, dname] <- 1                                     
+    }
+  }
+}
+
+dim(edited)
+View(trialother)
+
+# how to remove a column in r / delete column in R # this version will remove column in r by name 
+edited$`Conservation Plan_1` <- edited$`notes_all_cleaning specific` <- edited$'in cooperation (included in total unless stated otherwise) or other vague terms' <- edited$`number of conservation agreements`<- NULL ;
+  edited$`total number of partners for species` <- edited$`type of agreements (source of information)` <- NULL ; edited$`List agency office (if given)`  <- edited$`unspecified additional landowners` <- NULL ; 
+    edited$`If distinction between species specific partners and total agreement partners, list total agreement partners here` <- edited$`note redundancy` <- NULL ; 
+edited$'"in cooperation" (included in total unless stated otherwise) or other vague terms' <- NULL
+edited$X5 <- NULL
+
+#removing first three columns to make df numberic before writing it to csv
+  edited$`Common name` <- edited$`Who the partners are` <- NULL
+  
+   write.csv(edited, "~/Desktop/Fall 2019/RFF part 2/editedone.csv")
+
+
+colnames(edited)
+edited$`Metropolitan Water District`
+View(edited)
+
+```
+
+
+Colsums (worked)
+```{r}
+edited$`Scientific name` <- NULL
+fed <- (colSums(edited))
+fed
+table(fed)
+df <- print(fed, row.names = edited)
+write.csv (df, "~/Desktop/Fall 2019/RFF part 2/colsum.csv") #have excel sheet with info
+(x, row.names = edited) ## this works
+
+rownames <- array(t(colSums(x)), "myColSum") ## error is no. dimensions 
+?setNames
+# demo code
+setNames(nm=c('colname','colSums(demo)'),stack(colSums(demo))[2:1])
+again <- setNames(nm=c('colname','colSums(edited)'),stack(colSums(edited))[2:1])
+
+#going to reload without deleting scientific names 
+
+```
+
+
+rowSums
+```{r}
+
+##need to change NAs back to 0s for rowSums so skipped col 6 in rowsum 
+reedit <- edited
+reedit$`Scientific name` <- NULL
+View(reedit)
+rs <- rowSums(reedit[,-6]) #needed to remove 2 columns from analysis
+rs
+
+names <- edited[,1] #scientific names
+nonscin <- other$`Common name` #common names
+
+View(other)
+
+all <- cbind(names, rs) #using scientific names
+write.csv (all, "~/Desktop/Fall 2019/RFF part 2/rowsum.csv")
+all
+nall <- cbind(nonscin, rs) #using common names
+nall
+write.csv (nall, "~/Desktop/Fall 2019/RFF part 2/rsumnorm.csv")
+```
+
+notes on what the problem was: the data post loop was being read in as int not numeric. Didn't fix, but wasnt' a problem if cal was don't from post modified dataframe (instead of reading in another csv file)
+

@@ -1,0 +1,1342 @@
+---
+title: "Data Exploration Salafsky edited"
+author: "Annabelle"
+date: "June 15, 2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+added edited to file name to keep seperate from first round of networks if that is something want to go back to instead of knitting over (could be fine because had doc that was sent to Gwen)
+
+note on scaling
+- can over ride the default with "rescale = F" in final plot command 
+can manually manipulate by setting which every layout wanted to l and then multiplying 
+See multi for example of this
+All layouts are currently set to circle to increase readability 
+
+* need to fix scaling and color 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Set up file structure 
+```{r, include = FALSE}
+## setup the file structure so that this markdown document is in the main project folder along with the other folders noted below
+
+DataSource <- "./data" # input raw dataset goes here
+output.dir <-"./output" # output dataset writes to here
+functions.dir <- "./functions" # directory for functions 
+
+source(file.path(functions.dir,'FormatData.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'cleaning_salafsky.R')) # any functions that are called up by this markdown document need to be sourced here
+
+## general functions that need to be read in. I like to put them at the top so they are easier to deal with when they change version (inevitable)
+library(plyr) #for function "join_all" also note, there can be issue loading this after dplyr (which is why it's at the top)
+library(readr)
+library(readxl)
+library(tidyverse)
+library(dplyr)
+library(janitor) #used in cleaning 
+library(stringr)
+library(car) #for function qqplot 
+library(knitr) #for making tables form kable 
+library(data.table) #function setnames() allows to set multiple column names in one line of code 
+library(igraph)
+
+
+```
+
+##load in different datasets
+```{r, echo = FALSE, include = FALSE}
+CleanData <- read.csv(paste0(DataSource,"/codesalafsky.csv"), stringsAsFactors = FALSE) #removing end piece  ## codesalafsky.csv is the rawest data that function runs on
+code <- cleaning_salafsky(CleanData)
+sdata <- read_csv(paste(DataSource,"/tableofpartnersandactions.csv", sep = "")) #this csv is produced at end of cleaning_salafsky.R function 
+#sdata <- sdata %>% select(-X1) #remove X1 column that is getting produced 
+
+tdata <- read.csv(paste0(DataSource,"/Updated_variables.csv"), stringsAsFactors = FALSE) #data provided by tyler 
+tdata <- tdata %>%  as_tibble() #now can use stringr packages 
+tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
+##
+
+orgtyp_base <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "") #issue was that "" is coming up instead of NA
+## file name got changed
+
+```
+
+<br>
+
+
+
+Group bar chart species-threat
+- note, M not removed 
+```{r message=FALSE}
+#doesn't like that I'm not specifying melt variable names (even though there is only one) so removing warnings from knitting 
+alldf <- sdata #change variable name 
+
+species <- alldf[,c(3,11:21)] #note, had to change index because some extra column (X1) had added itself 
+
+eachsp <- species %>% group_by(Scientific.name) %>% summarise_each(funs(sum)) 
+
+
+allspindf <- eachsp
+new <- tdata #need to join with tdata (renamed here)
+###new$scientific_name
+#select relevant columns
+tthreats <- select(new, scientific_name, hab_x_x:threats_addressed_by_conservation_x_x)
+
+###tthreats$scientific_name
+#need to join with tdata 
+#to do so need to change col name so match 
+
+tthreats <- rename(tthreats, Sciname = scientific_name)
+allspindf <- rename(allspindf, Sciname = Scientific.name)
+
+threats <- left_join(allspindf, tthreats, join_by = Sciname)
+
+
+############### make graph for each threat
+
+#habitat
+hab <- threats %>% filter_at(vars(hab_x_x), any_vars(. %in% c(1))) 
+hab <- hab[,-c(1,13:20)]
+hab_m <- hab %>%  melt(value.name="hab")
+ggplot(hab_m, aes(x=variable, y=hab)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Count of all actions done to species with habitat threat") + scale_x_discrete(name ="Name of Action")
+
+#overutilization
+over <- threats %>% filter_at(vars(over_x_x), any_vars(. %in% c(1))) 
+over <- over[,-c(1,13:20)]
+over_m <- over %>%  melt(value.name="over")
+ggplot(over_m, aes(x=variable, y=over)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Count of all actions done to species with overutilization") + scale_x_discrete(name ="Name of Action")
+
+
+#pollution
+poll <- threats %>% filter_at(vars(poll_x_x), any_vars(. %in% c(1))) 
+poll <- poll[,-c(1,13:20)]
+poll_m <- poll %>%  melt(value.name="poll")
+ggplot(poll_m, aes(x=variable, y=poll)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Count of all actions done to species with pollution") + scale_x_discrete(name ="Name of Action")
+
+#species–species
+spsp <- threats %>% filter_at(vars(spsp_x_x), any_vars(. %in% c(1))) 
+spsp <- spsp[,-c(1,13:20)]
+spsp_m <- spsp %>%  melt(value.name="spsp")
+ggplot(spsp_m, aes(x=variable, y=spsp)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Count of all actions done to species with species–species threat") + scale_x_discrete(name ="Name of Action")
+
+#environmental stochasticity
+env <- threats %>% filter_at(vars(env_x_x), any_vars(. %in% c(1))) 
+env <- env[,-c(1,13:20)]
+env_m <- env %>%  melt(value.name="env")
+ggplot(env_m, aes(x=variable, y=env)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Count of all actions done to species with environmental stochasticity threat") + scale_x_discrete(name ="Name of Action")
+
+#demographic stochasticity
+demo <- threats %>% filter_at(vars(demo_x_x), any_vars(. %in% c(1))) 
+demo <- demo[,-c(1,13:20)]
+demo_m <- demo %>%  melt(value.name="demo")
+ggplot(demo_m, aes(x=variable, y=demo)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Count of all actions done to species with demographic stochasticity threat") + scale_x_discrete(name ="Name of Action")
+
+
+#combine into one dataset 
+### Should have just used group_by - found the total number for each based on threat type and then joined 
+#threat_actions <- join_all(list(hab_m, demo_m, spsp_m, env_m, poll_m, over_m), by='variable', type='left')
+#I think this is replicating information when joining, unsure how to fix
+#this would be the next step of putting onto 1 dataframe
+#tidythreat <- threat_actions %>%  pivot_longer(c(hab, demo), names_to = 'threat', values_to = 'count')
+
+#unsure how to put on same graph- this is from stackoverflow 
+require(gridExtra)
+plot1 <- qplot(1)
+plot2 <- qplot(1)
+#grid.arrange(plot1, plot2, ncol=2)
+```
+
+
+plot hists = M 
+
+use facet_wrap 
+
+### Histogram of number of partners per species 
+```{r eval=FALSE, include=FALSE}
+
+onlyM <- sdata[which(sdata$type.of.partners == "M"),]
+
+noM <- sdata[-which(sdata$type.of.partners == "M"),]
+
+nopartall <- (sdata %>% group_by(Scientific.name)   #selecting  each species
+%>% distinct(partner.in.agreement)    #count how many partners are distinct 
+%>% summarise(n())) 
+nopartall <- rename(nopartall, all = 'n()')
+
+noM_nopartners <- (onlyM %>% group_by(Scientific.name)   #selecting  each species
+%>% distinct(partner.in.agreement)    #count how many partners are distinct 
+%>% summarise(n()))  
+noM_nopartners <- rename(noM_nopartners, no_M = 'n()')
+
+onlyM_nopartners <- (noM %>% group_by(Scientific.name)   #selecting  each species
+%>% distinct(partner.in.agreement)    #count how many partners are distinct 
+%>% summarise(n())) 
+onlyM_nopartners <- rename(onlyM_nopartners, onlyM = 'n()')
+
+all_numbersofP <- full_join(nopartall, noM_nopartners, by = "Scientific.name")
+all_numbersofP <- full_join(all_numbersofP, onlyM_nopartners, by = "Scientific.name")
+
+
+#put onto graph 
+ggplot(all_numbersofP, aes(f0)) + 
+  geom_histogram(mapping = aes(x = no_M), stat = "count", fill = "red", alpha = 0.6, position = "dodge") +
+  geom_histogram(mapping = aes(x = onlyM), stat = "count", fill = "blue", alpha = 0.6, position = "dodge")
+  
+  
+    geom_histogram(data = all_numbersofP$all, fill = "red", alpha = 0.2) + 
+    geom_histogram(data = all_numbersofP$no_M, fill = "blue", alpha = 0.2) +
+    geom_histogram(data = all_numbersofP$onlyM, fill = "green", alpha = 0.2)
+    
+    
+    
+ggplot(all_numbersofP, aes(f0)) + geom_bar(mapping = aes(x = onlyM, y = count), fill = "blue", alpha = 0.6, position = "dodge", stat = "identity")
+
+
+ggplot(data = mtcars, aes(x = factor(carb), fill = factor(gear))) +
+geom_histogram(position = "dodge")
+
+ggplot(all_numbersofP) + geom_bar(mapping = aes(x = all, y = count), stat = "identity")
+
+ggplot(all_numbersofP) + geom_histogram(mapping = aes(x = no_M),  fill = "blue", alpha = 0.6, position = "dodge") + geom_histogram(mapping = aes(x = onlyM),alpha = 0.6, position = "dodge") + geom_histogram(mapping = aes(x = all), alpha = 0.6, fill = "red", position = "dodge")
+
+```
+
+Histogram of Ms take 2
+- # of partners per species
+- # of species per partner
+- actpartsum
+- actsum
+- how many partners are participating in each action 
+- number of species with each action 
+- number of partners that apply action to at least 1 species 
+
+scrap work 
+```{r eval=FALSE, include=FALSE, echo=FALSE}
+onlyM <- sdata[which(sdata$type.of.partners == "M"),]
+
+noM <- sdata[-which(sdata$type.of.partners == "M"),]
+
+#try doing for all first and then could probbaly add filter as first step 
+
+
+##counts number of partners per species 
+  dataA <- sdata %>% group_by(Scientific.name) %>% count('Scientific.name') #count the number of times rows for each scientific name
+  dataA$AL <- dataA$freq
+  dataA <- dataA %>% add_count(AL) %>% distinct(freq, AL, n) %>% arrange(freq) # count the number of times each number is repeated and remove any repetitions then arrange
+  #the following was repeated for each category 
+  #dataA <- dataA %>% add_count(freq) %>% distinct(freq, n) %>% arrange(freq)
+  dataB <- sdata %>% filter(type.of.partners == "M") %>% group_by(Scientific.name) %>% count('Scientific.name') 
+  dataB$M <- dataB$freq
+  dataB <- dataB %>% add_count(M) %>% distinct(freq, M, n) %>% arrange(freq)
+  #dataB <- dataB %>% add_count(freq) %>% distinct(freq, n) %>% arrange(freq)
+  dataC <- sdata %>% filter(type.of.partners != "M") %>% group_by(Scientific.name) %>% count('Scientific.name')
+  dataC$NO <- dataC$freq
+  dataC <- dataC %>% add_count(NO) %>% distinct(freq, NO, n) %>% arrange(freq)
+  #dataC <- dataC %>% add_count(freq) %>% distinct(freq, n) %>% arrange(freq)
+  
+
+dataAB <- merge(dataA, dataB, by = "freq", all=T)
+dataABC <- merge(dataAB, dataC, by = "freq", all=T)
+dataABC$all <- dataABC$n.x
+dataABC$onlyM <- dataABC$n.y
+dataABC$noM <- dataABC$n
+
+#remove redundant columns 
+nopart <- dataABC[,-c(2:7)]
+
+longpart <- nopart %>% pivot_wider(names_from = freq, values_from = all)
+
+long <- t(nopart) 
+long <- as.data.frame(long)
+ugh <- long %>% rownames_to_column()
+
+ggplot(data = ugh, aes(x = factor(rowname), stat = "count")) +
+geom_histogram(position = "dodge")
+
+
+ggplot(data = mtcars, aes(x = factor(carb), fill = factor(gear))) +
+geom_histogram(position = "dodge", stat="count")
+
+## ^^^^^ need to make this work for my data 
+
+
+#########################################
+# correct method below, just make sure not missing any pieces from above
+
+```
+
+
+- no. of partners per species
+```{r}
+## I think would have made sense to melt before combining into one table 
+
+
+ dataA <- sdata %>% group_by(Scientific.name) %>% count('Scientific.name') #count the number of times rows for each scientific name
+  dataA$All <- dataA$freq
+
+ AA <- melt(dataA) 
+  
+    #the following was repeated for each category 
+  #dataA <- dataA %>% add_count(freq) %>% distinct(freq, n) %>% arrange(freq)
+  dataB <- sdata %>% filter(type.of.partners == "M") %>% group_by(Scientific.name) %>% count('Scientific.name') 
+  dataB$onlyM <- dataB$freq
+  BB <- melt(dataB) 
+  
+  #dataB <- dataB %>% add_count(freq) %>% distinct(freq, n) %>% arrange(freq)
+  dataC <- sdata %>% filter(type.of.partners != "M") %>% group_by(Scientific.name) %>% count('Scientific.name')
+  dataC$noM <- dataC$freq
+   CC <- melt(dataC) 
+
+
+joint <- AA %>% full_join(BB, by = "Scientific.name") %>% full_join(CC, by = "Scientific.name")
+
+
+joint2 <- joint[-which(joint$variable.x == "freq"),]
+joint3 <- joint2[-which(joint2$variable.y == "freq"),]
+joint4 <- joint3[-which(joint3$variable == "freq"),]
+
+joint4 <- joint4[,-c(1)]
+
+five <- melt(joint4)
+
+
+whoops <- dataA %>% full_join(dataB, by = "Scientific.name") %>% full_join(dataC, by = "Scientific.name")
+right <- melt(whoops)
+
+
+right <- right[-which(right$variable == "freq"),]
+right <- right[-which(right$variable == "freq.x"),]
+right <- right[-which(right$variable == "freq.y"),]
+
+right <- right[-which(is.na(right$value)),]
+
+right <- right[,-c(1)]
+
+ggplot(data = right, aes(x = value, fill = factor(variable))) +
+geom_histogram(position = "dodge", stat="count") + ggtitle("# of partners per species")
+
+```
+
+
+
+
+- no. of species per partner
+```{r}
+ dataA <- sdata %>% group_by(partner.in.agreement) %>% count('partner.in.agreement') #count the number of times rows for each scientific name
+  dataA$All <- dataA$freq
+
+  
+  dataB <- sdata %>% filter(type.of.partners == "M") %>% group_by(partner.in.agreement) %>% count('partner.in.agreement') 
+  dataB$onlyM <- dataB$freq
+  
+  dataC <- sdata %>% filter(type.of.partners != "M") %>% group_by(partner.in.agreement) %>% count('partner.in.agreement')
+  dataC$noM <- dataC$freq
+   
+
+joint <- dataA %>% full_join(dataB, by = "partner.in.agreement") %>% full_join(dataC, by = "partner.in.agreement")
+
+
+
+right <- melt(joint)
+right <- right[-which(right$variable == "freq"),]
+right <- right[-which(right$variable == "freq.x"),]
+right <- right[-which(right$variable == "freq.y"),]
+
+right <- right[-which(is.na(right$value)),]
+
+right <- right[,-c(1)]
+
+
+ggplot(data = right, aes(x = value, fill = factor(variable))) +
+geom_histogram(position = "dodge", stat="count") + ggtitle("# of species per partner")
+
+
+```
+
+
+
+- actpartsum
+```{r}
+species <- sdata
+
+#all 
+speciesall <- species[,c(3,11:21)]
+eachspall <- speciesall %>% group_by(Scientific.name) %>% summarise_each(funs(sum)) 
+noactionswithpartnerall <- eachspall %>% mutate("all" = rowSums(eachspall[,c(2:12)]))
+noactionswithpartnerall <- noactionswithpartnerall[,-c(2:12)]
+
+#onlyM
+
+onlyM <- sdata[which(sdata$type.of.partners == "M"),]
+
+speciesonlyM <- onlyM
+speciesonlyM <- speciesonlyM[,c(3,11:21)]
+
+eachsponlyM <- speciesonlyM %>% group_by(Scientific.name) %>% summarise_each(funs(sum)) 
+noactionswithpartneronlyM <- eachsponlyM %>% mutate("onlyM" = rowSums(eachsponlyM[,c(2:12)]))
+noactionswithpartneronlyM <- noactionswithpartneronlyM[,-c(2:12)]
+
+#no M
+noM <- sdata[-which(sdata$type.of.partners == "M"),]
+
+speciesnoM <- noM
+speciesnoM <- speciesnoM[,c(3,11:21)]
+
+eachspnoM <- speciesnoM %>% group_by(Scientific.name) %>% summarise_each(funs(sum)) 
+noactionswithpartnernoM <- eachspnoM %>% mutate("noM" = rowSums(eachspnoM[,c(2:12)]))
+noactionswithpartnernoM <- noactionswithpartnernoM[,-c(2:12)]
+
+
+#join all df
+
+actpartsum <- noactionswithpartnernoM %>% full_join(noactionswithpartneronlyM, by = "Scientific.name") %>% full_join(noactionswithpartnerall, by = "Scientific.name")
+
+
+
+moltactpartsum <- melt(actpartsum)
+
+moltactpartsum <- moltactpartsum[-which(is.na(moltactpartsum$value)),]
+
+moltactpartsum <- moltactpartsum[,-c(1)]
+
+
+
+ggplot(data = moltactpartsum, aes(x = value, fill = factor(variable))) +
+geom_histogram(position = "dodge", stat="count") + ggtitle("Histogram of the number of actions done on a species by all partners")
+
+
+
+```
+
+
+- actsum
+```{r}
+
+species <- sdata
+
+
+#all 
+speciesall <- species[,c(3,11:21)]
+eachspall <- speciesall %>% group_by(Scientific.name) %>% summarise_each(funs(sum)) 
+
+onesandzerosall <- eachspall %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+totalnoall <- onesandzerosall %>% mutate("all" = rowSums(onesandzerosall[,c(2:12)])) 
+totalnoall <- totalnoall[,-c(2:12)]
+
+
+#onlyM
+
+eachsponlyM <- speciesonlyM %>% group_by(Scientific.name) %>% summarise_each(funs(sum)) 
+
+onesandzerosonlyM <- eachsponlyM %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+totalnoonlyM <- onesandzerosonlyM %>% mutate("onlyM" = rowSums(onesandzerosonlyM[,c(2:12)])) 
+totalnoonlyM <- totalnoonlyM[,-c(2:12)]
+
+
+#noM 
+eachspnoM <- speciesnoM %>% group_by(Scientific.name) %>% summarise_each(funs(sum)) 
+
+onesandzerosnoM <- eachspnoM %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+totalnonoM <- onesandzerosnoM %>% mutate("noM" = rowSums(onesandzerosnoM[,c(2:12)])) 
+totalnonoM <- totalnonoM[,-c(2:12)]
+
+
+#join all df
+
+actionsum <- totalnonoM %>% full_join(totalnoonlyM, by = "Scientific.name") %>% full_join(totalnoall, by = "Scientific.name")
+
+
+
+moltactionsum <- melt(actionsum)
+
+moltactionsum <- moltactionsum[-which(is.na(moltactionsum$value)),]
+
+moltactionsum <- moltactionsum[,-c(1)]
+
+
+ggplot(data = moltactionsum, aes(x = value, fill = factor(variable))) +
+geom_histogram(position = "dodge", stat="count") + ggtitle("Adjusted number of actions done to species")
+
+```
+
+
+Other histograms to complete - 
+- how many partners are participating in each action 
+- number of species with each action 
+- number of partners that apply action to at least 1 species 
+
+
+
+Make Network for each type of org 
+
+start from
+- managed to get df where all cells were lists (even though some said NULL?) was trying to unlist everything and then went pear shaped.. try and pick up from there 
+
+want to duplicate rows that are have cells labeled SB
+```{r}
+
+orgtyp_base2 <- orgtyp_base
+
+dummy <- 2
+
+#subset and duplicate rows with SB as orgtype       
+ orgtyp_base3 <-     orgtyp_base2 %>%  
+        filter(type_of_org=="SB") %>% 
+        uncount(dummy) %>% 
+   rownames_to_column() #this is the variable can index on because the rest are the same 
+#change one of each rows to SL and the other to SW  
+ 
+orgtyp_base3[which(orgtyp_base3$rowname == 1),9] <- "SW"
+orgtyp_base3[which(orgtyp_base3$rowname == 1.1),9] <- "SL"
+orgtyp_base3[which(orgtyp_base3$rowname == 2),9] <- "SW"        
+orgtyp_base3[which(orgtyp_base3$rowname == 2.1),9] <- "SL"   
+orgtyp_base3[which(orgtyp_base3$rowname == 3),9] <- "SW"  
+orgtyp_base3[which(orgtyp_base3$rowname == 3.1),9] <- "SL"  
+#then need to remove first column so has same dimensions as original df 
+orgtyp_base3 <- orgtyp_base3[,-c(1)]
+        
+#now remove old dataset with SB and join with this new one (rbind should work bc order doesn't matter)
+
+orgtyp_base2 <- orgtyp_base2[-which(orgtyp_base2$type_of_org == "SB"),]
+
+#orgtyp_base2 <- orgtyp_base2 %>%  
+  #      filter(type_of_org !="SB") #removes all rows that have SB 
+# so this doesn't actually work because need NAs for other parts of code to work 
+
+#then join 
+orgtyp_base <- rbind(orgtyp_base2, orgtyp_base3)
+```
+
+
+```{r echo=FALSE}
+#filter out all rows that don't have values 
+orgtyp <- orgtyp_base[-which(is.na(orgtyp_base$type_of_org)),] #this isn't doing anything, lets try again
+
+
+orgtyp2 <- orgtyp[,c(2,3,8)]
+
+tidy_orgtyp <- orgtyp2 %>% group_by(Scientific.name) %>% pivot_wider(names_from = type_of_org, values_from = Scientific.name)
+#now have dataframe with org types as columns and cell values of species names so can go through species by species and see when two org columns have same value (species)
+
+
+#to count the number of times partners in an org type work on species, would have to either use this vector: 
+##getscinamesback <- orgtyp %>%  left_join(tidy_orgtyp, by = 'Common.name')
+#or count number of strings in cell 
+#### Count the number of 'a's in each element of string
+#####q.data$number.of.a <- str_count(q.data$string, "a")
+
+#convert to df 
+orgtyp <- as.data.frame(tidy_orgtyp)
+
+e <- tidy_orgtyp %>% mutate_all(na_if, "NULL")
+
+f <- as.data.frame(e)
+
+f[!is.na(f)] <- 1
+f[is.na(f)] <- 0
+
+#remove first column 
+f <- f[,-c(1)]
+
+dim(f)
+
+### make adjacency matrix 
+f <- as.matrix(f) 
+#indexing is werid and matrix mult won't work so will try and write to csv 
+
+write.csv(f, "/usr/local/bin/store/partner_rff/output/orgtype_adjmat.csv")
+
+g <- read.csv(paste0("/usr/local/bin/store/partner_rff/output/orgtype_adjmat.csv"), stringsAsFactors = FALSE)
+#remove first column 
+g <- g[,-c(1)]
+
+tg <- (t(g))
+
+write.csv(tg, "/usr/local/bin/store/partner_rff/output/orgtype_adjmat_part2.csv")
+
+h <- read.csv(paste0("/usr/local/bin/store/partner_rff/output/orgtype_adjmat_part2.csv"), stringsAsFactors = FALSE)
+#remove first column 
+
+rownames(h) <- h$X #set partnernames as rownames
+h[,1] <- NULL #then remove column 
+
+orgtype_adjmat <- as.matrix(h) %*% as.matrix(g)
+
+
+################### set up network 
+```
+
+Note - node labels seem to move every time for this one so need to check 
+might actually be shifting as edit csv and sort various columns in that process 
+```{r echo=FALSE}
+tadjmat <- orgtype_adjmat
+
+tadjmat[lower.tri(tadjmat)] <- NA
+diag(tadjmat) <- NA
+
+tolist <- tadjmat %>% melt() 
+tolist <- tolist[-which(is.na(tolist$value)),]
+
+
+#library(igraph)
+
+net <- graph_from_data_frame(d=tolist, directed=T) 
+
+
+E(net)$arrow.size <- .2 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+
+
+node.size<-setNames(c(7,31,10,7,6,16,11,5,5,4,12,4), c("SL","USFWS","P","FO","N","SW","BLM","C","R","SG","USFS","M"))
+  #so not setting in the same order 
+#V(net)$label <- NA
+E(net)$width <- E(net)$value
+
+plot(net, vertex.size=node.size)
+
+l <- layout_in_circle(net)
+
+plot(net, rescale=F, vertex.size=node.size, layout = l)
+
+```
+Caption: 
+node = org type
+node size = # of species that all parnters categorized as that org works on
+edge width = # of species two orgs work on together 
+Note: now where there use to be a SB (state both), this category has been duplicated into both SL and SW
+
+<br>
+
+
+##Network for each org
+
+```{r}
+
+base <- orgtyp_base
+base <- base[,-c(4:7,9:12)]
+
+multi <- base[which(is.na(base$type_of_org)),] #vector for multi-partner strings
+
+
+base <- base[-which(is.na(base$type_of_org)),] #remove rows with multi-partner strings
+
+#would be super easy with a loop 
+
+
+#general process
+## subset by unique character in type_of_org column 
+
+#so manual process of c&p didn't work and would be easier to change row names here in parent df than going individually and trying to fix vertex.label 
+#now trying to change rownames 
+
+colnames(base)[5:15] <- c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding") #brackets indicate which columns want to change the names of 
+
+```
+Caption:
+Network for each org where 
+nodes are actions
+node size - number of times action is done
+Edge - number of partnerships that apply both types of actions
+
+
+Node names (full action name -> shortened version for label)
+
+X1..Land.Water.Management", --> "L_W_Man"
+"X2..Species.Management", --> "Sp_Man"
+"X3..Awareness.raising", --> "Awareness"
+"X4..law.enforcement.and.prosecution" , --> "law"
+"X5..livelihood..economic.and.moral.incentrives", --> "livelihood_econ"
+"X6..Conservation.Design.and.Planning", --> "ConD&P"
+"X7..Legal.and.Policy.frameworks", --> "Legal"
+"X8..Research.and.monitoring", --> "R&M"
+"X9..Education.and.Training", --> "Edu"
+"X10..Institutional.Development", -->"IDevelopment"
+"funding --> "funding"
+
+
+C = Corporation
+no. species = 6
+no. partners = 11
+```{r echo=FALSE}
+
+
+C <- base[which(base$type_of_org == "C"),]
+
+
+
+C <- C[,-c(1:4)] #remove non numeric columns
+tC <- t(C)   #transform
+C <- t(tC)   #was coming up as non numeric so tranformed again to overwrite
+
+matC <- tC %*%  C
+
+########### put into network analysis code 
+
+
+matC[lower.tri(matC)] <- NA
+diag(matC) <- NA
+
+Clist <- matC %>% melt() 
+Clist <- Clist[-which(is.na(Clist$value)),]
+
+Cnet <- graph_from_data_frame(d=Clist, directed=T) 
+
+E(Cnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(6,2,0,0,0,5,0,4,0,6,3), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
+ 
+
+
+
+E(Cnet)$width <- E(Cnet)$value 
+
+plot(Cnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+```
+
+
+M = Military 
+no. species = 4
+no. partners = 7
+```{r echo=FALSE}
+
+M <- base[which(base$type_of_org == "M"),]
+
+M <- M[,-c(1:4)] #remove non numeric columns
+tM <- t(M)   #transform
+M <- t(tM)   #was coming up as non numeric so tranformed again to overwrite
+
+matM <- tM %*%  M
+
+########### put into network analysis code 
+
+
+matM[lower.tri(matM)] <- NA
+diag(matM) <- NA
+
+Mlist <- matM %>% melt() 
+Mlist <- Mlist[-which(is.na(Mlist$value)),]
+
+Mnet <- graph_from_data_frame(d=Mlist, directed=T) 
+
+E(Mnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(3,3,0,0,0,0,1,3,0,1,0), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
+ 
+
+
+
+E(Mnet)$width <- E(Mnet)$value 
+
+plot(Mnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+```
+
+
+
+P = Private landowner
+no. species = 11
+no. partners = 11
+```{r echo=FALSE}
+
+P <- base[which(base$type_of_org == "P"),]
+
+P <- P[,-c(1:4)] #remove non numeric columns
+tP <- t(P)   #transform
+P <- t(tP)   #was coming up as non numeric so tranformed again to overwrite
+
+matP <- tP %*%  P
+
+########### put into network analysis code 
+
+
+matP[lower.tri(matP)] <- NA
+diag(matP) <- NA
+
+Plist <- matP %>% melt() 
+Plist <- Plist[-which(is.na(Plist$value)),]
+
+Pnet <- graph_from_data_frame(d=Plist, directed=T) 
+
+E(Pnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(9,6,1,0,0,2,1,5,0,6,1), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
+ 
+
+
+
+E(Pnet)$width <- E(Pnet)$value 
+
+plot(Pnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+```
+
+
+
+SW = State Wildlife (Agency)
+no. species = 14
+no. partners = 17
+```{r echo=FALSE}
+
+SW <- base[which(base$type_of_org == "SW"),]
+
+SW <- SW[,-c(1:4)] #remove non numeric columns
+tSW <- t(SW)   #transform
+SW <- t(tSW)   #was coming up as non numeric so tranformed again to overwrite
+
+matSW <- tSW %*%  SW
+
+########### put into network analysis code 
+
+
+matSW[lower.tri(matSW)] <- NA
+diag(matSW) <- NA
+
+SWlist <- matSW %>% melt() 
+SWlist <- SWlist[-which(is.na(SWlist$value)),]
+
+SWnet <- graph_from_data_frame(d=SWlist, directed=T) 
+
+E(SWnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(10,6,3,1,1,6,7,11,2,10,5), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
+ 
+
+
+
+E(SWnet)$width <- E(SWnet)$value 
+
+plot(SWnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+```
+
+
+BLM
+no. species = 11
+no. partners = 11
+```{r echo=FALSE}
+
+BLM <- base[which(base$type_of_org == "BLM"),]
+
+BLM <- BLM[,-c(1:4)] #remove non numeric columns
+tBLM <- t(BLM)   #transform
+BLM <- t(tBLM)   #was coming up as non numeric so tranformed again to overwrite
+
+matBLM <- tBLM %*%  BLM
+
+########### put into network analysis code 
+
+
+matBLM[lower.tri(matBLM)] <- NA
+diag(matBLM) <- NA
+
+BLMlist <- matBLM %>% melt() 
+BLMlist <- BLMlist[-which(is.na(BLMlist$value)),]
+
+BLMnet <- graph_from_data_frame(d=BLMlist, directed=T) 
+
+E(BLMnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(7,3,0,0,0,6,2,4,2,2,1), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
+ 
+
+
+
+E(BLMnet)$width <- E(BLMnet)$value 
+
+plot(BLMnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+```
+
+
+USFWS
+no. species = 31
+no. partners = 34
+```{r echo=FALSE}
+
+USFWS <- base[which(base$type_of_org == "USFWS"),]
+
+USFWS <- USFWS[,-c(1:4)] #remove non numeric columns
+tUSFWS <- t(USFWS)   #transform
+USFWS <- t(tUSFWS)   #was coming up as non numeric so tranformed again to overwrite
+
+matUSFWS <- tUSFWS %*%  USFWS
+
+########### put into network analysis code 
+
+
+matUSFWS[lower.tri(matUSFWS)] <- NA
+diag(matUSFWS) <- NA
+
+USFWSlist <- matUSFWS %>% melt() 
+USFWSlist <- USFWSlist[-which(is.na(USFWSlist$value)),]
+
+USFWSnet <- graph_from_data_frame(d=USFWSlist, directed=T) 
+
+E(USFWSnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(4,5,2,0,1,5,13,6,7,15,12), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
+ 
+
+
+
+E(USFWSnet)$width <- E(USFWSnet)$value 
+
+plot(USFWSnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+```
+
+
+FO = Federal Other
+no. species = 7
+no. partners = 9
+```{r echo=FALSE}
+
+FO <- base[which(base$type_of_org == "FO"),]
+
+FO <- FO[,-c(1:4)] #remove non numeric columns
+tFO <- t(FO)   #transform
+FO <- t(tFO)   #was coming up as non numeric so tranformed again to overwrite
+
+matFO <- tFO %*%  FO
+
+########### put into network analysis code 
+
+
+matFO[lower.tri(matFO)] <- NA
+diag(matFO) <- NA
+
+FOlist <- matFO %>% melt() 
+FOlist <- FOlist[-which(is.na(FOlist$value)),]
+
+FOnet <- graph_from_data_frame(d=FOlist, directed=T) 
+
+E(FOnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(4,2,1,0,1,5,1,6,2,6,1), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
+ 
+
+
+
+E(FOnet)$width <- E(FOnet)$value 
+
+plot(FOnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+```
+
+
+N = NGO
+no. species = 6
+no. partners = 9
+```{r echo=FALSE}
+
+N <- base[which(base$type_of_org == "N"),]
+
+N <- N[,-c(1:4)] #remove non numeric columns
+tN <- t(N)   #transform
+N <- t(tN)   #was coming up as non numeric so tranformed again to overwrite
+
+matN <- tN %*%  N
+
+########### put into network analysis code 
+
+
+matN[lower.tri(matN)] <- NA
+diag(matN) <- NA
+
+Nlist <- matN %>% melt() 
+Nlist <- Nlist[-which(is.na(Nlist$value)),]
+
+Nnet <- graph_from_data_frame(d=Nlist, directed=T) 
+
+E(Nnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(4,0,1,0,1,5,2,3,2,6,2), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
+ 
+
+
+
+E(Nnet)$width <- E(Nnet)$value 
+
+plot(Nnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+```
+
+
+
+#### Skipping SB because there are only 2 state agencies in this category - 
+- Probably makes more sense to add them in both SW and SL
+
+##### Other category removed 
+O = Other
+
+```{r echo=FALSE, eval = FALSE}
+
+O <- base[which(base$type_of_org == "O"),]
+
+O <- O[,-c(1:4)] #remove non numeric columns
+tO <- t(O)   #transform
+O <- t(tO)   #was coming up as non numeric so tranformed again to overwrite
+
+matO <- tO %*%  O
+
+########### put into network analysis code 
+
+
+matO[lower.tri(matO)] <- NA
+diag(matO) <- NA
+
+Olist <- matO %>% melt() 
+Olist <- Olist[-which(is.na(Olist$value)),]
+
+Onet <- graph_from_data_frame(d=Olist, directed=T) 
+
+E(Onet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(2,1,0,0,0,2,1,0,0,2,1), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
+ 
+
+
+
+E(Onet)$width <- E(Onet)$value 
+
+plot(Onet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+```
+
+R = Reserach 
+no. species = 5
+no. partners = 5
+```{r echo=FALSE}
+
+R <- base[which(base$type_of_org == "R"),]
+
+R <- R[,-c(1:4)] #remove non numeric columns
+tR <- t(R)   #transform
+R <- t(tR)   #was coming up as non numeric so tranformed again to overwrite
+
+matR <- tR %*%  R
+
+########### put into network analysis code 
+
+
+matR[lower.tri(matR)] <- NA
+diag(matR) <- NA
+
+Rlist <- matR %>% melt() 
+Rlist <- Rlist[-which(is.na(Rlist$value)),]
+
+Rnet <- graph_from_data_frame(d=Rlist, directed=T) 
+
+E(Rnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(0,1,0,0,0,0,0,1,0,1,1), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
+ 
+
+
+
+E(Rnet)$width <- E(Rnet)$value 
+
+plot(Rnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+```
+
+SG = State Governmnet
+no. species = 4
+no. partners = 5
+```{r echo=FALSE}
+
+SG <- base[which(base$type_of_org == "SG"),]
+
+SG <- SG[,-c(1:4)] #remove non numeric columns
+tSG <- t(SG)   #transform
+SG <- t(tSG)   #was coming up as non numeric so tranformed again to overwrite
+
+matSG <- tSG %*%  SG
+
+########### put into network analysis code 
+
+
+matSG[lower.tri(matSG)] <- NA
+diag(matSG) <- NA
+
+SGlist <- matSG %>% melt() 
+SGlist <- SGlist[-which(is.na(SGlist$value)),]
+
+SGnet <- graph_from_data_frame(d=SGlist, directed=T) 
+
+E(SGnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(1,1,0,0,0,1,0,0,1,1,3), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
+ 
+
+
+
+E(SGnet)$width <- E(SGnet)$value 
+
+plot(SGnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+```
+
+USFS
+no. species = 12
+no. partners = 12
+```{r echo=FALSE}
+
+USFS <- base[which(base$type_of_org == "USFS"),]
+
+USFS <- USFS[,-c(1:4)] #remove non numeric columns
+tUSFS <- t(USFS)   #transform
+USFS <- t(tUSFS)   #was coming up as non numeric so tranformed again to overwrite
+
+matUSFS <- tUSFS %*%  USFS
+
+########### put into network analysis code 
+
+
+matUSFS[lower.tri(matUSFS)] <- NA
+diag(matUSFS) <- NA
+
+USFSlist <- matUSFS %>% melt() 
+USFSlist <- USFSlist[-which(is.na(USFSlist$value)),]
+
+USFSnet <- graph_from_data_frame(d=USFSlist, directed=T) 
+
+E(USFSnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(10,4,1,0,0,5,4,7,1,3,2), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
+ 
+
+
+
+E(USFSnet)$width <- E(USFSnet)$value 
+
+plot(USFSnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+```
+
+
+SL
+no. species = 8 
+no. partners = 11
+```{r echo=FALSE}
+
+SL <- base[which(base$type_of_org == "SL"),]
+
+#try and add line here that counts number of rows and assigns that as a vector then the number of unique species 
+
+#trying to count number of partners from each species 
+nosp <- SL %>% dplyr::group_by(Common.name) %>%
+  dplyr::summarise(length(Common.name))
+#result is column of species names and a count column
+#want to change the count column back to ones and zeros and then count total 
+
+count <- nosp %>% mutate_if(is.numeric, ~1 * (. > 0)) %>% summarise(sum(`length(Common.name)`))
+
+
+#make into vector
+
+# color loop 
+
+#for #color =  
+#if ( 0<x <= 4) {
+#statement1
+#} else if ( 5 < x <= 9) {
+#statement2
+#} else if ( 10 < x <= 15) {
+#statement3
+#} else if ( 16 < x <= 20) {
+#statement4
+#} else if ( 21 < x <= 25) {
+#statement4  
+#} else if ( 26 < x <= 30) {
+#statement4  
+#} else {
+#statement5
+#}
+
+  
+#  count(distinct(SL$Common.name))
+  
+  
+ # summarise(n = n())
+
+
+SL <- SL[,-c(1:4)] #remove non numeric columns
+tSL <- t(SL)   #transform
+SL <- t(tSL)   #was coming up as non numeric so tranformed again to overwrite
+
+matSL <- tSL %*%  SL
+
+########### put into network analysis code 
+
+
+matSL[lower.tri(matSL)] <- NA
+diag(matSL) <- NA
+
+SLlist <- matSL %>% melt() 
+SLlist <- SLlist[-which(is.na(SLlist$value)),]
+
+SLnet <- graph_from_data_frame(d=SLlist, directed=T) 
+
+E(SLnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(6,2,0,0,0,5,2,4,1,5,3), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
+ 
+
+
+
+E(SLnet)$width <- E(SLnet)$value 
+
+plot(SLnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+```
+
+
+
+
+<br>
+
+For multi-partner strings 
+no. species = 23
+no. partners = 52
+```{r echo=FALSE}
+
+multi <- multi[,-c(1:4)] #remove non numeric columns
+tmulti <- t(multi)   #transform
+multi <- t(tmulti)   #was coming up as non numeric so tranformed again to overwrite
+
+matmulti <- tmulti %*%  multi
+
+########### put into network analysis code 
+
+
+matmulti[lower.tri(matmulti)] <- NA
+diag(matmulti) <- NA
+
+multilist <- matmulti %>% melt() 
+multilist <- multilist[-which(is.na(multilist$value)),]
+
+multinet <- graph_from_data_frame(d=Clist, directed=T) 
+
+E(multinet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(15,3,4,3,1,20,4,12,7,12,7), c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding"))
+ 
+
+E(multinet)$width <- E(multinet)$value 
+
+plot(multinet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+l <- layout_in_circle(multinet)
+
+plot(multinet, rescale=F, layout=l*1, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+
+#legend(x=-1.5, y=-1.1, c("Newspaper","Television", "Online News"), pch=21, col="#777777", pt.bg=colrs, pt.cex=2, cex=.8, bty="n", ncol=1)
+
+## ^ this won't work yet 
+
+
+# Set colors to plot the distances:
+
+#oranges <- colorRampPalette(c("dark red", "gold"))
+
+#col <- oranges(max(dist.from.NYT)+1)
+
+#col <- col[dist.from.NYT+1]
+
+
+```
+
+
+
+
+
+
+```{r eval=FALSE, include=FALSE}
+
+
+############################# Yay that works!! Now just need to make into matrix, multiple and then network (all below is scrap work)
+
+
+#new issue is that all cells (except for first row) is in list
+
+b <- lapply(orgtyp, function(x) ifelse(length(x)==0,0,x))
+
+c <- lapply(orgtyp, function(x) if (length(x) == 0) {0} else {x})
+
+
+myFUN <- function(x) {
+    if ((character(x)) >= 1) {
+      1
+    } else {
+      0
+    }
+  } 
+
+
+d <- myFUN(orgtyp)
+
+### original thought was to replace empty lists with 0s but none of these are working 
+## looks like thats because length wasn't 0 but 1
+##Issue is that all lists in df have length of 1
+### New plan is to try and replace by class
+
+orgtyp[lengths(orgtyp) == 1] <- 0
+
+
+myFun <- function(data) {
+  temp1 <- sapply(data, is.list)
+  temp2 <- do.call(
+    cbind, lapply(data[temp1], function(x) 
+      data.frame(do.call(rbind, x), check.names=FALSE)))
+  cbind(data[!temp1], temp2)
+}
+
+myFun(orgtyp)
+
+neworgtyp <- (apply(orgtyp, 1, unlist))
+
+neworgtyp <- t(neworgtyp)
+
+orgtype2 <- cbind(orgtyp[!sapply(orgtyp, is.list)], 
+      (t(apply(orgtyp[sapply(orgtyp, is.list)], 1, unlist))))
+
+
+is.null(orgtyp[2,2])
+
+orgtyp[1,5]
+
+#for now, just going to convert to 1s and 0s 
+orgtyp[is.null(orgtyp)] <- 0
+tidy_orgtyp[!is.na(tidy_orgtyp)] <- 1
+
+tidy_orgtyp[2,2]
+
+
+```
+
+
+

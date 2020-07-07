@@ -1,0 +1,276 @@
+---
+title: "statsone"
+author: "Annabelle"
+date: "January 8, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+Partnership overview3 part a 
+
+How many partners are there?
+1. 	Total
+2. 	Histogram of partners/species
+3. 	Max, min, median, and 1st and 3rd quantiles across species
+4. 	Per agreement/species (?)
+
+```{r}
+#total number of partners
+dim(edited) #243 (no columns - 1 bc have sci name as first column)
+
+#Histogram of partners/species 
+  #using rowSum calcs
+
+library(readr)
+require(readr)
+rsumsci <- read_csv("~/Desktop/Fall 2019/RFF part 2/rowsum.csv")
+rsumsci$X1 <- NULL
+
+str(rsumsci)
+#need to flip or transpose df 
+ta <- t(rsumsci)
+table(ta)
+View(ta)
+
+plot(ta)
+plot(rs)
+
+hist(ta$rs)
+?hist
+
+library(readr)
+require(readr)
+rnum <- read_csv("~/Desktop/Fall 2019/RFF part 2/rsumnorm.csv")
+View(rnum)
+rnum$X1 <- NULL
+back <- t(rnum)
+plot(back)
+#same error
+table(back)
+
+#try to subset to counts greater than 1 then see if plotting works 
+require(dplyr)
+(which(rnum$rs == 0)) #should be 34 N/A
+which(rnum$rs == 1)
+one <- which(rnum$rs == 1)
+nmaes(rnum)[one] #issue because have deleted names from dataframe
+
+which(rnum > 1) #get 180 results 
+
+big = rnum[-which(rnum$rs==0)] ##getting Error: Negative column indexes in `[` must match number of columns:
+only =  rnum[-which(rnum$rs==1)] #same issue
+#seems to think that the subset will leave some species names without information
+
+
+
+
+# 3 
+#summary(rsumsci)
+ #Scientific name          rs        
+ #Length:90          Min.   : 0.000  
+ #Class :character   1st Qu.: 0.000  
+ #Mode  :character   Median : 2.000  
+ #                   Mean   : 4.133  
+  #                  3rd Qu.: 4.750  
+   #                 Max.   :54.000
+ 
+
+   
+#     per agreement per species 
+
+```
+
+
+Partnership overview3 part b 
+Who are the organizations partnering with FWS? 
+  a. List of all the organizations involved 
+  b. Which partners are most commonly working with others 
+      i. Histogram of partnerships/partner 
+      ii. Max, min, median, and 1st and 3rd quantiles partners/partner 
+  c. How many species each partner is involved in projects on 
+      i. Histogram of species /partner 
+      ii. Max, min, median, and 1st and 3rd quantiles species/partner
+
+```{r}
+#a list of all organizations --> colSum
+df
+
+#bi
+
+
+  # no partners vs each partner
+
+#methodology - based on colsums, subset each species the partner of interest worked on
+  #so if USFS has 21 species, then subset those 21 species to id number of partners USFS was working with
+
+### ### ### I think this one... 
+### or 
+  ### for edited df - for the USFS colum, for every 1 that exists, want to sum accross that row? 
+
+for (i in 1:ncol(edited)) {
+    if edited[] = 1
+    dvec <- rowSums() -1
+    vec <- count(dvec)
+  }
+  print()
+}
+
+
+??rowSum
+
+require(base); require(dplyr)
+#using aggregate - can't figure out what to put for by
+i=1
+if (edited[i,1] == 1) {
+  vc <- (aggregate(edited[,1], by = , FUN = sum)) 
+  print((vc))
+} else {
+   print("error")
+}
+
+#using rowSums - just prints out values of row.. doesn't add them 
+i=1
+if (edited[i,1] == 1) {
+  vc <- (rowSums(edited[,1])) 
+  print((vc))
+} else {
+   print("error")
+}
+
+#just using the simplest function sum actually worked.. 
+i=1 # currently just using the first row 
+j = 1:90 #there are 90 rows altogether but that won't apply here 
+if (edited[i,1] == 1) {
+  vc <- (sum(edited[j,1])) # get the same answer even if delete j #if put i then only get value of cell 
+  print((vc)-1) #need to remove count of the column partner
+} else {
+   print("error")
+}
+
+ evec = c()
+for (i in 1:90){
+  #vector <- c(vector, values[i]) # create empty vector to sum up each iteration
+if (edited[i,1] == 1) {
+  vector <- (sum(edited[j,1])-1) # get the same answer even if delete j #if put i then only get value of cell 
+  append(evec, values = vector)
+  print(vector)
+} else {
+  (edited[i,1] == 0) #else works if info is after bracket 
+  exvec <- (sum(edited[j,1]))
+  append(evec, exvec, after = length(i))
+  print(exvec)
+}
+ print(evec)
+}
+
+ 
+
+  evec = c()
+for(i in 1:nrow(edited)){ #iterate across the rows of mat
+  for(j in 1:ncol(edited)){ #iterate across the columns of mat
+    if (edited[i,1] == 1) {
+     vector <- (sum(edited[j,1])) # get the same answer even if delete j #if put i then only get value of cell 
+     append(evec, values = vector)
+ }    else {
+  (edited[i,1] == 0) #else works if info is after bracket 
+  exvec <- (sum(edited[j,1]))
+  append(evec, exvec, after = length(i))
+ }
+  }
+}
+print(evec)
+
+for(i in 1:nrow(edited)) {
+    edited[i] <- rowSums(edited[i])
+    print(edited[i])
+}
+
+
+
+#trying to fix 
+  evec = c()
+  two = c()
+  j = 1:90
+for(i in 1:nrow(edited)){ #iterate across the rows of mat
+#  for(j in 1:ncol(edited)){ #iterate across the columns of mat
+    if (edited[i,1] == 1) {
+     evec <- (sum(edited[j,1])-1) # get the same answer even if delete j #if put i then only get value of cell 
+     append(two, values = vector)
+     print(two)
+     print(evec)
+ }    else {
+  (edited[i,1] == 0) #else works if info is after bracket 
+  exvec <- (sum(edited[j,1]))
+  append(evec, exvec, after = length(i))
+ }
+  }
+#}
+print(evec)
+
+
+
+  #issues to address
+#For the first row, is putting the value of the first row in every row that has a 1 instead of repeating calc for each row [#still getting 21 for each iteration (writing in 21 for each row that has 1 instead of repeating calc)]
+#empty vector is staying empty 
+
+    #need to delete 1 each time or delete 1*numer of times 1 shows up 
+    #figure out how to sum 
+    
+     
+
+
+
+
+
+
+#bii 
+
+#ci
+#number of species per partner 
+    #already held in colsum 
+plot(df)
+
+library(readr)
+require(readr)
+cono <- read_csv("~/Desktop/Fall 2019/RFF part 2/colsum.csv")
+?read_csv
+View(cono)
+
+plot(cono$X1, cono$x, xlim= c(-1, 100)) #wouldn't plot with warrning:: NAs introduced by coercion
+
+library(ggplot2)
+ggplot(cono)
+
+plot(t(cono))
+okay <- tally(cono)
+as.table(okay)
+
+plot(fed) #is the issue that I used cbind before? 
+ab <- hist(fed)
+View(ab)
+
+#cii 
+
+summary(cono)
+#      X1                  x         
+# Length:243         Min.   : 1.000  
+# Class :character   1st Qu.: 1.000  
+# Mode  :character   Median : 1.000  
+#                    Mean   : 1.671  
+#                    3rd Qu.: 1.000  
+#                    Max.   :42.000
+
+
+
+```
+

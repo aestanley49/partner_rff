@@ -1,0 +1,497 @@
+---
+title: "spatial analysis"
+author: "Annabelle"
+date: "April 28, 2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Set up file structure
+```{r, include = FALSE, echo = FALSE}
+#Github file set up
+DataSource <- "./data" # input raw dataset goes here
+output.dir <-"./output" # output dataset writes to here
+#functions.dir <- "./functions" # directory for functions   #not calling any functions
+
+#Functions to read in 
+library(janitor) #cleaning data
+library(tidyverse) #cleaning data
+library(readxl) #loading in files 
+library(raster) #for coordinate distance calc
+library(gstat)
+library(sp)
+library(glmmTMB)
+library(performance) #to use with glmmTMB
+library(car) #for qqplot 
+
+#source(file.path(functions.dir,'FormatData.R'))
+```
+
+
+load in data 
+```{r setup data, echo = FALSE}
+#average center point 
+center <- read_excel(paste0(DataSource, "/mean_center_range_subsetofprecluded_with_partnerdata.xlsx"))
+
+#rdata <- read.csv(paste0(DataSource, "/combodf.csv"))
+combo <- read.csv(paste0("/usr/local/bin/store/partner_rff/OutputAndInputsForThesis/combodf.csv"))
+
+
+RegData <- read_csv(paste0("/usr/local/bin/store/partner_rff/OutputAndInputsForThesis/newdf.csv", sep = ""))
+RegData <- RegData[,-c(1)] #remove excess column 
+```
+
+**Need to check is species in center got cleaned after Detailed_methods was created - I think might have some species in here that no longer have partner information** 
+
+cleaning and combing with combo
+```{r range, include= FALSE, echo=FALSE}
+#If have locations of centroid points 
+#then calculate distance from one point to the closet one? 
+  #so closer to 0 = less independent, bigger number = more independent? 
+#rangeoverlap <- c(0) #created as empty vector 
+#combo <- add_column(combo, rangeoverlap)
+
+#make changes so can join 
+combo$common_name[10] <- "CHRISTS PAINTBRUSH" #the accent on the o gets messed up in this species so set to same
+center$common_name[9] <- "CHRISTS PAINTBRUSH"
+combo$common_name[1] <- "San Fernando Valley spineflower" #loaded without common name 
+
+#now join the two df and drop species with data missing 
+
+full <- center %>% left_join(combo, by = "common_name")
+#remove ones without partner data
+
+full <- full[-which(is.na(full$total)),]
+
+#remove extra scientific name column 
+full <- full[,-c(7,8)]
+
+#note, only one species was removed due to inadequate information about geographic range (artic greyling)
+```
+
+
+options for analysis 
+
+Add coords information to glmm (lecture 6)
+```{r scrapwork}
+
+#plot against the response variable 
+plot(full$total ~ full$x) #almost definiety not independent on westcoast 
+plot(full$total ~ full$y)
+
+numfull <- full[,c(3:4,9:14)] #with Coords 
+
+
+length(numfull$total)
+choose(51,2)
+#plot(variogram(total~1,numfull,cloud=T))
+
+
+#variogram 
+#?variogram
+#vario.Head =variogram(numfull~1,data=numfull) #error "NA values in coordinates"
+#vario.Head.fit=fit.variogram.reml(head~1,Head,model=vgm(60000,"Gau",5,0)) #code from lecture 
+#plot(vario.Head,vario.Head.fit,pch=19) #code from lecture 
+
+#plot(variogram(total~1,numfull,cloud=T)) #different function in sp package? Can't find
+
+#total#standard linear analysis 
+##remove x effect and examine residuals 
+
+## predictor ~ x +y  (see if y is contributing something significant to the fit)
+    #then check vairogram 
+
+
+# Q - more straight forward to just use coords in glmm regression? numFactor?
+
+```
+
+
+
+<br>
+
+
+
+As part of regression, split into east coast v west values to see if could graph differences in part 1 of analysis (didn't have time to use this in thesis)
+```{r eastwestsplit, include= FALSE, echo=FALSE}
+
+#### correct values here 
+ugh <- combo
+#ugh <- ugh[,c(2,6)] #had to re calibrate when reloaded the data
+okay <- ugh %>% left_join(center, by = "scientific_name")
+#so have slight issue where Chorizanthe parryi var fernandina is splet Chorizanthe parryi var fernandina and Chorizanthe parryi var. fernandina (period after var.)
+#okay[53,2] <- 2
+
+okay <- okay[-which(is.na(okay$XCoord)),]
+
+
+#plot(okay$x, okay$y)
+
+## divide by xcoord value to make east coast v westcoast column 
+
+okay <- okay %>% mutate(geo = x < -95)
+summary(okay$geo) #adams cave beetle have same point which is why getting 10 but only see 9 points
+okay[which(okay$geo == FALSE),9] <- 0
+okay[which(okay$geo == TRUE),9] <- 1
+## true or 1 means species is westcoast
+
+west <- okay %>% filter(geo == TRUE)
+fullwest <- west %>% left_join(full)
+
+east <- okay %>% filter(geo == FALSE)
+fulleast <- east %>% left_join(full)
+```
+
+
+Generate variogram with raw data - text from lecture 10 
+```{r vario_all}
+Head <- full #made in chunk above
+Head <- Head[,c(5,6,9)] #select only necessary columns 
+Head <- as.data.frame(Head)
+#
+Head$logp = log(Head$total)
+#
+# remove NA values 
+### Head <- Head[-which(is.na(Head$total)),]
+#
+library(sp)
+#data(meuse)
+#
+coordinates(Head) = c("x", "y")
+#
+library(RColorBrewer)
+library(classInt)
+library(gstat)
+  #     hscat(logp~1,data=Head, breaks=c(0,5,10,15,20,25,30,200))
+hscat(logp~1,data=Head, breaks=c(0,1,2,3,5,10,15,20,25,30,35))    ## axes are wrong? Plots look square.. 
+#
+# How many points are there?
+#
+length(Head$logp)
+#
+# How many pairs of points?
+#
+choose(49,2)
+#
+# Scatter plot of squared differences
+#
+plot(variogram(logp~1,Head,cloud=T))
+#
+# Differences averaged for distance increments
+# to show empirical variogram
+#
+logzinc.vario = variogram(logp~1,Head)
+#
+# Take a look at the contents of logzinc.vario
+#
+logzinc.vario
+#
+# Now plot the empirical variogram
+# and identify the number of pairs of points
+# going into each estimate
+#
+plot(gamma~dist,data=logzinc.vario,xlim=c(0,30))
+#text(logzinc.vario$dist+100,logzinc.vario$gamma,logzinc.vario$np)
+#
+# Sometimes outliers can have a big effect
+# Note that for this data set one outlier will go into the 
+# computation of the squared difference 155 times.
+# Cressie suggests a robust measure of the variogram.
+#
+logzinc.vario.robust = variogram(logp~1,Head,cressie=T)
+#
+par(mfrow=c(1,2))
+plot(gamma~dist,data=logzinc.vario,type="b")
+#title("Classical Variogram")
+plot(gamma~dist,data=logzinc.vario.robust,type="b") 
+#title("Robust Variogram")
+par(mfrow=c(1,1))
+#
+#
+# *** this part of the code doesn't work right yet.. don't think the lines would be super relevant for this data anyway? 
+#
+#
+# Do a permutation test by shifting the values associated with
+# each location around at random (i.e. permute them)
+# and compute the variogram and plot it each time this is done.
+#
+# First plot the original variogram estimate
+#
+plot(gamma~dist,data=logzinc.vario,type="n")
+#
+# Now do 100 permutations and plot the resulting "pure nugget" effect
+# Where our variogram lies outside this envelope show significant
+# correlation.
+#
+x=data.frame(Head)$x
+y=data.frame(Head)$y
+logzinc=Head$logp
+id0=seq(length(Head$logp))
+#for(i in 1:100)
+#{
+#  id = sample(id0)
+#  hold.perm = data.frame(x=x,y=y,logp=logp[id])
+#  coordinates(hold.perm)=c("x","y")
+#  hold.vario = variogram(logp~1,hold.perm)
+#  lines(gamma~dist,data=hold.vario,col=2)
+#}
+lines(gamma~dist,data=logzinc.vario,col=1,type="b")
+#
+# Examining for Anisotropy
+#
+logzinc.vario.dir = variogram(logp~1,Head,alpha=c(0,45,90,135))
+plot(logzinc.vario.dir)
+
+```
+
+
+Variogram for westcoast data   ** Now having issues running code even thoguh it's bug free - starting with coordinates line .. 
+```{r vario_west}
+Head <- fullwest #made in chunk above
+Head <- Head[,c(6,15,16)] #select only necessary columns 
+#
+# might want to remove Weki bug in Hawaii row 37      #*# see a big difference when this is removed
+Head <- Head[-c(37),]
+#
+Head$logp = log(Head$total)
+#
+# remove NA values 
+### Head <- Head[-which(is.na(Head$total)),]
+#
+library(sp)
+#data(meuse)
+#
+coordinates(Head) = c("x", "y")
+#
+library(RColorBrewer)
+library(classInt)
+library(gstat)
+  #     hscat(logp~1,data=Head, breaks=c(0,5,10,15,20,25,30,200))
+hscat(logp~1,data=Head, breaks=c(0,1,2,3,5,10,15,20,25,30,35))    ## axes are wrong? Plots look square.. 
+#
+# How many points are there?
+#
+length(Head$logp)
+#
+# How many pairs of points?
+#
+choose(40,2)
+#
+# Scatter plot of squared differences
+#
+plot(variogram(logp~1,Head,cloud=T))
+#
+# Differences averaged for distance increments
+# to show empirical variogram
+#
+logzinc.vario = variogram(logp~1,Head)
+#
+# Take a look at the contents of logzinc.vario
+#
+logzinc.vario
+#
+# Now plot the empirical variogram
+# and identify the number of pairs of points
+# going into each estimate
+#
+plot(gamma~dist,data=logzinc.vario,xlim=c(0,10))
+#text(logzinc.vario$dist+100,logzinc.vario$gamma,logzinc.vario$np)
+#
+# Sometimes outliers can have a big effect
+# Note that for this data set one outlier will go into the 
+# computation of the squared difference 155 times.
+# Cressie suggests a robust measure of the variogram.
+#
+logzinc.vario.robust = variogram(logp~1,Head,cressie=T)
+#
+par(mfrow=c(1,2))
+plot(gamma~dist,data=logzinc.vario,type="b")
+#title("Classical Variogram")
+plot(gamma~dist,data=logzinc.vario.robust,type="b") 
+#title("Robust Variogram")
+par(mfrow=c(1,1))
+
+
+# Examining for Anisotropy
+#
+logzinc.vario.dir = variogram(logp~1,Head,alpha=c(0,45,90,135))
+plot(logzinc.vario.dir)
+
+```
+
+
+
+<br>
+
+
+
+Linear regression with spatial components added 
+
+
+original model 
+```{r}
+lm2 <- lm(log(total) ~ taxa + percentpublic + area_x + nsumemploy + total_x_x, data=RegData)
+#withou log 
+#lm2 <- lm((total) ~ taxa + percentpublic + area_x + nsumemploy + total_x_x, data=RegData)
+#
+summary(lm2)
+#
+#kable(table(lm2$coefficients))
+#
+par(mfrow = c(1, 1))
+plot(lm2)
+#
+qqPlot(residuals(lm2))
+par(mfrow = c(1, 1))
+#
+#plot(predicted(lm2), residuals(lm2))
+#hist(residuals(lm2))
+# how add CI equivalent around q-q plot? 
+AIC(lm2)
+#check_overdispersion(lm2)
+```
+
+put coordinates into model as predictors 
+```{r}
+# Empirical variogram estimation
+#
+library(gstat)
+vario.Head =variogram(logp~1,data=Head)
+vario.Head.fit=fit.variogram.reml(logp~1,Head,model=vgm(60000,"Gau",5,0)) #Get a bunch of weird error messages here 
+plot(vario.Head,vario.Head.fit,pch=19)
+#
+### So there isn't much trend to remove? 
+#
+#
+#
+# look for trend in data 
+# Remove the trend
+#
+linear1.lm = lm(logp~x,data=Head)
+summary(linear1.lm)
+AIC(linear1.lm)
+#
+x=data.frame(Head)$x
+y=data.frame(Head)$y
+par(mfrow=c(1,2))
+plot(resid(linear1.lm)~x,pch=15)      # clustering of points but no trend for each 
+plot(resid(linear1.lm)~y,pch=15)
+par(mfrow=c(1,1))
+#
+#
+#
+# Going to stop ploting residuals for each 
+#
+#
+linear2.lm = lm(logp~x+y,data=Head)
+summary(linear2.lm)
+anova(linear1.lm,linear2.lm,test="F")
+AIC(linear2.lm)
+#
+#
+linear3.lm = lm(logp~x*y,data=Head)
+summary(linear3.lm)
+anova(linear2.lm,linear3.lm,test="F")
+AIC(linear3.lm)
+#
+linear4.lm = lm(logp~x*y+I(x^2),data=Head)
+summary(linear4.lm)
+anova(linear3.lm,linear4.lm,test="F")
+AIC(linear4.lm)
+#
+linear5.lm = lm(logp~x*y+I(y^2),data=Head)
+summary(linear5.lm)
+anova(linear3.lm,linear5.lm,test="F")
+AIC(linear5.lm)
+
+### AIC of lm 3 was lowest so will use that in model combining with other predictors 
+
+```
+
+
+
+combine original model and coordinates 
+```{r}
+#switching to dataset full bc has coords and predictors 
+
+linear3.lm = lm(logp~x*y,data=Head)
+summary(linear3.lm)
+anova(linear2.lm,linear3.lm,test="F")
+AIC(linear3.lm)
+
+lm2 <- lm(log(total) ~ taxa + percentpublic + area_x + nsumemploy + total_x_x, data=RegData)
+summary(lm2)
+AIC(lm2)
+
+lmall1 <- lm(log(total) ~ taxa + percentpublic + area_x + nsumemploy + total_x_x + x, data = full)
+summary(lmall1)
+anova(linear2.lm,linear3.lm,test="F")
+AIC(lmall1)
+
+lmall2 <- lm(log(total) ~ taxa + percentpublic + area_x + nsumemploy + total_x_x + x+y, data = full)
+summary(lmall2)
+anova(linear2.lm,linear3.lm,test="F")
+AIC(lmall2)
+
+
+lmall3 <- lm(log(total) ~ taxa + percentpublic + area_x + nsumemploy + total_x_x + x*y, data = full)
+summary(lmall3)
+anova(linear2.lm,linear3.lm,test="F")
+AIC(lmall3)
+
+#result is a lower AIC and adjusted R squared value 
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+<br>
+
+
+
+ 
+
+Distance between points - done two ways and made two distance matrices 
+```{r include= FALSE, echo=FALSE}
+
+plot(full$XCoord, full$YCoord)
+##outlier is in hawaii, can basically see the contiential US 
+#
+## there is a difference with variables: XCoord and x / YCoord and Y
+## I don't know what the difference is but when plotting, get the following results=
+coords <- full[,c(4,5)]
+dis <- dist(coords) #distance between points - note this is incorrect bc cartesian distance - doesn't take curviture into account 
+as.matrix(dis) #have matrix of distances between points 
+#####gdis <- pointDistance(coords, lonlat=TRUE)
+#View(gdis)
+#
+#xandy <- center[,c(6,7)]
+#gdis <- pointDistance(xandy, lonlat=TRUE) ##this ran without producing any NaNs so correct? 
+#View(gdis)
+#gdis[48,27] #this is eastern cottontail and weki bug [distance from hawaii to New england] ## check
+#View(t(gdis))
+##need to combine?? 
+#as.matrix(gdis) #have matrix of distances between points 
+
+#good source - https://rspatial.org/raster/analysis/analysis.pdf
+# decay function 
+#residuals 
+#spatial lag plots ???? --> see chapter 7 of source 
+  #lagsarlm - package, probs need to load 
+
+# probably should create new chunck to do modeling, what else need to prep?? 
+
+```
