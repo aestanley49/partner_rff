@@ -3,8 +3,8 @@ title: "Data Exploration Salafsky edited"
 author: "Annabelle"
 date: "June 15, 2020"
 output:
-  html_document: default
   word_document: default
+  html_document: default
 ---
 
 added edited to file name to keep seperate from first round of networks if that is something want to go back to instead of knitting over (could be fine because had doc that was sent to Gwen)
@@ -985,7 +985,7 @@ plot(Nnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note 
 ##### Other category removed 
 O = Other
 
-```{r echo=FALSE eval = FALSE}
+```{r echo=FALSE, eval = FALSE}
 
 O <- base[which(base$type_of_org == "O"),]
 
@@ -1261,11 +1261,11 @@ plot(multinet, rescale=F, layout=l*1, vertex.size=node.size*2) ## note the node 
 
 # Set colors to plot the distances:
 
-oranges <- colorRampPalette(c("dark red", "gold"))
+#oranges <- colorRampPalette(c("dark red", "gold"))
 
-col <- oranges(max(dist.from.NYT)+1)
+#col <- oranges(max(dist.from.NYT)+1)
 
-col <- col[dist.from.NYT+1]
+#col <- col[dist.from.NYT+1]
 
 
 ```
