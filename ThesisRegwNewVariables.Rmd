@@ -1,0 +1,226 @@
+---
+title: "modelwnewvariables"
+author: "Annabelle"
+date: "July 7, 2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+file set up 
+```{r}
+DataSource <- "./data" # input raw dataset goes here
+output.dir <-"./output" # output dataset writes to here
+functions.dir <- "./functions" # directory for functions 
+
+#Functions to read in 
+library(janitor) #cleaning data
+library(tidyverse) #cleaning data
+library(ggplot2)
+library(readxl) #loading in files 
+library(circlize)
+library(readr)
+library(skimr)
+library(igraph)
+library(knitr) #for making tables form kable 
+library(kableExtra)
+library(reshape2)
+library(tidytext) #suggested in github helpform for an error
+library(data.table)
+library(glmmTMB)
+library(car)
+#function qqPlot - car
+```
+
+
+```{r}
+
+RegData <- read_csv(paste(DataSource,"/newdf2.csv", sep = ""))
+
+tdata <- read.csv(paste0(DataSource,"/Updated_variables.csv"), stringsAsFactors = FALSE) #data provided by tyler 
+tdata <- tdata %>%  as_tibble() #now can use stringr packages 
+tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
+
+processed <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/ProcessedPartnersDataModified.csv"), 
+                                 stringsAsFactors = FALSE, na = c("", " ", "NA"))
+```
+
+
+modify data 
+```{r}
+
+##join tdata by regdata
+
+allreg <- RegData %>% full_join(tdata, by = c("area_x", "total_x_x", "percentpublic"))
+
+allreg <- allreg[,-c(1,2,8,12:72)]
+
+allreg <- allreg %>% full_join(processed, by = c("scientific_name", "common_name"))
+
+allreg <- allreg[,-c(6:16)]
+
+#remove NAs 
+allreg <- allreg[-which(allreg$count_w_FedAg_w_collab == 0),]
+#note missing data for 3 species? 
+
+allreg <- allreg[-which(is.na(allreg$area_x)),]
+
+#set into two new variables 
+
+allregFedAg <- allreg[,-c(7)]
+
+allregNOFA <- allreg[,-c(6)]
+
+```
+
+
+View new response variables as histograms 
+```{r}
+
+
+hist(allreg$count_w_FedAg_w_collab, breaks = 12)
+
+hist(allreg$count_wo_FedAg_w_collab, breaks = 12)
+
+```
+
+
+
+
+cor-mat allregFedAg
+```{r}
+#set up
+PredictorsOnlyPixel <- allregFedAg[,c(6)]
+PredictAndResponsePixel <- allregFedAg
+PredictAndResponseGrid <- allregFedAg
+  
+# put histograms on the diagonal panel	
+panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
+{
+  usr <- par("usr"); on.exit(par(usr))			# not sure what usr is for?
+  par(usr = c(usr[1:2],0,1.5))
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)			# make the hist 
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col="grey", ...)  # defines what the histogram is going to look like
+}
+
+## put correlations & 95% CIs on the upper panels,
+panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- cor(x, y,use="complete.obs")
+    txt <- format(c(r, 0.123456789), digits=digits)[1]
+    prefix <- "r = "
+    rc <- cor.test(x,y)
+    rci <- rc$conf.int
+    txt2 <- format(c(rci, 0.123456789), digits=digits)[1]
+    txt3 <- format(c(rci, 0.123456789), digits=digits)[2]
+    prefix2 <- "\nCI = "
+    txt <- paste(prefix, txt, prefix2, txt2, ", ", txt3, sep="")
+    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = 1)
+}
+
+## plot a correlation matrix plot that uses the functions specified above to say what to plot where
+      ## this was taken directly from website and still not plotting r values for all 
+pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+```
+
+cor-mat allregNOFA
+```{r}
+#set up
+PredictorsOnlyPixel <- allregNOFA[,c(6)]
+PredictAndResponsePixel <- allregNOFA
+PredictAndResponseGrid <- allregNOFA
+  
+# put histograms on the diagonal panel	
+panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
+{
+  usr <- par("usr"); on.exit(par(usr))			# not sure what usr is for?
+  par(usr = c(usr[1:2],0,1.5))
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)			# make the hist 
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col="grey", ...)  # defines what the histogram is going to look like
+}
+
+## put correlations & 95% CIs on the upper panels,
+panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
+{
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- cor(x, y,use="complete.obs")
+    txt <- format(c(r, 0.123456789), digits=digits)[1]
+    prefix <- "r = "
+    rc <- cor.test(x,y)
+    rci <- rc$conf.int
+    txt2 <- format(c(rci, 0.123456789), digits=digits)[1]
+    txt3 <- format(c(rci, 0.123456789), digits=digits)[2]
+    prefix2 <- "\nCI = "
+    txt <- paste(prefix, txt, prefix2, txt2, ", ", txt3, sep="")
+    if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = 1)
+}
+
+## plot a correlation matrix plot that uses the functions specified above to say what to plot where
+      ## this was taken directly from website and still not plotting r values for all 
+pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+```
+
+
+VIFS
+```{r}
+vif(lm(count_wo_FedAg_w_collab ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = allregNOFA))
+
+vif(lm(count_w_FedAg_w_collab ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = allregFedAg))
+
+```
+
+
+```{r lm1}
+lm2 <- lm(log(count_wo_FedAg_w_collab) ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = allregNOFA)
+#withou log 
+#lm2 <- lm((count_wo_FedAg_w_collab) ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = allregNOFA)
+
+summary(lm2)
+
+#kable(table(lm2$coefficients))
+
+par(mfrow = c(1, 1))
+plot(lm2)
+
+qqPlot(residuals(lm2))
+par(mfrow = c(1, 1))
+
+#plot(predicted(lm2), residuals(lm2))
+#hist(residuals(lm2))
+# how add CI equivalent around q-q plot? 
+AIC(lm2)
+#check_overdispersion(lm2)
+```
+```{r lm2}
+lm2 <- lm(log(count_w_FedAg_w_collab) ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = allregFedAg)
+#withou log 
+#lm2 <- lm((count_wo_FedAg_w_collab) ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = allregNOFA)
+
+summary(lm2)
+
+#kable(table(lm2$coefficients))
+
+par(mfrow = c(1, 1))
+plot(lm2)
+
+qqPlot(residuals(lm2))
+par(mfrow = c(1, 1))
+
+#plot(predicted(lm2), residuals(lm2))
+#hist(residuals(lm2))
+# how add CI equivalent around q-q plot? 
+AIC(lm2)
+#check_overdispersion(lm2)
+```
