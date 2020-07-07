@@ -1212,6 +1212,22 @@ plot(multinet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## n
 l <- layout_in_circle(multinet)
 
 plot(multinet, rescale=F, layout=l*1, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+
+#legend(x=-1.5, y=-1.1, c("Newspaper","Television", "Online News"), pch=21, col="#777777", pt.bg=colrs, pt.cex=2, cex=.8, bty="n", ncol=1)
+
+## ^ this won't work yet 
+
+
+# Set colors to plot the distances:
+
+oranges <- colorRampPalette(c("dark red", "gold"))
+
+col <- oranges(max(dist.from.NYT)+1)
+
+col <- col[dist.from.NYT+1]
+
+
 ```
 
 
