@@ -1,0 +1,113 @@
+---
+title: "Partnerships_draft_code"
+author: "Annabelle"
+date: "July 14, 2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Set up file structure 
+```{r, include = FALSE}
+## setup the file structure so that this markdown document is in the main project folder along with the other folders noted below
+
+DataSource <- "./data" # input raw dataset goes here
+output.dir <-"./output" # output dataset writes to here
+functions.dir <- "./functions" # directory for functions 
+
+source(file.path(functions.dir,'FormatData.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'cleaning_salafsky.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'FormatwCollabs.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'multipartnerstrings.R')) # any functions that are called up by this markdown document need to be sourced here
+
+## general functions that need to be read in. I like to put them at the top so they are easier to deal with when they change version (inevitable)
+library(plyr) #for function "join_all" also note, there can be issue loading this after dplyr (which is why it's at the top)
+library(readr)
+library(readxl)
+library(tidyverse)
+library(dplyr)
+library(janitor) #used in cleaning 
+library(stringr)
+library(car) #for function qqplot 
+library(knitr) #for making tables form kable 
+library(data.table) #function setnames() allows to set multiple column names in one line of code 
+library(igraph)
+```
+
+##load in different datasets
+```{r, echo = FALSE, include = FALSE}
+CleanData <- read.csv(paste0(DataSource,"/codesalafsky.csv"), stringsAsFactors = FALSE) #removing end piece  ## codesalafsky.csv is the rawest data that function runs on
+code <- cleaning_salafsky(CleanData)
+sdata <- read_csv(paste(DataSource,"/tableofpartnersandactions.csv", sep = "")) #this csv is produced at end of cleaning_salafsky.R function 
+#sdata <- sdata %>% select(-X1) #remove X1 column that is getting produced 
+
+tdata <- read.csv(paste0(DataSource,"/Updated_variables.csv"), stringsAsFactors = FALSE) #data provided by tyler 
+tdata <- tdata %>%  as_tibble() #now can use stringr packages 
+tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
+##
+
+tableofPandA <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "", #issue was that "" is coming up instead of NA
+               strip.white=TRUE)
+docspef <- multipartnerstrings(tableofPandA)
+
+PartnersDataModified <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/PartnersDataModified.csv"), 
+                                stringsAsFactors = FALSE, na = c("", " ", "NA"))
+newpdata <- FormatwCollabs(PartnersDataModified)
+
+
+##orgtyp_base <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "") #issue was that "" is coming up instead of NA
+## file name got changed
+
+orgtype <- orgtyp_base ## taken from Data_exploration script 
+```
+
+
+
+#### Number of species 
+```{r}
+# number count 
+pcount <- newpdata[-c(91,92),]
+pcount <- pcount[-which(is.na(pcount$partner_names)),]
+dim(pcount) ##52 
+
+# salafsky counts 
+count(unique(docspef$Scientific.name)) ##37
+```
+
+
+#### Number of partners
+##### Larger df 
+```{r}
+FedAg_w_collab <- pcount[,c(1,2,5)]
+
+EditedData <- FedAg_w_collab
+
+for (i in 1:nrow(EditedData)) {
+  dvec <- trimws(strsplit(EditedData$FedAg_w_collab[i],split=",")[[1]])
+  for (dname in dvec) {
+    if (dname%in%colnames(EditedData)) {
+      EditedData[i, dname] <- 1              
+    } else {
+      EditedData[dname] <- 0
+      EditedData[i, dname] <- 1                                    
+    }
+  }
+}
+
+dim(EditedData) #294 - 3(first three columns in df) = 291 - this is different because now includes Fed Agency offices and what were previously collaborators
+```
+
+
+##### Larger df 
+```{r}
+
+count(unique(docspef$partner.in.agreement)) #140 
+## still have 3 groups issues to take care of 
+
+```
+
+
+
