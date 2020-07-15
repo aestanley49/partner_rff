@@ -15,12 +15,18 @@
 #load in dataset 
 
 #PartnersDataModified <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/PartnersDataModified.csv"), 
-        #                         stringsAsFactors = FALSE, na = c("", " ", "NA"))
+        #                        stringsAsFactors = FALSE, na = c("", " ", "NA"))
 
 FormatwCollabs <- function(PartnersDataModified){ 
   
   ## 1. Remove columns with extra information 
   PartnersDataModified <- PartnersDataModified[,-c(1, 4,5, 11:15)]
+  
+  ## 1.5 Need to remove comma at end of Flat-tailed horned lizard or have comma issue 
+  
+  PartnersDataModified[which(PartnersDataModified$common_name =="FLAT-TAILED HORNED LIZARD"),5] <- "California Department of Parks and Recreation Anza Borrego Desert State Park, BLM El Centro, BLM Palm Springs, BLM Yuma District, BLM California Desert District, Bureau of Reclamation Yuma, USFWS Carlsbad Field Office, USFWS Phoenix Field Office, US Marine Corps Air Station Yuma, US Naval Air Facility-El Centro, US Navy SW Division San Diego, Arizona Game and Fish, California Department of Fish and Game, California Department of Parks and Recreation Off-Highway Motor Vehicle Division Ocotillo Wells State Recreational Vehicle Area, California Department of Parks and Recreation Anza Borrego Desert State Park"
+  PartnersDataModified[which(PartnersDataModified$common_name =="FLAT-TAILED HORNED LIZARD"),6] <- "California Department of Parks and Recreation Anza Borrego Desert State Park, BLM, Bureau of Reclamation, USFWS, US Marine Corps, US Navy, Arizona Game and Fish, California Department of Fish and Game, California Department of Parks and Recreation Off-Highway Motor Vehicle Division Ocotillo Wells State Recreational Vehicle Area, California Department of Parks and Recreation Anza Borrego Desert State Park"
+
 
   # 2. Counts for each of the new columns 
     #Column with federal agency offices added 
