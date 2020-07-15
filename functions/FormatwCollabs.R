@@ -8,13 +8,14 @@
             ## A with cooperators
             ## B with cooperators 
 
+
 #load in packages
-library(tidyverse)
+#library(tidyverse)
 
 #load in dataset 
 
-PartnersDataModified <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/PartnersDataModified.csv"), 
-                                 stringsAsFactors = FALSE, na = c("", " ", "NA"))
+#PartnersDataModified <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/PartnersDataModified.csv"), 
+        #                         stringsAsFactors = FALSE, na = c("", " ", "NA"))
 
 FormatwCollabs <- function(PartnersDataModified){ 
   
