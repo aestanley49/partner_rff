@@ -7,6 +7,10 @@ output:
   html_document: default
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
 added edited to file name to keep seperate from first round of networks if that is something want to go back to instead of knitting over (could be fine because had doc that was sent to Gwen)
 
 note on scaling
@@ -17,9 +21,7 @@ All layouts are currently set to circle to increase readability
 
 * need to fix scaling and color 
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 ##Set up file structure 
 ```{r, include = FALSE}
@@ -91,8 +93,12 @@ tthreats <- select(new, scientific_name, hab_x_x:threats_addressed_by_conservati
 #need to join with tdata 
 #to do so need to change col name so match 
 
-tthreats <- rename(tthreats, Sciname = scientific_name)
-allspindf <- rename(allspindf, Sciname = Scientific.name)
+names(allspindf) <- c("Sciname","LW_Mng","Sp_Mng", "Awareness",                         
+                            "law","econ","Cons_Planning", "Policy",               
+                            "Research", "Education","Inst_Dev", "funding")
+names(tthreats) <- c("Sciname","hab_x_x","over_x_x","poll_x_x","spsp_x_x","env_x_x","demo_x_x","total_x_x","threats_addressed_by_conservation_x_x")
+#tthreats <- rename(tthreats, Sciname = scientific_name) ## rename stopped working so tried new way
+#allspindf <- rename(allspindf, Sciname = Scientific.name)
 
 threats <- left_join(allspindf, tthreats, join_by = Sciname)
 
@@ -150,6 +156,61 @@ plot1 <- qplot(1)
 plot2 <- qplot(1)
 #grid.arrange(plot1, plot2, ncol=2)
 ```
+
+
+Stacked barplot for threat types (full values)
+
+```{r}
+
+hab_m <- hab_m %>% group_by(variable) %>% summarise_each(funs(sum)) 
+over_m <- over_m %>% group_by(variable) %>% summarise_each(funs(sum)) 
+poll_m <- poll_m %>% group_by(variable) %>% summarise_each(funs(sum)) 
+spsp_m <- spsp_m %>% group_by(variable) %>% summarise_each(funs(sum)) 
+env_m <- env_m %>% group_by(variable) %>% summarise_each(funs(sum)) 
+demo_m <- demo_m %>% group_by(variable) %>% summarise_each(funs(sum)) 
+
+join_melted <- hab_m %>% full_join(poll_m, by = "variable") %>% full_join(over_m, by = "variable") %>% full_join(spsp_m, by = "variable") %>% full_join(env_m, by = "variable") %>% full_join(demo_m, by = "variable")
+
+melt <- join_melted %>% melt()
+names(melt) <- c("action" , "threat", "value")
+
+
+ggplot(data = melt, aes(x = action, y = value, fill = factor(threat))) +
+geom_bar(position = "stack", stat="identity") + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Comparison of threats across each action type") + scale_x_discrete(name ="Action")
+
+```
+
+
+Change into proportional amount 
+## This is where the knit issue is coming - doesn't like where joined$variable is being overwritten 
+
+```{r eval=FALSE}
+total <- colSums(join_melted[,c(2:7)])
+joined <- bind_rows(join_melted, total)
+joined$variable <- c("LW_Mng","Sp_Mng","Awareness ","law","econ","Cons_Planning","Policy","Research","Education " ,"Inst_Dev ","funding" , "sum")
+
+
+mutatejoin <- joined %>% 
+  select(-variable) %>% 
+  mutate_each(funs(./.[12]))
+  
+mutatejoin <- mutatejoin[-c(12),]
+names <- joined[-c(12), -c(2:7)]
+
+linked <- cbind(names, mutatejoin)
+
+meltlinked <- melt(linked)
+names(meltlinked) <- c("action", "threat", "value" )
+
+ggplot(meltlinked, aes(x = threat, y = value, fill = action)) + 
+    geom_bar(position = "fill",stat = "identity") +
+    # or:
+    # geom_bar(position = position_fill(), stat = "identity") 
+    scale_y_continuous(labels = scales::percent_format()) + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Comparison of threats across each action type by percent") + scale_x_discrete(name ="Action")
+
+```
+
+
 
 
 plot hists = M 
@@ -272,7 +333,7 @@ geom_histogram(position = "dodge", stat="count")
 
 
 - no. of partners per species
-```{r}
+```{r include=FALSE}
 ## I think would have made sense to melt before combining into one table 
 
 
@@ -326,7 +387,7 @@ geom_histogram(position = "dodge", stat="count") + ggtitle("# of partners per sp
 
 
 - no. of species per partner
-```{r}
+```{r include=FALSE}
  dataA <- sdata %>% group_by(partner.in.agreement) %>% count('partner.in.agreement') #count the number of times rows for each scientific name
   dataA$All <- dataA$freq
 
@@ -361,7 +422,7 @@ geom_histogram(position = "dodge", stat="count") + ggtitle("# of species per par
 
 
 - actpartsum
-```{r}
+```{r include=FALSE}
 species <- sdata
 
 #all 
@@ -415,7 +476,7 @@ geom_histogram(position = "dodge", stat="count") + ggtitle("Histogram of the num
 
 
 - actsum
-```{r}
+```{r include=FALSE}
 
 species <- sdata
 
@@ -464,15 +525,16 @@ geom_histogram(position = "dodge", stat="count") + ggtitle("Adjusted number of a
 
 ```
 
+<br>
 
 Other histograms to complete - 
 - how many partners are participating in each action 
 - number of species with each action 
 - number of partners that apply action to at least 1 species 
 
+<br>
 
-
-Make Network for each type of org 
+#Make Network for each type of org 
 
 start from
 - managed to get df where all cells were lists (even though some said NULL?) was trying to unlist everything and then went pear shaped.. try and pick up from there 
@@ -513,7 +575,7 @@ orgtyp_base <- rbind(orgtyp_base2, orgtyp_base3)
 ```
 
 
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE}
 #filter out all rows that don't have values 
 orgtyp <- orgtyp_base[-which(is.na(orgtyp_base$type_of_org)),] #this isn't doing anything, lets try again
 
@@ -573,7 +635,7 @@ orgtype_adjmat <- as.matrix(h) %*% as.matrix(g)
 
 Note - node labels seem to move every time for this one so need to check 
 might actually be shifting as edit csv and sort various columns in that process 
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE}
 tadjmat <- orgtype_adjmat
 
 tadjmat[lower.tri(tadjmat)] <- NA
@@ -617,7 +679,7 @@ Note: now where there use to be a SB (state both), this category has been duplic
 
 ##Network for each org
 
-```{r}
+```{r include=FALSE}
 
 base <- orgtyp_base
 base <- base[,-c(4:7,9:12)]
@@ -638,7 +700,43 @@ base <- base[-which(is.na(base$type_of_org)),] #remove rows with multi-partner s
 
 colnames(base)[5:15] <- c("L_W_Man" ,"Sp_Man", "Awareness", "law" , "livelihood_econ", "ConD&P","Legal","R&M" ,"Edu","IDevelopment","funding") #brackets indicate which columns want to change the names of 
 
+write.csv(base, "/usr/local/bin/store/partner_rff/output/base.csv")
+
 ```
+
+
+```{r}
+total <- colSums(base[,c(5:15)])
+joined <- bind_rows(base, total)
+joined[143,4] <- "sum" #set row name for variable
+
+
+mutatejoin <- joined %>% 
+  select(-partner.in.agreement) %>% select(-type_of_org) %>% select(-Scientific.name) %>% select(-Common.name) %>% 
+  mutate_each(funs(./.[143]))
+  
+names <- joined[,c(4)]
+
+linked <- cbind(names, mutatejoin)
+
+linked <- linked[-c(143),]
+newlink <- linked %>% group_by(names) %>% summarise_each(funs(sum)) 
+
+
+
+meltlinked <- melt(newlink)
+
+
+ggplot(meltlinked, aes(x = variable, y = value, fill = names)) + 
+    geom_bar(position = "fill",stat = "identity") +
+    # or:
+    # geom_bar(position = position_fill(), stat = "identity") 
+    scale_y_continuous(labels = scales::percent_format()) + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of each action done by org type") + scale_x_discrete(name ="Action")
+```
+Something is wrong with code - there is more than one partner doing law 
+
+
+
 Caption:
 Network for each org where 
 nodes are actions
@@ -664,7 +762,7 @@ X1..Land.Water.Management", --> "L_W_Man"
 C = Corporation
 no. species = 6
 no. partners = 11
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE}
 
 
 C <- base[which(base$type_of_org == "C"),]
@@ -706,7 +804,7 @@ plot(Cnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note 
 M = Military 
 no. species = 4
 no. partners = 7
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE}
 
 M <- base[which(base$type_of_org == "M"),]
 
@@ -746,7 +844,7 @@ plot(Mnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note 
 P = Private landowner
 no. species = 11
 no. partners = 11
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE}
 
 P <- base[which(base$type_of_org == "P"),]
 
@@ -786,7 +884,7 @@ plot(Pnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note 
 SW = State Wildlife (Agency)
 no. species = 14
 no. partners = 17
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE}
 
 SW <- base[which(base$type_of_org == "SW"),]
 
@@ -825,7 +923,7 @@ plot(SWnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note
 BLM
 no. species = 11
 no. partners = 11
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE}
 
 BLM <- base[which(base$type_of_org == "BLM"),]
 
@@ -864,7 +962,7 @@ plot(BLMnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## not
 USFWS
 no. species = 31
 no. partners = 34
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE}
 
 USFWS <- base[which(base$type_of_org == "USFWS"),]
 
@@ -903,7 +1001,7 @@ plot(USFWSnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## n
 FO = Federal Other
 no. species = 7
 no. partners = 9
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE}
 
 FO <- base[which(base$type_of_org == "FO"),]
 
@@ -942,7 +1040,7 @@ plot(FOnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note
 N = NGO
 no. species = 6
 no. partners = 9
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE}
 
 N <- base[which(base$type_of_org == "N"),]
 
@@ -1023,7 +1121,7 @@ plot(Onet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note 
 R = Reserach 
 no. species = 5
 no. partners = 5
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE}
 
 R <- base[which(base$type_of_org == "R"),]
 
@@ -1061,7 +1159,7 @@ plot(Rnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note 
 SG = State Governmnet
 no. species = 4
 no. partners = 5
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE}
 
 SG <- base[which(base$type_of_org == "SG"),]
 
@@ -1099,7 +1197,7 @@ plot(SGnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note
 USFS
 no. species = 12
 no. partners = 12
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE}
 
 USFS <- base[which(base$type_of_org == "USFS"),]
 
@@ -1136,9 +1234,9 @@ plot(USFSnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## no
 
 
 SL
-no. species = 8 
+no. species = 7 
 no. partners = 11
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE}
 
 SL <- base[which(base$type_of_org == "SL"),]
 
@@ -1152,8 +1250,11 @@ nosp <- SL %>% dplyr::group_by(Common.name) %>%
 
 count <- nosp %>% mutate_if(is.numeric, ~1 * (. > 0)) %>% summarise(sum(`length(Common.name)`))
 
+#make into vector (count is currently a function?)
 
-#make into vector
+# for number of partners
+part <- nrow(SL)
+
 
 # color loop 
 
@@ -1174,6 +1275,23 @@ count <- nosp %>% mutate_if(is.numeric, ~1 * (. > 0)) %>% summarise(sum(`length(
 #statement5
 #}
 
+
+for #color =  
+if ( 0<x <= 4) {
+statement1
+} else if ( 5 < x <= 9) {
+statement2
+} else if ( 10 < x <= 15) {
+statement3
+} else if ( 16 < x <= 20) {
+statement4
+} else if ( 21 < x <= 25) {
+statement4  
+} else if ( 26 < x <= 30) {
+statement4  
+} else {
+statement5
+}
   
 #  count(distinct(SL$Common.name))
   
@@ -1208,7 +1326,17 @@ node.size<-setNames(c(6,2,0,0,0,5,2,4,1,5,3), c("L_W_Man" ,"Sp_Man", "Awareness"
 
 E(SLnet)$width <- E(SLnet)$value 
 
-plot(SLnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+pal2 <- "skyblue"
+
+plot(SLnet, vertex.color = pal2, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note the node sizes were scaled up 
+
+
+oranges <- colorRampPalette(c("dark red"))
+
+pal2 <- rainbow(5, alpha=1)
+
+pal2 <- "skyblue"
+
 
 ```
 
@@ -1220,7 +1348,7 @@ plot(SLnet, rescale=F, layout=layout_in_circle, vertex.size=node.size*2) ## note
 For multi-partner strings 
 no. species = 23
 no. partners = 52
-```{r echo=FALSE}
+```{r echo=FALSE, include=FALSE}
 
 multi <- multi[,-c(1:4)] #remove non numeric columns
 tmulti <- t(multi)   #transform
@@ -1270,9 +1398,350 @@ plot(multinet, rescale=F, layout=l*1, vertex.size=node.size*2) ## note the node 
 
 ```
 
+<br>
+
+For each partner type - # doing actions / total 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+C = Corporation
+no. species = 6
+no. partners = 11
+```{r echo=FALSE}
+partno <- nrow(C)
+
+C <- base[which(base$type_of_org == "C"),]
+C <- C[,-c(1:4)]
+
+prop <- C %>% 
+  mutate_each(funs(./partno)) #divide each time an action is happening by total number of partners 
+
+prop <- colSums(prop)
+prop <- t(prop)
+prop <- t(prop)
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+#now have what percentage of partners for this org type are doing each action 
+
+ggplot(prop, aes(x = rowname, y = V1)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of species-partner types doing each action (Coroporation)") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Proportion")
+```
+
+
+M = Military 
+no. species = 4
+no. partners = 7
+```{r echo=FALSE}
+partno <- nrow(M)
+
+M <- base[which(base$type_of_org == "M"),]
+M <- M[,-c(1:4)]
+
+prop <- M %>% 
+  mutate_each(funs(./partno)) #divide each time an action is happening by total number of partners 
+
+prop <- colSums(prop)
+prop <- t(prop)
+prop <- t(prop)
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+#now have what percentage of partners for this org type are doing each action 
+
+ggplot(prop, aes(x = rowname, y = V1)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of species-partner types doing each action (Military)") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Proportion")
+```
+
+
+
+P = Private landowner
+no. species = 11
+no. partners = 11
+```{r echo=FALSE}
+partno <- nrow(P)
+
+P <- base[which(base$type_of_org == "P"),]
+P <- P[,-c(1:4)]
+
+prop <- P %>% 
+  mutate_each(funs(./partno)) #divide each time an action is happening by total number of partners 
+
+prop <- colSums(prop)
+prop <- t(prop)
+prop <- t(prop)
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+#now have what percentage of partners for this org type are doing each action 
+
+ggplot(prop, aes(x = rowname, y = V1)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of species-partner types doing each action (Private landowner)") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Proportion")
+```
+
+
+
+SW = State Wildlife (Agency)
+no. species = 14
+no. partners = 17
+```{r echo=FALSE}
+SW <- base[which(base$type_of_org == "SW"),]
+SW <- SW[,-c(1:4)]
+
+partno <- nrow(SW)
+
+prop <- SW %>% 
+  mutate_each(funs(./partno)) #divide each time an action is happening by total number of partners 
+
+prop <- colSums(prop)
+prop <- t(prop)
+prop <- t(prop)
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+#now have what percentage of partners for this org type are doing each action 
+
+ggplot(prop, aes(x = rowname, y = V1)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of species-partner types doing each action (State Wildlife Agency)") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Proportion")
+```
+
+
+BLM
+no. species = 11
+no. partners = 11
+```{r echo=FALSE}
+BLM <- base[which(base$type_of_org == "BLM"),]
+BLM <- BLM[,-c(1:4)]
+
+partno <- nrow(BLM)
+
+prop <- BLM %>% 
+  mutate_each(funs(./partno)) #divide each time an action is happening by total number of partners 
+
+prop <- colSums(prop)
+prop <- t(prop)
+prop <- t(prop)
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+#now have what percentage of partners for this org type are doing each action 
+
+ggplot(prop, aes(x = rowname, y = V1)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of species-partner types doing each action (BLM)") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Proportion")
+```
+
+
+USFWS
+no. species = 31
+no. partners = 34
+```{r echo=FALSE}
+USFWS <- base[which(base$type_of_org == "USFWS"),]
+USFWS <- USFWS[,-c(1:4)]
+
+partno <- nrow(USFWS)
+
+prop <- USFWS %>% 
+  mutate_each(funs(./partno)) #divide each time an action is happening by total number of partners 
+
+prop <- colSums(prop)
+prop <- t(prop)
+prop <- t(prop)
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+#now have what percentage of partners for this org type are doing each action 
+
+ggplot(prop, aes(x = rowname, y = V1)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of species-partner types doing each action (USFWS)") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Proportion")
+```
+
+
+FO = Federal Other
+no. species = 7
+no. partners = 9
+```{r echo=FALSE}
+FO <- base[which(base$type_of_org == "FO"),]
+FO <- FO[,-c(1:4)]
+
+partno <- nrow(FO)
+
+prop <- FO %>% 
+  mutate_each(funs(./partno)) #divide each time an action is happening by total number of partners 
+
+prop <- colSums(prop)
+prop <- t(prop)
+prop <- t(prop)
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+#now have what percentage of partners for this org type are doing each action 
+
+ggplot(prop, aes(x = rowname, y = V1)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of species-partner types doing each action (Federal Other)") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Proportion")
+```
+
+
+N = NGO
+no. species = 6
+no. partners = 9
+```{r echo=FALSE}
+N <- base[which(base$type_of_org == "N"),]
+N <- N[,-c(1:4)]
+
+partno <- nrow(N)
+
+prop <- N %>% 
+  mutate_each(funs(./partno)) #divide each time an action is happening by total number of partners 
+
+prop <- colSums(prop)
+prop <- t(prop)
+prop <- t(prop)
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+#now have what percentage of partners for this org type are doing each action 
+
+ggplot(prop, aes(x = rowname, y = V1)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of species-partner types doing each action (NGO)") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Proportion")
+```
+
+
+
+#### Skipping SB because there are only 2 state agencies in this category - 
+- Probably makes more sense to add them in both SW and SL
+
+##### Other category removed 
+O = Other
+
+
+R = Reserach 
+no. species = 5
+no. partners = 5
+```{r echo=FALSE}
+R <- base[which(base$type_of_org == "R"),]
+R <- R[,-c(1:4)]
+
+partno <- nrow(R)
+
+prop <- R %>% 
+  mutate_each(funs(./partno)) #divide each time an action is happening by total number of partners 
+
+prop <- colSums(prop)
+prop <- t(prop)
+prop <- t(prop)
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+#now have what percentage of partners for this org type are doing each action 
+
+ggplot(prop, aes(x = rowname, y = V1)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of species-partner types doing each action (Reserach)") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Proportion")
+
+```
+
+SG = State Governmnet
+no. species = 4
+no. partners = 5
+```{r echo=FALSE}
+SG <- base[which(base$type_of_org == "SG"),]
+SG <- SG[,-c(1:4)]
+
+partno <- nrow(SG)
+
+prop <- SG %>% 
+  mutate_each(funs(./partno)) #divide each time an action is happening by total number of partners 
+
+prop <- colSums(prop)
+prop <- t(prop)
+prop <- t(prop)
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+#now have what percentage of partners for this org type are doing each action 
+
+ggplot(prop, aes(x = rowname, y = V1)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of species-partner types doing each action (State Government)") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Proportion")
+
+```
+
+proportion of speciesxpartner types have each action present 
+
+USFS
+no. species = 12
+no. partners = 12
+```{r}
+# for number of partners
+partno <- nrow(USFS)
+
+USFS <- base[which(base$type_of_org == "USFS"),]
+USFS <- USFS[,-c(1:4)]
+
+prop <- USFS %>% 
+  mutate_each(funs(./partno)) #divide each time an action is happening by total number of partners 
+
+prop <- colSums(prop)
+prop <- t(prop)
+prop <- t(prop)
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+#now have what percentage of partners for this org type are doing each action 
+prop$V1
+
+ggplot(prop, aes(x = rowname, y = V1)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of species-partner types doing each action (USFS)") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Proportion")
+```
+
+
+SL
+no. species = 7 
+no. partners = 11
+```{r echo=FALSE}
+# for number of partners
+partno <- nrow(SL)
+
+SL <- base[which(base$type_of_org == "SL"),]
+SL <- SL[,-c(1:4)]
+
+prop <- SL %>% 
+  mutate_each(funs(./partno)) #divide each time an action is happening by total number of partners 
+
+prop <- colSums(prop)
+prop <- t(prop)
+prop <- t(prop)
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+#now have what percentage of partners for this org type are doing each action 
+prop$V1
+
+ggplot(prop, aes(x = rowname, y = V1)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of species-partner types doing each action (SL)") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Proportion")
+
+```
+
+
+
+
+
+
+
+
+<br>
 
 
 ```{r eval=FALSE, include=FALSE}
