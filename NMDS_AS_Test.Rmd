@@ -1,0 +1,157 @@
+---
+title: "NMDS_AS_Test"
+author: "Annabelle"
+date: "July 8, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Note - need to properly set up multipartnerstring function but right now, just going to rely on output being saved in the environment and run from there
+```{r, include = FALSE}
+## setup the file structure so that this markdown document is in the main project folder along with the other folders noted below
+
+DataSource <- "./data" # input raw dataset goes here
+output.dir <-"./output" # output dataset writes to here
+functions.dir <- "./functions" # directory for functions 
+
+#source(file.path(functions.dir,'FormatData.R')) # any functions that are called up by this markdown document need to be sourced here
+
+library(vegan)
+```
+
+# partner x species 
+
+df modifications - note dataframe is partners x species 
+```{r}
+data <- nondocspef
+
+data <- data[,-c(1)]#remove columns with species names 
+
+#change names 
+names(data) <- c("partner","LW_Mng","Sp_Mng", "Awareness",                         
+                            "law","econ","Cons_Planning", "Policy",               
+                            "Research", "Education","Inst_Dev", "funding")
+
+rownames(data) <- data$partner #issue is that partner names aren't unique so can't set them to rownames
+## have to remove any partners which have no action data? why are there rows for them?
+data <- data[-which(rowSums(data[,2:12])==0),-1]
+
+
+```
+
+
+
+NMDS
+```{r}
+Testnmds<-metaMDS(data,k=2)
+names(Testnmds)
+Testnmds
+
+plot(Testnmds) # actions are crosses and partners are circles
+ordiplot(Testnmds,type="n")
+orditorp(Testnmds,display="species",col="red",air=0.01)
+orditorp(Testnmds,display="sites",cex=0.3,air=0.01)
+## those won't work in markdown for whatever reason but works in reg script
+
+Testnmds$stress
+```
+
+
+# partners
+
+so have issue where can't see names on graph because not unique (still species specific) but what if we combined irregardless of species
+
+Note - stress value was the same until turned df back to 1s and 0s
+
+set up new dataset 
+```{r}
+data2 <- nondocspef
+
+#remove names 
+data2 <- data2[,-c(1)]
+
+data2 <- data2 %>% 
+  group_by(partner.in.agreement) %>%  #want to select first all the same scientific names and then individual agreeements (that way if there are multiple agreements dont sum partner actions across agreements)
+  summarise_each(funs(sum)) #works as col sum 
+
+
+## change back to 1s and 0s 
+data2 <- data2 %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+
+
+#remove top rows missing info 
+data2 <- data2[-c(1:5),]
+
+names(data2) <- c("partner","LW_Mng","Sp_Mng", "Awareness",                         
+                            "law","econ","Cons_Planning", "Policy",               
+                            "Research", "Education","Inst_Dev", "funding")
+
+rownames(data2) <- data2$partner
+data2[,1] <- NULL #then remove column
+
+# have empty rows?
+data2 <- data2[-which(rowSums(data2[,1:11])==0),-1]
+
+```
+
+NMDS
+**** Need to figure out how to add labels 
+```{r}
+Testnmds<-metaMDS(data2,k=2)
+names(Testnmds)
+Testnmds
+
+plot(Testnmds) # actions are crosses and partners are circles
+ordiplot(Testnmds,type="n")
+orditorp(Testnmds,display="species",col="red",air=0.01)
+orditorp(Testnmds,display="sites",cex=0.3,air=0.01)
+
+Testnmds$stress
+```
+
+
+# species 
+
+Try with species as points 
+
+```{r}
+data3 <- nondocspef
+
+data3 <- data3[,-c(2)]
+
+data3 <- data3 %>% 
+  group_by(Scientific.name) %>% 
+ summarise_each(funs(sum))
+  
+
+names(data3) <- c("names","LW_Mng","Sp_Mng", "Awareness",                         
+                            "law","econ","Cons_Planning", "Policy",               
+                            "Research", "Education","Inst_Dev", "funding")
+
+data3 <- data3 %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+
+rownames(data3) <- data3$names
+data3[,1] <- NULL #then remove column
+
+
+```
+
+
+NMDS
+**** Need to figure out how to add labels 
+```{r}
+Testnmds<-metaMDS(data3,k=2)
+names(Testnmds)
+Testnmds
+
+plot(Testnmds) # actions are crosses and partners are circles
+ordiplot(Testnmds,type="n")
+orditorp(Testnmds,display="species",col="red",air=0.01)
+orditorp(Testnmds,display="sites",cex=0.3,air=0.01)
+
+Testnmds$stress
+```
