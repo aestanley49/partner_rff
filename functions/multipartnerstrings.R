@@ -5,7 +5,7 @@
 
 #load in data 
 #tableofPandA <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "", #issue was that "" is coming up instead of NA
-#               strip.white=TRUE) #trying to see if this will fix problem 
+   #            strip.white=TRUE) #trying to see if this will fix problem 
     #### note, this csv has specific field offices in partner names
     ## worth combining with earlier version and creating two outputs? 
     ### if offices aren't included, more will be combined (not super significant in agreement level combination)
@@ -19,6 +19,13 @@
 
 #need to call whatever tableofPandAmodified.csv will be named
 multipartnerstrings <- function(tableofPandA){ 
+  
+  
+  ### First need to fix any spelling inconsistencies between strings and individual partners or won't combine
+  ### Add any found here 
+  
+  tableofPandA[13,1]  <- "CPSD State Park" #for Cicindela albissima, now matches what is in strings 
+  
 
 ######### the following puts together by species, then specific agreeement then non-distinct partners
 
