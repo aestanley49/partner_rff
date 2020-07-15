@@ -1,0 +1,245 @@
+---
+title: "Data_ex_S_withMsplit"
+author: "Annabelle"
+date: "July 10, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Set up file structure 
+```{r, include = FALSE}
+## setup the file structure so that this markdown document is in the main project folder along with the other folders noted below
+
+DataSource <- "./data" # input raw dataset goes here
+output.dir <-"./output" # output dataset writes to here
+functions.dir <- "./functions" # directory for functions 
+
+source(file.path(functions.dir,'FormatData.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'cleaning_salafsky.R')) # any functions that are called up by this markdown document need to be sourced here
+
+## general functions that need to be read in. I like to put them at the top so they are easier to deal with when they change version (inevitable)
+library(plyr) #for function "join_all" also note, there can be issue loading this after dplyr (which is why it's at the top)
+library(readr)
+library(readxl)
+library(tidyverse)
+library(dplyr)
+library(janitor) #used in cleaning 
+library(stringr)
+library(car) #for function qqplot 
+library(knitr) #for making tables form kable 
+library(data.table) #function setnames() allows to set multiple column names in one line of code 
+library(igraph)
+```
+
+##load in different datasets
+```{r, echo = FALSE, include = FALSE}
+CleanData <- read.csv(paste0(DataSource,"/codesalafsky.csv"), stringsAsFactors = FALSE) #removing end piece  ## codesalafsky.csv is the rawest data that function runs on
+code <- cleaning_salafsky(CleanData)
+sdata <- read_csv(paste(DataSource,"/tableofpartnersandactions.csv", sep = "")) #this csv is produced at end of cleaning_salafsky.R function 
+#sdata <- sdata %>% select(-X1) #remove X1 column that is getting produced 
+
+tdata <- read.csv(paste0(DataSource,"/Updated_variables.csv"), stringsAsFactors = FALSE) #data provided by tyler 
+tdata <- tdata %>%  as_tibble() #now can use stringr packages 
+tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
+##
+
+##orgtyp_base <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "") #issue was that "" is coming up instead of NA
+## file name got changed
+
+orgtype <- orgtyp_base ## taken from Data_exploration script 
+
+```
+
+join org type information to split multipartner strings produced in function (not that isn't set up correctly yet)
+```{r}
+data <- nondocspef
+data$partner.in.agreement
+
+orgtyp_base <- orgtype[,c(1,8)]
+orgtyp_base <- orgtyp_base[-which(is.na(orgtyp_base$type_of_org)),] #this removes multipartner strings from dataset
+
+
+joint <- data %>% left_join(orgtyp_base, by = "partner.in.agreement")
+
+#need to remove duplicated rows 
+redup <- joint[!duplicated(joint), ]
+
+#now have same number of rows started with in data so all set 
+
+#going to remove organizations that don't have categorization for multipartner strings 
+
+redup <- redup[-which(is.na(redup$type_of_org)),]
+
+```
+
+
+```{r}
+alldf <- redup
+
+species <- alldf[,-c(2,14)]
+
+eachsp <- species %>% group_by(Scientific.name) %>% summarise_each(funs(sum)) 
+
+
+allspindf <- eachsp
+new <- tdata #need to join with tdata (renamed here)
+###new$scientific_name
+#select relevant columns
+tthreats <- select(new, scientific_name, hab_x_x:threats_addressed_by_conservation_x_x)
+
+names(allspindf) <- c("Sciname","LW_Mng","Sp_Mng", "Awareness",                         
+                            "law","econ","Cons_Planning", "Policy",               
+                            "Research", "Education","Inst_Dev", "funding")
+names(tthreats) <- c("Sciname","hab_x_x","over_x_x","poll_x_x","spsp_x_x","env_x_x","demo_x_x","total_x_x","threats_addressed_by_conservation_x_x")
+#tthreats <- rename(tthreats, Sciname = scientific_name) ## rename stopped working so tried new way
+#allspindf <- rename(allspindf, Sciname = Scientific.name)
+
+threats <- left_join(allspindf, tthreats, join_by = Sciname)
+
+```
+
+
+
+```{r}
+############### make graph for each threat
+
+#habitat
+hab <- threats %>% filter_at(vars(hab_x_x), any_vars(. %in% c(1))) 
+hab <- hab[,-c(1,13:20)]
+hab_m <- hab %>%  melt(value.name="hab")
+ggplot(hab_m, aes(x=variable, y=hab)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Count of all actions done to species with habitat threat") + scale_x_discrete(name ="Name of Action")
+
+#overutilization
+over <- threats %>% filter_at(vars(over_x_x), any_vars(. %in% c(1))) 
+over <- over[,-c(1,13:20)]
+over_m <- over %>%  melt(value.name="over")
+ggplot(over_m, aes(x=variable, y=over)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Count of all actions done to species with overutilization") + scale_x_discrete(name ="Name of Action")
+
+
+#pollution
+poll <- threats %>% filter_at(vars(poll_x_x), any_vars(. %in% c(1))) 
+poll <- poll[,-c(1,13:20)]
+poll_m <- poll %>%  melt(value.name="poll")
+ggplot(poll_m, aes(x=variable, y=poll)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Count of all actions done to species with pollution") + scale_x_discrete(name ="Name of Action")
+
+#species–species
+spsp <- threats %>% filter_at(vars(spsp_x_x), any_vars(. %in% c(1))) 
+spsp <- spsp[,-c(1,13:20)]
+spsp_m <- spsp %>%  melt(value.name="spsp")
+ggplot(spsp_m, aes(x=variable, y=spsp)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Count of all actions done to species with species–species threat") + scale_x_discrete(name ="Name of Action")
+
+#environmental stochasticity
+env <- threats %>% filter_at(vars(env_x_x), any_vars(. %in% c(1))) 
+env <- env[,-c(1,13:20)]
+env_m <- env %>%  melt(value.name="env")
+ggplot(env_m, aes(x=variable, y=env)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Count of all actions done to species with environmental stochasticity threat") + scale_x_discrete(name ="Name of Action")
+
+#demographic stochasticity
+demo <- threats %>% filter_at(vars(demo_x_x), any_vars(. %in% c(1))) 
+demo <- demo[,-c(1,13:20)]
+demo_m <- demo %>%  melt(value.name="demo")
+ggplot(demo_m, aes(x=variable, y=demo)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Count of all actions done to species with demographic stochasticity threat") + scale_x_discrete(name ="Name of Action")
+
+
+#combine into one dataset 
+### Should have just used group_by - found the total number for each based on threat type and then joined 
+#threat_actions <- join_all(list(hab_m, demo_m, spsp_m, env_m, poll_m, over_m), by='variable', type='left')
+#I think this is replicating information when joining, unsure how to fix
+#this would be the next step of putting onto 1 dataframe
+#tidythreat <- threat_actions %>%  pivot_longer(c(hab, demo), names_to = 'threat', values_to = 'count')
+
+#unsure how to put on same graph- this is from stackoverflow 
+require(gridExtra)
+plot1 <- qplot(1)
+plot2 <- qplot(1)
+#grid.a
+
+```
+
+
+Stacked barplot for threat types (full values)
+
+```{r}
+
+hab_m <- hab_m %>% group_by(variable) %>% summarise_each(funs(sum)) 
+over_m <- over_m %>% group_by(variable) %>% summarise_each(funs(sum)) 
+poll_m <- poll_m %>% group_by(variable) %>% summarise_each(funs(sum)) 
+spsp_m <- spsp_m %>% group_by(variable) %>% summarise_each(funs(sum)) 
+env_m <- env_m %>% group_by(variable) %>% summarise_each(funs(sum)) 
+demo_m <- demo_m %>% group_by(variable) %>% summarise_each(funs(sum)) 
+
+join_melted <- hab_m %>% full_join(poll_m, by = "variable") %>% full_join(over_m, by = "variable") %>% full_join(spsp_m, by = "variable") %>% full_join(env_m, by = "variable") %>% full_join(demo_m, by = "variable")
+
+melt <- join_melted %>% melt()
+names(melt) <- c("action" , "threat", "value")
+
+
+ggplot(data = melt, aes(x = action, y = value, fill = factor(threat))) +
+geom_bar(position = "stack", stat="identity") + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Comparison of threats across each action type") + scale_x_discrete(name ="Action")
+
+```
+
+
+Change into proportional amount 
+## This is where the knit issue is coming - doesn't like where joined$variable is being overwritten 
+
+```{r eval=FALSE}
+total <- colSums(join_melted[,c(2:7)])
+joined <- bind_rows(join_melted, total)
+joined$variable <- c("LW_Mng","Sp_Mng","Awareness ","law","econ","Cons_Planning","Policy","Research","Education " ,"Inst_Dev ","funding" , "sum")
+
+
+mutatejoin <- joined %>% 
+  select(-variable) %>% 
+  mutate_each(funs(./.[12]))
+  
+mutatejoin <- mutatejoin[-c(12),]
+names <- joined[-c(12), -c(2:7)]
+
+linked <- cbind(names, mutatejoin)
+
+meltlinked <- melt(linked)
+names(meltlinked) <- c("action", "threat", "value" )
+
+ggplot(meltlinked, aes(x = threat, y = value, fill = action)) + 
+    geom_bar(position = "fill",stat = "identity") +
+    # or:
+    # geom_bar(position = position_fill(), stat = "identity") 
+    scale_y_continuous(labels = scales::percent_format()) + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Comparison of threats across each action type by percent") + scale_x_discrete(name ="Action")
+
+```
+
+
+```{r}
+total <- colSums(redup[,c(3:13)])
+joined <- bind_rows(redup, total)
+#joined[135,14] <- "sum" #set row name for variable
+
+###### code broke here 
+mutatejoin <- joined %>% 
+  select(-partner.in.agreement) %>% select(-type_of_org) %>% select(-Scientific.name) %>% 
+  mutate_each(funs(./.[135]))
+  
+names <- joined[,c(4)]
+
+linked <- cbind(names, mutatejoin)
+
+linked <- linked[-c(143),]
+newlink <- linked %>% group_by(names) %>% summarise_each(funs(sum)) 
+
+
+
+meltlinked <- melt(newlink)
+
+
+ggplot(meltlinked, aes(x = variable, y = value, fill = names)) + 
+    geom_bar(position = "fill",stat = "identity") +
+    # or:
+    # geom_bar(position = position_fill(), stat = "identity") 
+    scale_y_continuous(labels = scales::percent_format()) + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of each action done by org type") + scale_x_discrete(name ="Action")
+```
+
