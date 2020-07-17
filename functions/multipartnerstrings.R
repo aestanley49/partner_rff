@@ -23,6 +23,8 @@ multipartnerstrings <- function(modPA){
  
 ######### the following puts together by species, then specific agreeement then non-distinct partners
 
+  tableofPandA <-   modPA
+  
 df2 <- separate_rows(tableofPandA, partner.in.agreement, sep = ",")
 
 # returns string w/o leading or trailing whitespace
