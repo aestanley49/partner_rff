@@ -18,15 +18,9 @@
 # - difference is wether split is agreement specific 
 
 #need to call whatever tableofPandAmodified.csv will be named
-multipartnerstrings <- function(tableofPandA){ 
+multipartnerstrings <- function(modPA){ 
   
-  
-  ### First need to fix any spelling inconsistencies between strings and individual partners or won't combine
-  ### Add any found here 
-  
-  tableofPandA[13,1]  <- "CPSD State Park" #for Cicindela albissima, now matches what is in strings 
-  
-
+ 
 ######### the following puts together by species, then specific agreeement then non-distinct partners
 
 df2 <- separate_rows(tableofPandA, partner.in.agreement, sep = ",")
