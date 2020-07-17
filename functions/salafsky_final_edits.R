@@ -12,7 +12,7 @@
 #tableofPandA <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "", #issue was that "" is coming up instead of NA
       #                              strip.white=TRUE) #trying to see if this will fix problem 
       
-modPA <- function(tableofPandA){ 
+salafsky_final_edits <- function(tableofPandA){ 
                    
 
 ##### 1. Change names / remove commas 
