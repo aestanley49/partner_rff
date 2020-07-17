@@ -12,7 +12,7 @@
 #tableofPandA <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "", #issue was that "" is coming up instead of NA
       #                              strip.white=TRUE) #trying to see if this will fix problem 
       
-tableofPandA <- function(tableofPandA){ 
+modPA <- function(tableofPandA){ 
                    
 
 ##### 1. Change names / remove commas 
@@ -41,6 +41,17 @@ tableofPandA[which(tableofPandA$partner.in.agreement == "All parties"),1] <- "Pa
 ### Need to set up code to make sure that all partners for this species & agreement are fed into this cell --> 
 # ******Also need to code in all for this one
 tableofPandA[which(tableofPandA$partner.in.agreement == "ALL (all parties)"),1] 
+
+
+#### taken from multipartnerstrings.R function so that have edits all in one place 
+
+
+### First need to fix any spelling inconsistencies between strings and individual partners or won't combine
+### Add any found here 
+
+tableofPandA[13,1]  <- "CPSD State Park" #for Cicindela albissima, now matches what is in strings 
+
+
 
 
 
@@ -73,7 +84,8 @@ zero <- tableofPandA %>% rownames_to_column() %>% filter_at(vars(rowname), all_v
 ## all non zero rows have been reomved 
 
 # check in coding salafsky before deleting row 
+modPA <- tableofPandA
 
-return(tableofPandA) # return indicates what will get spit out of the function and what will be accessible in the MD doc
+return(modPA) # return indicates what will get spit out of the function and what will be accessible in the MD doc
 
 }
