@@ -28,7 +28,7 @@ tableofPandA[which(tableofPandA$partner.in.agreement == "** I think this refers 
 # change to :: Anza-Borrego State Park, Arizona Game and Fish Yuma, California Department of Fish and Game, California State Parks, Ocotillo Wells, BLM El Centro, BLM Palm Springs, BLM Yuma, US Bureau of Reclamation Yuma, USFWS Carlsbad, USFWS Phoenix, US Marine Corps Air Station Yuma, US Naval Air Facility El Centro, US Navy SW Division
 
 
-tableofPandA[which(tableofPandA$partner.in.agreement == "???"),1] <- "NRCS, USFWS"
+tableofPandA[which(tableofPandA$partner.in.agreement == "??"),1] <- "NRCS, USFWS"
 # ???	Sceloporus arenicolus	DUNES SAGEBRUSH LIZARD
 #NRCS, FWS	Sceloporus arenicolus	DUNES SAGEBRUSH LIZARD
 
@@ -85,6 +85,12 @@ zero <- tableofPandA %>% rownames_to_column() %>% filter_at(vars(rowname), all_v
 
 # check in coding salafsky before deleting row 
 modPA <- tableofPandA
+
+
+##### Check to see if species x documents are consistent with federal organization name changes 
+  # some cases where hard to distinguish difference in document - making that list of species here 
+
+          ##*#******_____________________________********#####
 
 return(modPA) # return indicates what will get spit out of the function and what will be accessible in the MD doc
 
