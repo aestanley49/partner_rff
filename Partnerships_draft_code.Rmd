@@ -20,6 +20,7 @@ functions.dir <- "./functions" # directory for functions
 source(file.path(functions.dir,'FormatData.R')) # any functions that are called up by this markdown document need to be sourced here
 source(file.path(functions.dir,'cleaning_salafsky.R')) # any functions that are called up by this markdown document need to be sourced here
 source(file.path(functions.dir,'FormatwCollabs.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'salafsky_final_edits.R')) # any functions that are called up by this markdown document need to be sourced here
 source(file.path(functions.dir,'multipartnerstrings.R')) # any functions that are called up by this markdown document need to be sourced here
 
 ## general functions that need to be read in. I like to put them at the top so they are easier to deal with when they change version (inevitable)
@@ -51,7 +52,9 @@ tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_cas
 
 tableofPandA <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "", #issue was that "" is coming up instead of NA
                strip.white=TRUE)
-docspef <- multipartnerstrings(tableofPandA)
+## New csv made for changes made as final cleaning steps (replacing partner strings that were "all" with relevant partner names)
+modPA <- salafsky_final_edits(tableofPandA)
+docspef <- multipartnerstrings(modPA)
 
 PartnersDataModified <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/PartnersDataModified.csv"), 
                                 stringsAsFactors = FALSE, na = c("", " ", "NA"))
@@ -74,6 +77,7 @@ pcount <- pcount[-which(is.na(pcount$partner_names)),]
 dim(pcount) ##52 
 
 # salafsky counts 
+docspef <- as.data.frame(docspef)
 count(unique(docspef$Scientific.name)) ##37
 ```
 
@@ -108,6 +112,46 @@ count(unique(docspef$partner.in.agreement)) #140
 ## still have 3 groups issues to take care of 
 
 ```
+
+
+
+
+
+Other to do from doc 
+
+put number of actions into the number of partners regression?
+- this was done in Codeforoverviewdoc w actpartsum and action sum 
+
+
+Is there a subset of this for which we can identify the identity of the partners? If so, how many are there?
+
+
+Historgram of Taxa - what are the NAs??
+
+
+
+This section has some confusion I think because of M vs noM counts. I think we should report the M counts here in all cases. Needs to be fixed.
+
+
+
+Number of partners per species 
+
+
+
+Can we say something about a “general” suite of actions and how the compliment of actions is achieved by the partnership?
+
+
+
+
+
+
+
+
+
+
+
+### Checking to see which partners are all 0s 
+
 
 
 
