@@ -6,6 +6,7 @@
 "8","Natural Resources Conservation Service","Thymallus arcticus","ARCTIC GRAYLING- UPPER MISSOURI RIVER DPS","FO",1,0,0,0,0,1,0,1,0,1,1
 "9","Southern Conservation Corporation","Pseudanophthalmus pholeter","GREATER ADAMS CAVE BEETLE","N",1,0,0,0,0,1,0,0,0,1,0
 "10","Southern Conservation Corporation","Pseudanophthalmus catorycetes","Lesser Adams cave bettle ","N",1,0,0,0,0,1,0,0,0,1,0
+"11","Colorado Division of Parks and Wildlife","Oncorhynchus clarkii virginalis","RIO GRANDE CUTTHROAT TROUT","SB",1,1,0,0,0,0,0,1,0,1,0
 "12","Montana Department of Natural Resources and Conservation","Thymallus arcticus","ARCTIC GRAYLING- UPPER MISSOURI RIVER DPS","SL",1,0,0,0,0,1,0,1,0,1,0
 "13","CPSD state park ","Cicindela albissima","CORAL PINK SAND DUNES TIGER BEETLE","SL",0,0,0,0,0,0,0,0,0,0,0
 "14","New Mexico Department of Game and Fish","Oncorhynchus clarkii virginalis","RIO GRANDE CUTTHROAT TROUT","SW",1,0,0,0,0,0,0,1,0,1,0
@@ -67,6 +68,8 @@
 "117","Confederated tribes of the goshute reservation","Iotichthys phlegethontis","LEAST CHUB","P",1,1,0,0,0,0,0,1,0,1,0
 "118","Bob McIntsh (Private landowner)","Oncorhynchus mykiss ssp.","MCCLOUD RIVER REDBAND TROUT","P",0,0,0,0,0,0,0,0,0,0,0
 "119","Montana State University","Zaitzevia thermae","WARM SPRINGS ZAITZEVIAN RIFFLE BEETLE","R",0,0,0,0,0,0,0,0,0,0,1
+"120","Montana Fish Wildlife and Parks","Thymallus arcticus","ARCTIC GRAYLING- UPPER MISSOURI RIVER DPS","SB",1,0,0,0,0,1,1,0,0,1,1
+"121","Montana Fish Wildlife and Parks","Zaitzevia thermae","WARM SPRINGS ZAITZEVIAN RIFFLE BEETLE","SB",0,0,0,0,0,0,0,0,0,0,1
 "122","Kane County","Cicindela albissima","CORAL PINK SAND DUNES TIGER BEETLE","SG",0,0,0,0,0,0,0,0,0,0,0
 "123","Siskiyou County Board of Supervisors","Oncorhynchus mykiss ssp.","MCCLOUD RIVER REDBAND TROUT","SG",0,0,0,0,0,0,0,0,0,0,0
 "124","Idaho Governor's Office of Species Conservation","Urocitellus endemicus","SOUTHERN IDAHO GROUND SQUIRREL","SG",0,1,0,0,0,1,0,0,0,0,1
@@ -138,9 +141,3 @@
 "192","USFS Coronado National Forest Safford Ranger District","Sonorella macrophallus","WET CANYON TALUSSNAIL","USFS",0,0,0,0,0,1,1,1,0,0,0
 "193","USFWS ","Moxostoma","SICKLEFIN REDHORSE","USFWS",0,1,0,0,0,0,0,0,0,0,1
 "194","USFWS Arizona Ecological Services Field Office","Sonorella macrophallus","WET CANYON TALUSSNAIL","USFWS",0,0,0,0,0,0,0,0,0,0,0
-"11","Colorado Division of Parks and Wildlife","Oncorhynchus clarkii virginalis","RIO GRANDE CUTTHROAT TROUT","SW",1,1,0,0,0,0,0,1,0,1,0
-"210","Colorado Division of Parks and Wildlife","Oncorhynchus clarkii virginalis","RIO GRANDE CUTTHROAT TROUT","SL",1,1,0,0,0,0,0,1,0,1,0
-"310","Montana Fish Wildlife and Parks","Thymallus arcticus","ARCTIC GRAYLING- UPPER MISSOURI RIVER DPS","SW",1,0,0,0,0,1,1,0,0,1,1
-"410","Montana Fish Wildlife and Parks","Thymallus arcticus","ARCTIC GRAYLING- UPPER MISSOURI RIVER DPS","SL",1,0,0,0,0,1,1,0,0,1,1
-"510","Montana Fish Wildlife and Parks","Zaitzevia thermae","WARM SPRINGS ZAITZEVIAN RIFFLE BEETLE","SW",0,0,0,0,0,0,0,0,0,0,1
-"610","Montana Fish Wildlife and Parks","Zaitzevia thermae","WARM SPRINGS ZAITZEVIAN RIFFLE BEETLE","SL",0,0,0,0,0,0,0,0,0,0,1

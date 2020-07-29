@@ -3,10 +3,12 @@
 "USFWS",42
 "BLM",22
 "Montana Department of Fish Wildlife and Parks",1
+"Rare Care",1
+"NPS",8
 "Kentucky Ecological Services Field Office",1
 "Owner of the Beaver Cave property",1
 "Kentucky Department of Fish and Wildlife Resources",2
-"Natural Resources Conservation Service",2
+"NRCS",4
 "Farm Service Agency",2
 "Kentucky State Nature Preserves Commission",1
 "Kentucky Division of Forestry",1
@@ -31,7 +33,6 @@
 "Mississippi Department of Wildlife Fisheries and Parks",1
 "Nevada Department of Conservation and Natural Resources",1
 "Clark County",1
-"NPS",7
 "Nevada Department of Wildlife",3
 "Nevada Department of Transportation",1
 "Nevada Division of State Parks",2
@@ -53,7 +54,6 @@
 "the California Farm Bureau Federation",1
 "California Department of Fish and Wildlife Natural Heritage Division Endangered plant program",1
 "Center of Excellence for Hazardous Materials Management",1
-"NRCS",2
 "Texas A&M University",1
 "Texas Comptroller of Public Accounts",1
 "Texas Interagency Task Force on Economic Growth and Endangered Species",1
@@ -195,5 +195,4 @@
 "Washington State Department of Fish and Wildlife",1
 "Washington State Department of Natural Resources",1
 "University of Hawaii",1
-"Utah State Office",1
 "Alcoa Power Generating Inc",1
