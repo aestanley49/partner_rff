@@ -10,10 +10,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 file set up 
-```{r}
+```{r include=FALSE}
 DataSource <- "./data" # input raw dataset goes here
 output.dir <-"./output" # output dataset writes to here
 functions.dir <- "./functions" # directory for functions 
+
+source(file.path(functions.dir,'FormatwCollabs.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'salafsky_final_edits.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'multipartnerstrings.R')) # any functions that are called up by this markdown document need to be sourced here
 
 #Functions to read in 
 library(janitor) #cleaning data
@@ -46,6 +50,12 @@ tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_cas
 
 processed <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/ProcessedPartnersDataModified.csv"), 
                                  stringsAsFactors = FALSE, na = c("", " ", "NA"))
+
+tableofPandA <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "", #issue was that "" is coming up instead of NA
+               strip.white=TRUE)
+## New csv made for changes made as final cleaning steps (replacing partner strings that were "all" with relevant partner names)
+modPA <- salafsky_final_edits(tableofPandA)
+docspef <- multipartnerstrings(modPA)
 ```
 
 
