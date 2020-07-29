@@ -71,7 +71,7 @@ tableofPandA <- tableofPandA[-which(tableofPandA$partner.in.agreement == "partie
 
 
 # Add 1 in action 9 for NRCS, FWS	Sceloporus arenicolus	DUNES SAGEBRUSH LIZARD bc have technical assistance actions that wasn't categorized 
-tableofPandA[-which(tableofPandA$partner.in.agreement == "NRCS, USFWS"),21] <- 1 ##note column no could change
+tableofPandA[which(tableofPandA$partner.in.agreement == "NRCS, USFWS"),21] <- 1 ##note column no could change
 
 
 
