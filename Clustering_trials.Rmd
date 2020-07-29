@@ -1,0 +1,839 @@
+---
+title: "cluster_AS_test"
+author: "Annabelle"
+date: "7/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+##Set up file structure 
+```{r, include = FALSE}
+## setup the file structure so that this markdown document is in the main project folder along with the other folders noted below
+
+DataSource <- "./data" # input raw dataset goes here
+output.dir <-"./output" # output dataset writes to here
+functions.dir <- "./functions" # directory for functions 
+
+source(file.path(functions.dir,'FormatData.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'cleaning_salafsky.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'FormatwCollabs.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'salafsky_final_edits.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'multipartnerstrings.R')) # any functions that are called up by this markdown document need to be sourced here
+
+## general functions that need to be read in. I like to put them at the top so they are easier to deal with when they change version (inevitable)
+library(plyr) #for function "join_all" also note, there can be issue loading this after dplyr (which is why it's at the top)
+library(readr)
+library(readxl)
+library(tidyverse)
+library("cluster")
+library(vegan)
+library(pvclust)
+```
+
+##load in different datasets
+```{r, echo = FALSE, include = FALSE}
+tableofPandA <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "", #issue was that "" is coming up instead of NA
+               strip.white=TRUE)
+## New csv made for changes made as final cleaning steps (replacing partner strings that were "all" with relevant partner names)
+modPA <- salafsky_final_edits(tableofPandA)
+docspef <- multipartnerstrings(modPA)
+
+PartnersDataModified <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/PartnersDataModified.csv"), 
+                                stringsAsFactors = FALSE, na = c("", " ", "NA"))
+newpdata <- FormatwCollabs(PartnersDataModified)
+
+#orgtype <- orgtyp_base ## taken from Data_exploration script 
+
+tdata <- read.csv(paste0(DataSource,"/Updated_variables.csv"), stringsAsFactors = FALSE) #data provided by tyler 
+tdata <- tdata %>%  as_tibble() #now can use stringr packages 
+tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
+```
+
+
+
+
+Look at similarity in data 
+
+- Jaccard index
+  (solid tutorial - https://jootse84.github.io/notes/jaccard-index-calculation-in-R#:~:text=Recently%20I've%20been%20reading,between%20sets%20for%20binary%20variables.)
+  
+  
+  
+```{r}
+#dist.mat<-vegdist(partspecies,method="jaccard") #distance matrix based on Jaccard distance
+#print(dist.mat)
+
+partspecies <- docspef
+partspecies <- partspecies[,-c(1:3)]
+
+names(partspecies) <- c("LW_Mng","Sp_Mng", "Awareness",                         
+                            "law","econ","Cons_Planning", "Policy",               
+                            "Research", "Education","Inst_Dev", "funding")
+
+```
+
+
+source - https://www.displayr.com/how-to-calculate-jaccard-coefficients-in-displayr-using-r/
+```{r Jaccard, eval = FALSE, include = FALSE}
+Jaccard = function (x, y) { 
+  M.11 = sum(x == 1 & y == 1) 
+  M.10 = sum(x == 1 & y == 0) 
+  M.01 = sum(x == 0 & y == 1) 
+  return (M.11 / (M.11 + M.10 + M.01)) }
+
+input.variables = data.frame(partspecies$LW_Mng, partspecies$Sp_Mng, partspecies$Awareness, partspecies$law, partspecies$econ, partspecies$Cons_Planning, partspecies$Policy, partspecies$Research, partspecies$Education, partspecies$Inst_Dev, partspecies$funding) 
+
+m = matrix(data = NA, nrow = length(input.variables), ncol = length(input.variables)) 
+for (r in 1:length(input.variables)) { 
+  for (c in 1:length(input.variables)) { 
+    if (c == r) { 
+      m[r,c] = 1 
+      } else if (c > r) { 
+        m[r,c] = Jaccard(input.variables[,r], input.variables[,c]) 
+        } 
+    } 
+  } 
+
+variable.names = sapply(input.variables, attr, "label") 
+colnames(m) = c("LW_Mng","Sp_Mng", "Awareness",                         
+                            "law","econ","Cons_Planning", "Policy",               
+                            "Research", "Education","Inst_Dev", "funding")
+rownames(m) = c("LW_Mng","Sp_Mng", "Awareness",                         
+                            "law","econ","Cons_Planning", "Policy",               
+                            "Research", "Education","Inst_Dev", "funding")
+
+jaccards = m
+
+jaccards
+
+heatmap(jaccards, Rowv=NA, Colv=NA, col = heat.colors(256),  margins=c(5,10))
+
+## not sure if this is nessecary or need to keep 1s 
+diag(jaccards) <- NA
+```
+** need to find out why when use this am getting NA warnings/errors 
+
+
+- https://journocode.com/2016/03/similarity-and-distance-in-data-part-2/
+    - Need to check get the same values 
+```{r Jaccard check, eval = FALSE, include = FALSE}
+partspecies
+
+jacc <- dist(t(partspecies), method = "binary")
+
+#ggplot needs a dataframe: 
+jacc <- as.data.frame(as.matrix(jacc)) 
+
+#we want the jaccard similarity, not the distance: j
+jaccsim <- 1 - jacc
+
+#add a row with names to melt on 
+jaccsim$names <- rownames(jaccsim) 
+#melt the data frame to make it tidy 
+jacc.m <- reshape2::melt(jaccsim, id.vars = "names")
+#add a row with names to melt on 
+jaccsim$names <- rownames(jaccsim) #melt the data frame to make it tidy 
+jacc.m <- reshape2::melt(jaccsim, id.vars = "names")
+
+
+#make sure the parties are in correct order in the plot 
+#convert to factor 
+jacc.m$names <- factor(jacc.m$names, rownames(jaccsim)) 
+jacc.m$variable <- factor(jacc.m$variable, rev(rownames(jaccsim))) 
+#sort the data frame 
+jacc.m <- plyr::arrange(jacc.m, variable, plyr::desc(names)) 
+#make sure the parties are in correct order in the plot #convert to factor 
+jacc.m$names <- factor(jacc.m$names, rownames(jaccsim)) 
+jacc.m$variable <- factor(jacc.m$variable, rev(rownames(jaccsim))) 
+#sort the data frame 
+jacc.m <- plyr::arrange(jacc.m, variable, plyr::desc(names))
+
+library(ggplot2) 
+sim <- ggplot(jacc.m, aes(names, variable)) + geom_tile(aes(fill=value), colour = "white") + scale_fill_gradient(low = "#b7f7ff", high = "#0092a3")
+
+
+
+base_size <- 20 
+sim + theme_light(base_size = base_size) + 
+  labs(x = "", y = "") + 
+  scale_x_discrete(expand = c(0, 0)) + 
+  scale_y_discrete(expand = c(0, 0)) + 
+  guides(fill=guide_legend(title=NULL)) + 
+  theme(axis.ticks = element_blank(), 
+        axis.text.x = element_text(size = base_size * 0.8, angle = 330, hjust = 0), 
+        axis.text.y = element_text(size = base_size * 0.8) 
+        )
+```
+
+
+looks like Daisy is best option for dissimilarity option (can handle binary) - https://rdrr.io/cran/cluster/man/daisy.html
+
+
+
+
+Now have jaccards, will start following this to tie into NMDS - https://sites.ualberta.ca/~ahamann/teaching/renr690/Lab5.pdf
+
+```{r}
+jacc <- dist(t(partspecies), method = "binary")
+
+#ggplot needs a dataframe: 
+jacc <- as.data.frame(as.matrix(jacc)) 
+
+#we want the jaccard similarity, not the distance: j
+jaccsim <- 1 - jacc
+
+#so this seems to work.. 
+tree_wd =hclust(as.dist(1-jaccsim), method = "ward.D")
+tree_wd2 =hclust(as.dist(1-jaccsim), method = "ward.D2")
+tree_single =hclust(as.dist(1-jaccsim), method = "single")
+tree_comp =hclust(as.dist(1-jaccsim), method = "complete")
+tree_avg =hclust(as.dist(1-jaccsim), method = "average")
+tree_mcq =hclust(as.dist(1-jaccsim), method = "mcquitty")
+
+
+
+## Need to go through the following and see what makes the most sense 
+    #This should be (an unambiguous abbreviation of) one of "ward.D", "ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC).
+
+
+
+################# with significance testing
+
+jac <- as.dist(1-jaccsim)
+
+# method.dist - the distance measure to be used.. one of "correlation", "uncentered", "abscor" or those which are allowed for method argument in dist function. But won't allow me to use jaccard 
+
+#tree_wd = pvclust(jacc, method.hclust="ward.D", method.dist = "binary", nboot=1000) 
+tree_wd_default = pvclust(jacc, method.hclust="ward.D", nboot=1000, store=TRUE) # default
+tree_wd2 = pvclust(jacc, method.hclust="ward.D2", nboot=1000) 
+tree_single = pvclust(jacc, method.hclust="single", nboot=1000) 
+tree_single_store = pvclust(jacc, method.hclust="single", nboot=1000, store=TRUE) 
+tree_comp = pvclust(jacc, method.hclust="complete", nboot=1000) 
+tree_avg = pvclust(jacc, method.hclust="average", nboot=1000) ## this is the default 
+tree_mcq = pvclust(jacc, method.hclust="mcquitty", nboot=1000)
+
+#tree=pvclust(jacc, method.hclust="ward.D", nboot=1000)
+
+#plot(tree_wd, main="ward.D binary") ## this doesn't produce a valid output 
+plot(tree_wd_default, main="ward.D default")
+plot(tree_wd2, main="ward.D2")
+plot(tree_single, main="single")
+plot(tree_comp, main="complete")
+plot(tree_avg, main= "average")
+plot(tree_mcq, main= "mcquitty")
+
+
+########  trying new approach with binary 
+new <- hclust(dist(jaccsim, method="binary")) ## Note.. had to remove 1 - to get output that made sense but hclust uses disimilarity NOT similarity so how does this make sense? 
+plot(new, main= "binary")
+#tree_binary = pvclust(jaccsim, method.hclust="binary", nboot=1000)
+        ##### would have to specifiy method.hclust but doesn't allow "binary"
+#plot(tree_binary, main="ward.D binary") ## this doesn't produce a valid output 
+
+
+#######Add clusters back to dataset- source: https://www.datacamp.com/community/tutorials/hierarchical-clustering-R
+seeds_df_cl <- mutate(seeds_df, cluster = cut_avg)
+count(seeds_df_cl,cluster)
+
+
+################# NMDS
+jaccsim <- 1 - jacc
+Testnmds<-metaMDS(as.dist(1-jaccsim), distance = "jaccard", k=2, trymax=500)
+
+mycol = c("green", "yellow", "purple", "orange")
+plot(out1$points, pch=19, col=mycol[docspef$partner.in.agreement])
+text(out1$points-0.1, labels=docspef$X1..Land.Water.Management)
+
+
+partspecies
+
+
+
+ # calculates squared Mahalanobis
+Testnmds # runs NMDS
+scores=nmds.min(Testnmds) # generate scores
+Testnmds$stress # the last value indicates the final stress
+
+
+
+```
+
+
+
+
+
+
+<br>
+
+hclust
+- works with jaccsim (before add names back to it, so only 4? rows down i previous chunk)
+http://girke.bioinformatics.ucr.edu/GEN242/pages/mydoc/Rclustering.html
+```{r eval = FALSE, include = FALSE}
+clust.res<-hclust(jaccards) #agglomerative clustering using complete linkage
+#You can plot the dendrogram with:
+plot(clust.res)
+
+## I think issue is that hclust wants dissimilarity matrix (have similarity) but that shouldn't matter bc dis = 1- sim 
+
+
+hv <- hclust(as.dist(1-jaccards))
+## I think issue is that have 0 as metric for a number of cells 
+
+mod_jaccards <- jaccards
+mod_jaccards[2,4] <- .00001
+mod_jaccards[3,4] <- .00001
+mod_jaccards[4,5] <- .00001
+
+hv <- hclust(as.dist(1-jaccsim))
+
+plot(as.dendrogram(hv), edgePar=list(col=3, lwd=4), horiz=T)
+
+```
+
+
+
+set up dataframes 
+```{r}
+
+sp_act <- docspef[,-c(2,3)]
+
+sp_act <- sp_act %>% group_by(Scientific.name) %>% summarise_each(funs(sum)) 
+
+new <- tdata #need to join with tdata (renamed here)
+###new$scientific_name
+#select relevant columns
+tthreats <- select(new, scientific_name, hab_x_x:threats_addressed_by_conservation_x_x)
+
+###tthreats$scientific_name
+#need to join with tdata 
+#to do so need to change col name so match 
+
+tthreats <- rename(tthreats, Sciname = scientific_name)
+sp_act <- rename(sp_act, Sciname = Scientific.name)
+
+threats_act <- left_join(sp_act, tthreats, join_by = Sciname)
+```
+*** Need to worry about scaling and standardizing values 
+
+species as units and threats on axes
+```{r}
+threatonly <- threats_act[,-c(2:12,19:20)]
+
+threatonly <- threatonly[-which(is.na(threatonly$hab_x_x)),]
+
+## change to presence absence data or not able to use the same method... 
+
+
+threatonly <- threatonly %>% mutate_if(is.numeric, ~1 * (. > 0))
+
+##### remove Sciname 
+
+threatonly <- threatonly[,-c(1)]
+
+
+####then similarity matrix
+jacc_threats <- dist(t(threatonly), method = "binary")
+
+#ggplot needs a dataframe: 
+jacc_threats <- as.data.frame(as.matrix(jacc_threats)) 
+
+#we want the jaccard similarity, not the distance: j
+jaccsim_threats <- 1 - jacc_threats
+
+
+######## need to select method... 
+
+tree_wd =hclust(as.dist(1-jaccsim_threats), method = "ward.D")
+tree_wd2 =hclust(as.dist(1-jaccsim_threats), method = "ward.D2")
+tree_single =hclust(as.dist(1-jaccsim_threats), method = "single") #after here all prouduce same tree
+tree_comp =hclust(as.dist(1-jaccsim_threats), method = "complete")
+tree_avg =hclust(as.dist(1-jaccsim_threats), method = "average")
+tree_mcq =hclust(as.dist(1-jaccsim_threats), method = "mcquitty")
+
+
+#try ploting each with same line of code
+plot(tree_wd2, main= "mcquitty")
+
+```
+
+
+
+threats + actions as columns and species as rows 
+```{r}
+threats_act_mod <- threats_act %>% mutate_if(is.numeric, ~1 * (. > 0)) 
+threats_act_mod <- threats_act_mod[,-c(1,19,20)]
+
+threats_act_mod <- threats_act_mod[-which(is.na(threats_act_mod$hab_x_x)),]
+
+
+####then similarity matrix
+jacc_all <- dist(t(threats_act_mod), method = "binary")
+
+#ggplot needs a dataframe: 
+jacc_all <- as.data.frame(as.matrix(jacc_all)) 
+
+#we want the jaccard similarity, not the distance: j
+jaccsim_all <- 1 - jacc_all
+
+
+######## need to select method... 
+
+tree_wd =hclust(as.dist(1-jaccsim_all), method = "ward.D")
+tree_wd2 =hclust(as.dist(1-jaccsim_all), method = "ward.D2")
+tree_single =hclust(as.dist(1-jaccsim_all), method = "single") 
+tree_comp =hclust(as.dist(1-jaccsim_all), method = "complete")
+tree_avg =hclust(as.dist(1-jaccsim_all), method = "average")
+tree_mcq =hclust(as.dist(1-jaccsim_all), method = "mcquitty")
+
+
+#try ploting each with same line of code
+plot(tree_mcq, main= "mcquitty")
+
+```
+
+
+
+
+
+
+line up with bar chart/network 
+** will have to change order later on
+
+```{r bar_chart}
+df <- as_tibble(docspef)
+
+
+colsum <- (as.data.frame(colSums(df[,c(4:14)])) #creating dataframe so can plot
+  %>% rownames_to_column()) #making sure that dataframe has rownames to set as x and y 
+ 
+  
+colsum <- colsum  %>% rename(count = `colSums(df[, c(4:14)])`) #renaming column produced by colsums
+  
+
+#ggplot(colsum) + geom_point(mapping = aes(x = rowname, y = count))
+
+ggplot(colsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Name of Action")
+```
+so want to have column freq in same order as clusters (will need to reorder depending on what method decide to use.. )
+
+
+
+<br>
+
+<br>
+
+<br>
+
+-------scrap ------------------- 
+
+
+
+fuzzy 
+```{r fuzzy, eval = FALSE, include = FALSE}
+library(cluster)
+
+cfuz <- fanny(jaccsim, 3, metric ="manhattan",memb.exp = 1.7)
+
+names(cfuz)
+
+
+
+ordiplot(ord, dis = "si")
+ordiplot(ord, dis = "si", type = "n")
+stars(cfuz$membership, locatio = ord, draw.segm = TRUE,
++ add = TRUE, scale = FALSE, len = 0.1)
+ordihull(ord, cfuz$clustering, col = "blue")
+
+
+ord <- cmdscale(mod_jaccards)
+```
+
+
+
+
+<br>
+
+
+Mona
+- package - https://stat.ethz.ch/R-manual/R-devel/library/cluster/html/mona.html
+
+results : if not easier to interpret by now .. https://www.reddit.com/r/rstats/comments/1rj7fr/clustering_using_mona_from_cluster_package/
+
+
+```{r eval = FALSE, include = FALSE}
+data <- docspef[,-c(1:2)]
+
+rownames(data) <- data$partner.in.agreement #set partnernames as rownames
+data[,1] <- NULL #then remove column 
+
+names(data) <- c("LW_Mng","Sp_Mng", "Awareness",                         
+                            "law","econ","Cons_Planning", "Policy",               
+                            "Research", "Education","Inst_Dev", "funding")
+
+ma <- mona(data)
+ma
+## Plot similar to Figure 10 in Struyf et al (1996)
+plot(ma)
+
+summary(ma)
+```
+
+
+trying to see if can turn mona.object into dendrogram but not working for me yet... source - https://rdrr.io/cran/clue/src/R/hierarchy.R
+```{r eval=FALSE, include=FALSE}
+### * is.cl_hierarchy
+ x <- ma
+## Determine whether an object is a hierarchy.
+## Note that hierarchies are n-trees, which can naturally be represented
+## by their classes (as done via cl_classes()) or internal ultrametric
+## obtained by assigning height one to all splits (as done by
+## .cl_ultrametric_from_classes()). 
+## We typically used the latter, but note that this is an *internal*
+## reprsentation.
+## User-level, cl_dendrogram objects are indexed hierarchies, and
+## cl_hierarchy objects are n-trees.  The latter can be "converted" into
+## the former (using height one splits) via as.cl_dendrogram().
+
+is.cl_hierarchy <-
+function(x)
+    UseMethod("is.cl_hierarchy")
+
+## Default method.
+is.cl_hierarchy.default <- .false
+
+## Package stats: hclust().
+is.cl_hierarchy.hclust <-
+function(x)
+    !is.unsorted(x$height)
+
+## Package cluster: agnes() and diana() give objects inheriting from
+## class "twins".
+is.cl_hierarchy.twins <- .true
+## Package cluster: mona().
+is.cl_hierarchy.mona <- .true
+
+## Package ape: class "phylo".
+is.cl_hierarchy.phylo <-
+function(x)
+    ape::is.ultrametric(x)
+
+## Package clue: (virtual) class "cl_hierarchy".
+## Note that "raw" cl_ultrametric objects are *not* hierarchies, as
+## these are meant for numeric computations.
+## <FIXME>
+## Is this really a good idea?
+## We can as.hclust() a cl_dendrogram and then it is a cl_hierarchy ...
+## </FIXME>
+is.cl_hierarchy.cl_hierarchy <- .true
+
+### * as.cl_hierarchy
+
+## Note that cl_hierarchy conceptually is a virtual class, so there are
+## no prototypes and no cl_hierarchy() creator.
+
+.cl_hierarchy_classes <- "cl_hierarchy"
+
+as.cl_hierarchy <-
+function(x)
+{
+    if(is.cl_hierarchy(x)) {
+        if(!inherits(x, "cl_hierarchy"))
+            .make_container(x, .cl_hierarchy_classes)
+        else
+            x
+    }
+    else
+        .make_container(as.cl_ultrametric(x),
+                        .cl_hierarchy_classes)
+}
+
+### * print.cl_hierarchy
+
+print.cl_hierarchy <-
+function(x, ...)
+    .print_container(x, "cl_hierarchy", ...)
+
+### * Complex.cl_hierarchy
+
+## No Complex() for any kind of hierarchy.
+Complex.cl_hierarchy <-
+function(z)
+    stop(gettextf("Generic '%s' not defined for \"%s\" objects.",
+                  .Generic, .Class),
+         domain = NA)
+
+### * Math.cl_hierarchy
+
+## No Math() for any kind of hierarchy.
+Math.cl_hierarchy <-
+function(x, ...)
+    stop(gettextf("Generic '%s' not defined for \"%s\" objects.",
+                  .Generic, .Class),
+         domain = NA)
+
+### * Ops.cl_hierarchy
+
+Ops.cl_hierarchy <-
+function(e1, e2)
+{
+    if(nargs() == 1L)
+        stop(gettextf("Unary '%s' not defined for \"%s\" objects.",
+                      .Generic, .Class),
+             domain = NA)
+
+    ## Only comparisons are supprorted.
+    if(!(as.character(.Generic) %in% c("<", "<=", ">", ">=",
+                                       "==", "!=")))
+        stop(gettextf("Generic '%s' not defined for \"%s\" objects.",
+                      .Generic, .Class),
+             domain = NA)
+
+    if(n_of_objects(e1) != n_of_objects(e2))
+        stop("Hierarchies must have the same number of objects.")
+
+    c1 <- cl_classes(e1)
+    c2 <- cl_classes(e2)
+
+    switch(.Generic,
+           "<=" = all(is.finite(match(c1, c2))),
+           "<"  = all(is.finite(match(c1, c2))) && any(is.na(match(c2, c1))),
+           ">=" = all(is.finite(match(c2, c1))),
+           ">"  = all(is.finite(match(c2, c1))) && any(is.na(match(c1, c2))),
+           "==" = all(is.finite(match(c1, c2))) && all(is.finite(match(c2, c1))),
+           "!=" = any(is.na(match(c1, c2))) || any(is.na(match(c2, c1))))
+}
+
+### * Summary.cl_hierarchy
+
+## <NOTE>
+## This is really the same as Summary.cl_partition().
+## </NOTE>
+
+Summary.cl_hierarchy <-
+function(..., na.rm = FALSE)
+{
+    ok <- switch(.Generic, max = , min = , range = TRUE, FALSE)
+    if(!ok)
+        stop(gettextf("Generic '%s' not defined for \"%s\" objects.",
+                      .Generic, .Class),
+             domain = NA)
+    args <- list(...)
+    switch(.Generic,
+           "min" = cl_meet(cl_ensemble(list = args)),
+           "max" = cl_join(cl_ensemble(list = args)),
+           "range" = {
+               cl_ensemble(min = cl_meet(cl_ensemble(list = args)),
+                           max = cl_join(cl_ensemble(list = args)))
+           })
+}
+
+### * as.hclust.cl_hierarchy
+
+as.hclust.cl_hierarchy <-
+function(x, ...)
+    as.hclust(.get_representation(x), ...)
+
+### * is.cl_dendrogram
+
+## <FIXME>
+## Once we have cl_dendrogram testing, we can simplify cl_hierarchy
+## testing.  E.g.,
+##   is.cl_hierachy.default <- is.cl_dendrogram
+## should be ok, and we can add cl_hierarchy predicates for hierarchies
+## which are not dendrograms on top of that.
+## </FIXME>
+
+is.cl_dendrogram <-
+function(x)
+    UseMethod("is.cl_dendrogram")
+## Default method.
+is.cl_dendrogram.default <- .false
+## Package stats: hclust().
+is.cl_dendrogram.hclust <-
+function(x)
+    !is.unsorted(x$height)
+## Package cluster: agnes() and diana() give objects inheriting from
+## class "twins".
+is.cl_dendrogram.twins <- .true
+## Package cluster: mona().
+is.cl_dendrogram.mona <- .true
+## Package ape: class "phylo".
+is.cl_dendrogram.phylo <-
+function(x)
+    ape::is.ultrametric(x)
+## (We could also support ape's class "matching" via coercion to class
+## "phylo".)
+## Package clue: (virtual) class "cl_dendrogram".
+is.cl_dendrogram.cl_dendrogram <- .true
+
+### * as.cl_dendrogram
+
+.cl_dendrogram_classes <- c("cl_dendrogram", "cl_hierarchy")
+
+as.cl_dendrogram <-
+function(x)
+{
+    if(is.cl_dendrogram(x)) {
+        if(!inherits(x, "cl_dendrogram"))
+            .make_container(x, .cl_dendrogram_classes)
+        else
+            x
+    }
+    else
+        .make_container(as.cl_ultrametric(x),
+                        .cl_dendrogram_classes)
+}
+
+### * print.cl_dendrogram
+
+print.cl_dendrogram <-
+function(x, ...)
+    .print_container(x, "cl_dendrogram", ...)
+
+### * plot.cl_dendrogram
+
+plot.cl_dendrogram <-
+function(x, ...)
+    plot(cl_ultrametric(.get_representation(x)), ...)
+
+### * Group methods for cl_dendrogram objects.
+
+Ops.cl_dendrogram <-
+function(e1, e2)
+{
+    if(nargs() == 1L)
+        stop(gettextf("Unary '%s' not defined for \"%s\" objects.",
+                      .Generic, .Class),
+             domain = NA)
+
+    ## Only comparisons are supprorted.
+    if(!(as.character(.Generic) %in% c("<", "<=", ">", ">=",
+                                       "==", "!=")))
+        stop(gettextf("Generic '%s' not defined for \"%s\" objects.",
+                      .Generic, .Class),
+             domain = NA)
+
+    u1 <- cl_ultrametric(e1)
+    u2 <- cl_ultrametric(e2)
+    if(length(u1) != length(u2))
+        stop("Dendrograms must have the same number of objects.")
+    switch(.Generic,
+           "<=" = all(u1 <= u2),
+           "<"  = all(u1 <= u2) && any(u1 < u2),
+           ">=" = all(u1 >= u2),
+           ">"  = all(u1 >= u2) && any(u1 > u2),
+           "==" = all(u1 == u2),
+           "!=" = any(u1 != u2))
+}
+
+### * Summary.cl_dendrogram
+
+## <NOTE>
+## This is really the same as Summary.cl_hierarchy() ...
+## We cannot really call the poset specific internal meet and join
+## functions from here as e.g. max(D, H) (D a dendrogram, H an n-tree)
+## should use the n-tree poset functions ...
+## However, dispatch for cl_dendrogram should not be needed if we also
+## dispatch on cl_hierarchy ...
+## </NOTE>
+
+## Summary.cl_dendrogram <-
+## function(..., na.rm = FALSE)
+## {
+##     ok <- switch(.Generic, max = , min = , range = TRUE, FALSE)
+##     if(!ok)
+##         stop(gettextf("Generic '%s' not defined for \"%s\" objects.",
+##                       .Generic, .Class))
+##     args <- list(...)
+##     switch(.Generic,
+##            "min" = cl_meet(cl_ensemble(list = args)),
+##            "max" = cl_join(cl_ensemble(list = args)),
+##            "range" = {
+##                cl_ensemble(min = cl_meet(cl_ensemble(list = args)),
+##                            max = cl_join(cl_ensemble(list = args)))
+##            })
+## }
+
+### * as.hclust.cl_dendrogram
+
+## <NOTE>
+## This is really the same as as.hclust.cl_hierarchy() ...
+## Dispatch for cl_dendrogram should not be needed if we also dispatch
+## on cl_hierarchy ...
+## </NOTE>
+
+## as.hclust.cl_dendrogram <-
+## function(x, ...)
+##     as.hclust(.get_representation(x), ...)
+
+### ** cut.cl_dendrogram
+
+## Not perfect as this perhaps return something more "classed" in the
+## spirit of clue ...
+
+cut.cl_dendrogram <-
+function(x, ...)
+    cutree(as.hclust(x), ...)
+
+### * Utilities
+
+## To turn a mona object into a cl_dendrogram, we need to be able to
+## compute its associated ultrametric.  Hence, provide a cophenetic()
+## method for mona objects ...
+cophenetic.mona <-
+function(x)
+{
+    no <- length(x$order)
+    ns <- max(x$step) + 1
+
+    m <- matrix(NA, no, no)
+    FOO <- function(ind, step, s) {
+        if(length(ind) <= 1) return()
+        grp <- c(0, cumsum(step == s))
+        ind <- split(ind, grp)
+        len <- length(ind)
+        for(a in seq_len(len)) {
+            for(b in seq_len(a - 1L)) {
+                ## Need both as we currently cannot assume that the
+                ## indices are sorted.  Alternatively, work with the
+                ## sequence from one to the number of objects, and
+                ## reorder at the end ...
+                m[ind[[a]], ind[[b]]] <<- s
+                m[ind[[b]], ind[[a]]] <<- s
+            }
+        }
+        ind <- ind[lengths(ind) > 1L]
+        pos <- which(step == s)
+        step <- split(step[-pos], grp[-1][-pos])
+        if(is.null(step)) return()
+        for(a in seq_along(ind))
+            FOO(ind[[a]], step[[a]], s + 1)
+    }
+    
+    FOO(x$order, x$step, 1)
+    m[is.na(m)] <- ns
+    m <- ns - m
+    rownames(m) <- rownames(x$data)
+    as.dist(m)
+}
+
+## And while we're at it ...
+## (Of course, as.hclust() should really "know" that a cophenetic()
+## method is available ...)
+as.hclust.mona <-
+function(x, ...)
+    hclust(cophenetic(x), "single")
+    
+
+### Local variables: ***
+### mode: outline-minor ***
+### outline-regexp: "### [*]+" ***
+### End: ***
+```
+
