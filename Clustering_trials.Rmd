@@ -210,7 +210,7 @@ jac <- as.dist(1-jaccsim)
 # method.dist - the distance measure to be used.. one of "correlation", "uncentered", "abscor" or those which are allowed for method argument in dist function. But won't allow me to use jaccard 
 
 #tree_wd = pvclust(jacc, method.hclust="ward.D", method.dist = "binary", nboot=1000) 
-tree_wd_default = pvclust(jacc, method.hclust="ward.D", nboot=1000, store=TRUE) # default
+#tree_wd_default = pvclust(jacc, method.hclust="ward.D", nboot=1000, store=TRUE) # default  
 tree_wd2 = pvclust(jacc, method.hclust="ward.D2", nboot=1000) 
 tree_single = pvclust(jacc, method.hclust="single", nboot=1000) 
 tree_single_store = pvclust(jacc, method.hclust="single", nboot=1000, store=TRUE) 
@@ -246,23 +246,121 @@ count(seeds_df_cl,cluster)
 jaccsim <- 1 - jacc
 Testnmds<-metaMDS(as.dist(1-jaccsim), distance = "jaccard", k=2, trymax=500)
 
+
+stressplot(Testnmds)
+
+
+plot(Testnmds)
+
+#ordiplot(Testnmds,type="n")
+#orditorp(Testnmds,display="species",col="red",air=0.01)
+#orditorp(Testnmds,display="sites",cex=1.25,air=0.01)
+
+####### so only getting plots of actions - because using similarity matrix that has already been created, not able to include partners? 
+
+
+#start with original dataframe 
+TestPartners <- partspecies
+TestPartners <- TestPartners[-which(rowSums(TestPartners[,c(1:11)])==0),]
+####### I don't understand why dropping so many rows 
+#> dim(TestPartners)
+#[1] 163  11
+#> dim(partspecies)
+#[1] 200  11
+
+Testnmds<-metaMDS(TestPartners,k=2)
+
+plot(Testnmds) # actions are crosses and partners are circles
+ordiplot(Testnmds,type="n")
+#orditorp(Testnmds,display="species",col="red",air=0.01)
+#orditorp(Testnmds,display="sites",cex=0.3,air=0.01)
+#ordicluster(Testnmds,hclust(as.dist(1-jaccsim), method = "single")) 
+## The above  rows don't work in markdown but will in regular R... ?? 
+
+
+
+######### with current tutorial, unsure how to add in cluster info so switching to lab 
+#### (If were to continue, I think would have to somehow add clusters as "treatments" to partners)
+
+
+##library(ecodist) ### can't download this package?? 
+#         dm<-metaMDS(as.dist(1-jaccsim), distance = "jaccard", k=2, trymax=500)
+
+dm=distance(dat1, "mahal") # calculates squared Mahalanobis
+nmds_out=nmds(dm, mindim=2, maxdim=2) # runs NMDS
+nmds_out <- Testnmds
+scores=nmds.min(nmds_out) # generate scores
+nmds_out$stress # the last value indicates the final stress
+
+## so now this won't work because can't run scores because can't run ecodist package 
+
+
+#trying to bypass this issue... 
+
+labels <- docspef[,c(3)]
+
+sort(unique(labels$partner.in.agreement))
+mycol=c("green","yellow","purple","orange")
+plot(scores, pch=19, col=mycol[labels$partner.in.agreement])
+text(scores+0.8, labels=labels$partner.in.agreement)
+vectors=vf(scores, docspef, nperm=10)
+plot(vectors, len=0.1,
+col="red")
+
+
+##Also note found this which is interesting
+Testnmds$points
+# I think these are the points for each partner that is in the dataset but don't know how to get them on a plot with the actions and then group them.. 
+
+Testnmds$converged
+
+
+
 mycol = c("green", "yellow", "purple", "orange")
 plot(out1$points, pch=19, col=mycol[docspef$partner.in.agreement])
 text(out1$points-0.1, labels=docspef$X1..Land.Water.Management)
 
 
-partspecies
-
-
-
- # calculates squared Mahalanobis
-Testnmds # runs NMDS
-scores=nmds.min(Testnmds) # generate scores
-Testnmds$stress # the last value indicates the final stress
-
-
 
 ```
+
+
+couldn't get ecodist to run so found code here - https://rdrr.io/cran/ecodist/src/R/nmds.min.R
+```{r}
+nmds.min <- function(x, dims=2)
+
+{
+# returns the minimum-stress configuration from nmds output.
+# (Results from nmds)
+# if dims==0, returns the overall lowest-stress configuration 
+# Otherwise, returns the lowest-stress configuration of dimensionality dims
+
+# patched 2013-05-09 thanks to a bug report from Kellie Carim
+# superseded by min.nmds
+
+    if(dims == 0) {
+        x.min <- x$conf[x$stress == min(x$stress)]
+    }
+    else {
+        x.dims <- sapply(x$conf, ncol)
+        x$conf <- x$conf[x.dims == dims]
+        x$stress <- x$stress[x.dims == dims]
+        x$r2 <- x$r2[x.dims == dims]
+        x.min <- x$conf[x$stress == min(x$stress)]
+    }
+    cat("Minimum stress for given dimensionality: ", x$stress[which.min(x$stress)], "\n")
+    cat("r^2 for minimum stress configuration: ", x$r2[which.min(x$stress)], "\n")
+    x.min <- x.min[[1]]
+    x.min <- data.frame(x.min)
+    attr(x.min, "stress") <- x$stress[which.min(x$stress)]
+    attr(x.min, "r2") <- x$r2[which.min(x$stress)]
+    x.min
+}
+```
+
+
+
+
 
 
 
@@ -419,8 +517,102 @@ colsum <- colsum  %>% rename(count = `colSums(df[, c(4:14)])`) #renaming column 
 #ggplot(colsum) + geom_point(mapping = aes(x = rowname, y = count))
 
 ggplot(colsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Name of Action")
+
+
+#ex of how to reorder columns
+##level_order <- c('virginica', 'versicolor', 'setosa')
+##ggplot(iris, aes(x = factor(Species, level = level_order), y = Petal.Width)) + geom_col()
 ```
 so want to have column freq in same order as clusters (will need to reorder depending on what method decide to use.. )
+
+Also add network?? 
+************** need to fix this.... *********************
+```{r}
+
+condense <- sdata[,c(1,2,6,10:20)] #select relevant columns
+
+condense <- condense[-which(condense$type.of.partners == "M"),] #remove ones with multiple partners in string 
+#this is avoiding the data issue instead of addressing it
+
+condense <- condense %>% select(Scientific.name, partner.in.agreement, X1..Land.Water.Management:funding) %>% group_by(Scientific.name)
+#losing scientific_name so will add with join 
+#con <- condense2 %>% left_join(condense, by = c("X1..Land.Water.Management" ,                    "X2..Species.Management"            ,             "X3..Awareness.raising"   ,                      "X4..law.enforcement.and.prosecution"      ,      "X5..livelihood..economic.and.moral.incentrives","X6..Conservation.Design.and.Planning"    ,       "X7..Legal.and.Policy.frameworks"     ,          "X8..Research.and.monitoring"           ,         "X9..Education.and.Training"  ,                  "X10..Institutional.Development"        ,         "funding"))
+
+
+#actions network 
+#does not include multipartner strings 
+
+## note, need to go back and check when vectors were created 
+
+rawdf <- condense # take datafram of 0s and 1s without multi species strings 
+#remove extra columns 
+rawdf <- rawdf[,-c(1,2)] #remove non numeric columns
+trn <- t(rawdf)   #transform
+rawdf <- t(trn)  #rawdf was coming up as non numeric so tranformed again to overwrite
+
+trial1 <- trn %*%  rawdf
+
+#double check numbers 
+colSums(rawdf) #checks out!! 
+
+
+########### put into network analysis code 
+
+
+tactadjmat <- trial1
+
+tactadjmat[lower.tri(tactadjmat)] <- NA
+diag(tactadjmat) <- NA
+
+actlist <- tactadjmat %>% melt() 
+actlist <- actlist[-which(is.na(actlist$value)),]
+
+#nsize <- tolist %>% filter((Var1 == Var2)) #set new vector with diag values
+#tolist <- tolist %>% filter((Var1 != Var2)) 
+
+#allthreat <- tolist %>% right_join(nsize, by = c("Var1"))
+#allthreat <- allthreat[,-c(4)]
+
+actnet <- graph_from_data_frame(d=actlist, directed=T) 
+
+
+#plot(net, edge.arrow.size=.2, edge.curved=0,
+
+  #   vertex.color="orange", vertex.frame.color="#555555",
+
+   #  vertex.label=V(net)$Var1, vertex.label.color="black",
+
+   #  vertex.label.cex=.7, vertex.size = net$value.y)
+
+E(actnet)$arrow.size <- .2 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(66,35,10,2,4,48,34,54,19,62,33), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
+ 
+
+#so not setting in the same order 
+
+
+E(actnet)$width <- E(actnet)$value*.35 
+
+plot(actnet, vertex.size=node.size*.5)
+
+
+#plot(net, edge.arrow.size=0.01,vertex.label.color = "black", vertex.size=node.size)
+
+
+node.size<-setNames(c(66,35,10,2,4,48,34,54,19,62,33), c("LandWaterMan" ,"SpeciesMan", "AwarRaise", "law.enforce" , "livelihood_economic_moral", "Conservation.D&P","Legal.and.Policy","Research.and.monitoring" ,"Edu_Training","Institutional.Dev","funding")) #tried resetting names but nothing happened 
+ 
+
+#changed label names and layout
+l <- layout_with_fr(actnet)
+plot(actnet, vertex.label = c("LandWaterMan" ,"SpeciesMan", "AwarRaise", "law.enforce" , "livelihood_economic_moral", "Conservation.D&P","Legal.and.Policy","Research.and.monitoring" ,"Edu_Training","Institutional.Dev","funding"), layout = l, vertex.size=node.size*.5)
+
+
+#trying to show edge lengths without distraction of labels
+l <- layout_on_grid(actnet)
+plot(actnet, vertex.label=NA, layout = l, vertex.size=node.size*.75)
+```
 
 
 
