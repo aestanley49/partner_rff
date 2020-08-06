@@ -33,7 +33,7 @@ FormatwCollabs <- function(PartnersDataModified){
   PartnersDataModified[which(PartnersDataModified$common_name =="ARCTIC GRAYLING- UPPER MISSOURI RIVER DPS"),7] ##BLM Dillon Feild Office listed under "prepared by" but already counted in code 
   PartnersDataModified[which(PartnersDataModified$common_name =="CORAL PINK SAND DUNES TIGER BEETLE"),7] ##Conservation Committe for the Coral Pink Sand Dunes Tiger Beetle - not added because this is a group of multiple entities not a single partner
   PartnersDataModified[which(PartnersDataModified$common_name =="CUYAMAC LAKE DOWNINGIA"),7] <- "Department of Biology San Diego State University"
-  PartnersDataModified[which(PartnersDataModified$common_name =="LEAST CHUB"),7] <- "Utah Department of Natural Resources"
+##PartnersDataModified[which(PartnersDataModified$common_name =="LEAST CHUB"),7] <- "Utah Department of Natural Resources" --> already included in partner list
 ##PartnersDataModified[which(PartnersDataModified$common_name =="NEVARES SPRING NAUCORID BUG (=FURNACE CREEK)"),7] <- "Desert Reserach Institute, NPS Death Valley National Park" --> already included in partner list
 ##PartnersDataModified[which(PartnersDataModified$common_name == "NEW ENGLAND COTTONTAIL"),7] <- "Wildlife Management Institute, USFWS, the New England Cottontail Technical Committee" --> already included in partner list
   PartnersDataModified[which(PartnersDataModified$common_name =="ORCUTTS'S HAZARDIA"),7] <- "Center for Natural Lands Management"
