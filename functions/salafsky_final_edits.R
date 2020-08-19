@@ -54,7 +54,7 @@ tableofPandA[13,1]  <- "CPSD State Park" #for Cicindela albissima, now matches w
 
 tableofPandA[which(tableofPandA$partner.in.agreement == "Anza-Borrego Desert State Park (ABDSP)"),1] <- "Anza-Borrego Desert State Park"
 
-tableofPandA[which(tableofPandA$partner.in.agreement == "Anza-Borrego Desert State Park, Arizona Game and Fish Yuma, California Department of Fish and Game, California State Parks, Ocotillo Wells, BLM El Centro, BLM Palm Springs, BLM Yuma, US Bureau of Reclamation Yuma, USFWS Carlsbad, USFWS Phoenix, US Marine Corps Air Station Yuma, US Naval Air Facility El Centro, US Navy SW Division"),1] <- "Anza-Borrego State Park, Arizona Game and Fish Yuma, California Department of Fish and Game, California State Parks, Ocotillo Wells, BLM El Centro, BLM Palm Springs, BLM Yuma, US Bureau of Reclamation Yuma, USFWS Carlsbad, USFWS Phoenix, US Marine Corps Air Station Yuma, US Naval Air Facility El Centro, US Navy SW Division"
+tableofPandA[which(tableofPandA$partner.in.agreement == "Anza-Borrego Desert State Park, Arizona Game and Fish Yuma, California Department of Fish and Game, California State Parks, Ocotillo Wells, BLM El Centro, BLM Palm Springs, BLM Yuma, US Bureau of Reclamation Yuma, USFWS Carlsbad, USFWS Phoenix, US Marine Corps Air Station Yuma, US Naval Air Facility El Centro, US Navy SW Division"),1] <- "Anza-Borrego State Park, Arizona Game and Fish Department, California Department of Fish and Game, California State Parks, Ocotillo Wells State Vehicular Recreation Area, BLM El Centro, BLM Palm Springs, BLM Yuma, US Bureau of Reclamation Yuma, USFWS Carlsbad, USFWS Phoenix, US Marine Corps Air Station Yuma, US Naval Air Facility El Centro, US Navy SW Division"
 
 tableofPandA[which(tableofPandA$partner.in.agreement == "Anza-Borrego Desert State Park (ABDSP)"),1] <- "Anza-Borrego Desert State Park"
 
@@ -68,7 +68,6 @@ tableofPandA[which(tableofPandA$partner.in.agreement == "CPSD State Park, BLM Ut
 tableofPandA[which(tableofPandA$partner.in.agreement == "CPSD State Park, BLM Utah State office, USFWS Utah Field Office"),1] <- "Coral Pink Sand Dunes State Park, BLM Utah State office, USFWS Utah Field Office"
 
 tableofPandA[which(tableofPandA$partner.in.agreement == "Vauge/Unspecified cooperators: NRCS, New Mexico Department of Game and Fish"),1] <- "NRCS, New Mexico Department of Game and Fish"
-
 
 
 
