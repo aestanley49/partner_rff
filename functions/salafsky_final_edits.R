@@ -52,6 +52,24 @@ tableofPandA[which(tableofPandA$partner.in.agreement == "ALL (all parties)"),1]
 tableofPandA[13,1]  <- "CPSD State Park" #for Cicindela albissima, now matches what is in strings 
 
 
+tableofPandA[which(tableofPandA$partner.in.agreement == "Anza-Borrego Desert State Park (ABDSP)"),1] <- "Anza-Borrego Desert State Park"
+
+tableofPandA[which(tableofPandA$partner.in.agreement == "Anza-Borrego Desert State Park, Arizona Game and Fish Yuma, California Department of Fish and Game, California State Parks, Ocotillo Wells, BLM El Centro, BLM Palm Springs, BLM Yuma, US Bureau of Reclamation Yuma, USFWS Carlsbad, USFWS Phoenix, US Marine Corps Air Station Yuma, US Naval Air Facility El Centro, US Navy SW Division"),1] <- "Anza-Borrego State Park, Arizona Game and Fish Yuma, California Department of Fish and Game, California State Parks, Ocotillo Wells, BLM El Centro, BLM Palm Springs, BLM Yuma, US Bureau of Reclamation Yuma, USFWS Carlsbad, USFWS Phoenix, US Marine Corps Air Station Yuma, US Naval Air Facility El Centro, US Navy SW Division"
+
+tableofPandA[which(tableofPandA$partner.in.agreement == "Anza-Borrego Desert State Park (ABDSP)"),1] <- "Anza-Borrego Desert State Park"
+
+
+## And changing from abreviations so actually know who partner is
+
+tableofPandA[which(tableofPandA$partner.in.agreement == "USFWS, neighboring land owners, EPA, COE, MSU"),1] <- "USFWS, neighboring land owners, EPA, Montana State University, U.S. Army Corps of Engineers"
+
+tableofPandA[which(tableofPandA$partner.in.agreement == "Coral Pink Sand Dunes State Park"),1] <- "Coral Pink Sand Dunes State Park"
+tableofPandA[which(tableofPandA$partner.in.agreement == "CPSD State Park, BLM Utah State office"),1] <- "Coral Pink Sand Dunes State Park, BLM Utah State office"
+tableofPandA[which(tableofPandA$partner.in.agreement == "CPSD State Park, BLM Utah State office, USFWS Utah Field Office"),1] <- "Coral Pink Sand Dunes State Park, BLM Utah State office, USFWS Utah Field Office"
+
+tableofPandA[which(tableofPandA$partner.in.agreement == "Vauge/Unspecified cooperators: NRCS, New Mexico Department of Game and Fish"),1] <- "NRCS, New Mexico Department of Game and Fish"
+
+
 
 
 
