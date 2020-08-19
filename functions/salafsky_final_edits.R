@@ -69,6 +69,19 @@ tableofPandA[which(tableofPandA$partner.in.agreement == "CPSD State Park, BLM Ut
 
 tableofPandA[which(tableofPandA$partner.in.agreement == "Vauge/Unspecified cooperators: NRCS, New Mexico Department of Game and Fish"),1] <- "NRCS, New Mexico Department of Game and Fish"
 
+tableofPandA[which(tableofPandA$partner.in.agreement == "Air force, BLM"),1] <- "The Air force, BLM"
+
+tableofPandA[which(tableofPandA$partner.in.agreement == "Mississippi Department of Wildlife, Fisheries and Parks - Mississippi Museum of Natural Sciences (MMNS)
+"),1] <- "Mississippi Department of Wildlife Fisheries and Parks - Mississippi Museum of Natural Sciences"
+
+
+tableofPandA[which(tableofPandA$partner.in.agreement == "USFS DeSoto National Forest, Mississippi National Guard, USFWS Southeast Region, Mississippi Museum of Natural Sciences
+"),1] <- "USFS DeSoto National Forest, Mississippi National Guard, USFWS Southeast Region, Mississippi Department of Wildlife Fisheries and Parks - Mississippi Museum of Natural Sciences"
+
+
+tableofPandA[which(tableofPandA$partner.in.agreement == "??Redband Core Group (unspecified who makes up)"),1] <- "Redband Core Group"
+
+
 
 
 
