@@ -2,7 +2,9 @@
 title: "Partnerships_draft_code"
 author: "Annabelle"
 date: "July 14, 2020"
-output: word_document
+output:
+  html_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -61,10 +63,16 @@ PartnersDataModified <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/P
 newpdata <- FormatwCollabs(PartnersDataModified)
 
 
-##orgtyp_base <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "") #issue was that "" is coming up instead of NA
+
+# ----> including prep in script.. 
+
+orgtyp_base <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "") #issue was that "" is coming up instead of NA
 ## file name got changed
 
-orgtype <- orgtyp_base ## taken from Data_exploration script 
+#orgtype <- orgtyp_base ## taken from Data_exploration script 
+
+#average center point 
+center <- read_excel(paste0(DataSource, "/mean_center_range_subsetofprecluded_with_partnerdata.xlsx"))
 ```
 
 
@@ -78,7 +86,7 @@ dim(pcount) ##52
 
 # salafsky counts 
 docspef <- as.data.frame(docspef)
-count(unique(docspef$Scientific.name)) ##37
+#count(unique(docspef$Scientific.name)) ##37
 ```
 
 
@@ -101,56 +109,415 @@ for (i in 1:nrow(EditedData)) {
   }
 }
 
-dim(EditedData) #294 - 3(first three columns in df) = 291 - this is different because now includes Fed Agency offices and what were previously collaborators
+dim(EditedData) #295 - 3(first three columns in df) = 292 - this is different because now includes Fed Agency offices and what were previously collaborators
 ```
 
 
 ##### Larger df 
 ```{r}
 
-count(unique(docspef$partner.in.agreement)) #140 
+#count(unique(docspef$partner.in.agreement)) #140 
 ## still have 3 groups issues to take care of 
 
 ```
 
 
 
+## Figures for doc
 
 
-Other to do from doc 
+##### 1. # of partners per species 
+```{r}
+alldf <- docspef
+nopartners <- (alldf %>% group_by(Scientific.name)   #selecting  each species
+%>% distinct(partner.in.agreement)    #count how many partners are distinct 
+%>% summarise(n()))                   # Count the number of distinct 
 
-put number of actions into the number of partners regression?
-- this was done in Codeforoverviewdoc w actpartsum and action sum 
+#kable(nopartners)
 
+nopartners <- rename(nopartners, tally = 'n()')
 
-Is there a subset of this for which we can identify the identity of the partners? If so, how many are there?
+#reset as bar plot with each species name as value on x-axis 
 
-
-Historgram of Taxa - what are the NAs??
-
-
-
-This section has some confusion I think because of M vs noM counts. I think we should report the M counts here in all cases. Needs to be fixed.
-
-
-
-Number of partners per species 
+ordered <- nopartners %>% arrange(-tally)
 
 
+#ordered$Scientific.name
 
-Can we say something about a “general” suite of actions and how the compliment of actions is achieved by the partnership?
-
-
-
-
+ggplot(ordered) + geom_bar(mapping = aes(x = reorder(Scientific.name, -tally), y = tally), stat = "identity") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Common Name") + scale_y_continuous(name ="# of partners working on species") 
+```
 
 
+##### 2. Spatial distribution of species 
+```{r}
+plot(center$YCoord ~ center$XCoord)
+```
+I made this plot in arcgis online with a super limited platform and there wasn't anyway I could see to make the modifications :/ worth switching to use qgis?? 
+
+
+##### 3. Species per Partner 
+
+Count of the number of speies partner work on
+
+```{r, echo = FALSE}
+# the number of species that each partner works on:
+#PartnerData <- FormatData(RawData) #reload data to avoid sum(colsums) glitch
+
+#	Histogram of species/partner 
+
+count <- colSums(EditedData[,-c(1:3)])
+
+#hist(colSums(EditedData[,-c(1:3)]),
+ #    xlab ="number of species that a partner works on",
+  #   breaks = 50, 
+   #  main = "Count of the number of speies partners work on")
+
+
+count <- as.data.frame(count)
+
+count <- count %>% rownames_to_column() 
+
+ggplot(count) + geom_histogram(mapping = aes(x = count), stat = "count")
+```
+This is including agency offices which is why fed agency numbers are lower 
+Also break in y axis has something to do with scale_y_discrete but I can't figure out what yet.. 
 
 
 
+##### 4. Partner types that work together
 
 
-### Checking to see which partners are all 0s 
+a include multispecies string information 
+- have to join docspef with orgtype_base
+
+```{r echo=FALSE, include=FALSE}
+#filter out all rows that don't have values 
+orgtyp <- orgtyp_base[-which(is.na(orgtyp_base$type_of_org)),] #this isn't doing anything, lets try again
+
+orgtyp <- orgtyp[,c(1:2,4,8)]
+#orgtyp <- orgtyp[,c(1,5)]
+#orgtyp <- orgtyp %>% group_by(partner.in.agreement, Scientific.name, agreement.number)
+
+### add common names to scientfic names in docspef
+common_names <- orgtyp_base[,c(2,3)]
+common_names <- unique( common_names[ , 1:2 ] )
+
+docspef <- docspef %>% left_join(common_names)
+
+
+orgtyp_start <- docspef %>% left_join(orgtyp) ##not sure how getting 197 rows (seems to add 2 to docspef)
+## now getting 202... I think this is due to changes done above w/r/t SB changing to SW & SL
+
+count(unique(orgtyp_start[which(is.na(orgtyp_start$type_of_org)),])) #now there is 67?..should only be 45 NAs
+```
+***** The join here is what is generating the NAs
+Have removed common name so now won't have the same error? Will have to write in org types that were missing for salafsky
+
+but why is a species like flat tailed horn lizard all NULL when half of those partners had info in orgtyp_base?? 
+I think when string splits happen, null is override?? 
+
+
+b
+- fix names of partners
+- assign to org type 
+```{r include= FALSE echo = FALSE}
+
+#bug in the code but can't find where so taking this out/fixing it now
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "USFWS Southwest Region	Sceloporus arenicolus	DUNES SAGEBRUSH LIZARD"),3] <- "USFWS Southwest Region"
+
+
+
+fixme <- orgtyp_start[which(is.na(orgtyp_start$type_of_org)),]
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "BLM"),16] <- "BLM"
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "BLM Palm Springs" | orgtyp_start$partner.in.agreement == "BLM Utah State office" | orgtyp_start$partner.in.agreement == "BLM Vernal Field Office" | orgtyp_start$partner.in.agreement == "BLM White River Field Office" | orgtyp_start$partner.in.agreement == "BLM Yuma" |orgtyp_start$partner.in.agreement == "BLM El Centro" ),16] <- "BLM"
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "US Bureau of Reclamation Yuma" | orgtyp_start$partner.in.agreement == "US Customs and Border Protection" | orgtyp_start$partner.in.agreement == "EPA" | orgtyp_start$partner.in.agreement == "DOI Office of Surface MIning reclamation and Enforcement" | orgtyp_start$partner.in.agreement == "NPS" | orgtyp_start$partner.in.agreement == "NRCS" | orgtyp_start$partner.in.agreement == "Farm Service Agency" | orgtyp_start$partner.in.agreement == "Bureau of Reclamation"),16] <- "FO"
+
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "USFS Lincoln National Forest" | orgtyp_start$partner.in.agreement == "USFS Pacific Southwest Region Eagle Lake Ranger District Lassen national Forest"),16] <- "USFS"
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "USFWS"),16] <- "USFWS"
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "USFWS Carlsbad" | orgtyp_start$partner.in.agreement == "USFWS Carlsbad Fish and Wildlife Office " | orgtyp_start$partner.in.agreement == "USFWS Ecological Services New Mexico Field Office" | orgtyp_start$partner.in.agreement == "USFWS Pacific Southwest Region Sacramento Office " | orgtyp_start$partner.in.agreement == "USFWS Phoenix" |orgtyp_start$partner.in.agreement == "USFWS Southwest Region" |orgtyp_start$partner.in.agreement == "USFWS Utah Ecological Services Field Office" |orgtyp_start$partner.in.agreement == "USFWS Utah Field Office"|orgtyp_start$partner.in.agreement == "USFWS Western Colorado Field Office" |orgtyp_start$partner.in.agreement == "Bozeman Fish Technology center (USFWS)" |orgtyp_start$partner.in.agreement == "USFWS Pacific Southwest Region Sacramento Office" |orgtyp_start$partner.in.agreement == "USFWS Carlsbad Fish and Wildlife Office"),16] <- "USFWS"
+
+
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Anza-Borrego Desert State Park" | orgtyp_start$partner.in.agreement == "Anza-Borrego Desert State Park (ABDSP)" | orgtyp_start$partner.in.agreement == "Anza-Borrego State Park" |orgtyp_start$partner.in.agreement == "California State Parks" |orgtyp_start$partner.in.agreement == "CPSD State Park"),16] <- "SL" 
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Coral Pink Sand Dunes State Park"),16] <- "SL"
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Utah Department of Parks and Recreation" | orgtyp_start$partner.in.agreement == "Ocotillo Wells State Vehicular Recreation Area" | orgtyp_start$partner.in.agreement == "North Carolina Department of Agriculture & Consumer Services Plant Conservation Program" | orgtyp_start$partner.in.agreement == "Utah School and Institutional Trust Lands Administration"),16] <- "SL"
+
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Private landowners" | orgtyp_start$partner.in.agreement == "Private Landowners" | orgtyp_start$partner.in.agreement == "B. Kinsely"),16] <- "P"
+
+
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "366th wing" | orgtyp_start$partner.in.agreement == "The Air force" | orgtyp_start$partner.in.agreement == "U.S. Marine Corps" |orgtyp_start$partner.in.agreement == "U.S. Navy" |orgtyp_start$partner.in.agreement == "Mississippi National Guard"),16] <- "M"
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "US Marine Corps" | orgtyp_start$partner.in.agreement == "US Marine Corps Air Station Yuma" | orgtyp_start$partner.in.agreement == "US Naval Air Facility El Centro" |orgtyp_start$partner.in.agreement == "US Navy" |orgtyp_start$partner.in.agreement == "US Navy SW Division"),16] <- "M"
+
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Kane County" | orgtyp_start$partner.in.agreement == "Otero County" | orgtyp_start$partner.in.agreement == "Village of Cloudcroft" | orgtyp_start$partner.in.agreement == "Uintah County"),16] <- "SG"
+
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Duke Energy Carolinas" | orgtyp_start$partner.in.agreement == "Portland General Electric"),16] <- "C"
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "The Nature Conservancy"| orgtyp_start$partner.in.agreement == "Southern Conservation Corporation"),16] <- "N"
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Montana State University"| orgtyp_start$partner.in.agreement == "Oregon Natural Heritage Program"),16] <- "R"
+
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Arizona Game and Fish Department" | orgtyp_start$partner.in.agreement == "Utah Division of Wildlife Resources" | orgtyp_start$partner.in.agreement == "Kentucky Department of Fish and Wildlife Resources" | orgtyp_start$partner.in.agreement == "New Mexico Department of Game and Fish"),16] <- "SW"
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Califonia Department of Fish and Game" | orgtyp_start$partner.in.agreement == "California Department of Fish and Game" | orgtyp_start$partner.in.agreement == "California Department of Fish and Wildlife" |orgtyp_start$partner.in.agreement == "California Department of Parks and Recreation"),16] <- "SW"  #*#*### Check categorization
+
+
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Illinois Department of Natural Resources" | orgtyp_start$partner.in.agreement == "Indiana Department of Natural Resources" | orgtyp_start$partner.in.agreement == "Montana Fish Wildlife and Parks" | orgtyp_start$partner.in.agreement == "Kentucky Natural Resources and Environmental Cabinet"),16] <- "SB"
+
+
+
+###?????? unsure how to categorize 
+# U.S. Army Corps of Engineers
+# having issues getting edits to stick for Mississippi Department of Wildlife & Mississippi Museum of Natural Sciences ((should just be one partner unit))
+
+# Kentucky Coal Association -- registered as 501(c)6 non-profit organization
+# can't find Kentucky Coal Country Association on web (even though listed as seperate partner in agreement)
+# West Kentucky Coal Association (also listed as NGO)
+# Kentucky Farm Bureau
+# Oregon Plant Conservation Program - part of state gov that does plant management and R --> double list?
+# Doesn't seem to fit - Utah Governor Public Lands Policy Coordination Office --> SG???
+
+
+orgtyp_start <- orgtyp_start[-which(is.na(orgtyp_start$type_of_org)),]
+## remove NAs so don't effect network later
+## note - this isn't a long term solution and should be able to comment/delete this later once all partners are assigned groups
+
+
+
+```
+
+
+c
+
+  want to duplicate rows that are have cells labeled SB
+```{r}
+
+orgtyp_base2 <- orgtyp_start
+
+dummy <- 2
+
+#subset and duplicate rows with SB as orgtype       
+ orgtyp_base3 <-     orgtyp_base2 %>%  
+        filter(type_of_org=="SB") %>% 
+        uncount(dummy) %>% 
+   rownames_to_column() #this is the variable can index on because the rest are the same 
+#change one of each rows to SL and the other to SW  
+ 
+orgtyp_base3[which(orgtyp_base3$rowname == 1),17] <- "SW"
+orgtyp_base3[which(orgtyp_base3$rowname == 2),17] <- "SL"
+orgtyp_base3[which(orgtyp_base3$rowname == 3),17] <- "SW"        
+orgtyp_base3[which(orgtyp_base3$rowname == 4),17] <- "SL"   
+orgtyp_base3[which(orgtyp_base3$rowname == 5),17] <- "SW"  
+orgtyp_base3[which(orgtyp_base3$rowname == 6),17] <- "SL"  
+orgtyp_base3[which(orgtyp_base3$rowname == 7),17] <- "SW"  
+orgtyp_base3[which(orgtyp_base3$rowname == 8),17] <- "SL"  
+orgtyp_base3[which(orgtyp_base3$rowname == 9),17] <- "SW"  
+orgtyp_base3[which(orgtyp_base3$rowname == 10),17] <- "SL" 
+orgtyp_base3[which(orgtyp_base3$rowname == 11),17] <- "SW"  
+orgtyp_base3[which(orgtyp_base3$rowname == 12),17] <- "SL"  
+#then need to remove first column so has same dimensions as original df 
+orgtyp_base3 <- orgtyp_base3[,-c(1)]
+        
+#now remove old dataset with SB and join with this new one (rbind should work bc order doesn't matter)
+
+orgtyp_base2 <- orgtyp_base2[-which(orgtyp_base2$type_of_org == "SB"),]
+
+#orgtyp_base2 <- orgtyp_base2 %>%  
+  #      filter(type_of_org !="SB") #removes all rows that have SB 
+# so this doesn't actually work because need NAs for other parts of code to work 
+
+#then join 
+orgtyp_done <- rbind(orgtyp_base2, orgtyp_base3)
+#orgtyp_done <- rbind.fill(orgtyp_base2, orgtyp_base3)
+
+```
+
+
+
+d
+
+
+```{r echo=FALSE, include=FALSE}
+
+orgtyp2 <- orgtyp_done[,c(1,15,16)] 
+
+tidy_orgtyp <- orgtyp2 %>% group_by(Scientific.name) %>% pivot_wider(names_from = type_of_org, values_from = Scientific.name)
+#now have dataframe with org types as columns and cell values of species names so can go through species by species and see when two org columns have same value (species)
+
+
+#to count the number of times partners in an org type work on species, would have to either use this vector: 
+##getscinamesback <- orgtyp %>%  left_join(tidy_orgtyp, by = 'Common.name')
+#or count number of strings in cell 
+#### Count the number of 'a's in each element of string
+#####q.data$number.of.a <- str_count(q.data$string, "a")
+
+#convert to df 
+orgtyp <- as.data.frame(tidy_orgtyp)
+
+e <- tidy_orgtyp %>% mutate_all(na_if, "NULL")
+
+f <- as.data.frame(e)
+
+f[!is.na(f)] <- 1
+f[is.na(f)] <- 0
+
+#remove first column 
+f <- f[,-c(1)]
+
+dim(f)
+
+### make adjacency matrix 
+f <- as.matrix(f) 
+#indexing is werid and matrix mult won't work so will try and write to csv 
+
+write.csv(f, "/usr/local/bin/store/partner_rff/output/orgtype_adjmat.csv")
+
+g <- read.csv(paste0("/usr/local/bin/store/partner_rff/output/orgtype_adjmat.csv"), stringsAsFactors = FALSE)
+#remove first column 
+g <- g[,-c(1)]
+
+tg <- (t(g))
+
+write.csv(tg, "/usr/local/bin/store/partner_rff/output/orgtype_adjmat_part2.csv")
+
+h <- read.csv(paste0("/usr/local/bin/store/partner_rff/output/orgtype_adjmat_part2.csv"), stringsAsFactors = FALSE)
+#remove first column 
+
+rownames(h) <- h$X #set partnernames as rownames
+h[,1] <- NULL #then remove column 
+
+orgtype_adjmat <- as.matrix(h) %*% as.matrix(g)
+
+
+####### Remove NA column and row (just being generated for the rows in the orgtyp2 dataframe which are blanks for both common name and org type so by removing this bug, not loosing any information)
+
+
+##orgtype_adjmat <- orgtype_adjmat[-c(8),-c(8)] ## if have issue later on, double check this to make sure it hasn't moved
+
+################### set up network 
+```
+**** NAs are getting introduced. I think issue starts with blanks in common names but unsure. Join process seems to be introducing a lot of missing information 
+Nope so the NAs are rows that haven't been assigned an Org type. Will add section above to manually add. 
+
+
+-- okay so now that NA issue has been pretty much addressed, can proceed as ususal... 
+
+
+
+Note - node labels seem to move every time for this one so need to check 
+might actually be shifting as edit csv and sort various columns in that process 
+```{r echo=FALSE, include=FALSE}
+tadjmat <- orgtype_adjmat
+
+
+#set row and column names 
+rownames(tadjmat) <- c("BLM", "Federal Other", "USFS", "USFWS","Reserach","Military","Corporation","Private Landowner", "State Wildlife", "NGO", "State Land", "State Government")
+
+colnames(tadjmat)<- c("BLM", "Federal Other", "USFS", "USFWS","Reserach","Military","Corporation","Private Landowner", "State Wildlife", "NGO", "State Land", "State Government")
+
+tadjmat[lower.tri(tadjmat)] <- NA
+diag(tadjmat) <- NA
+
+tolist <- tadjmat %>% melt() 
+tolist <- tolist[-which(is.na(tolist$value)),]
+
+
+#library(igraph)
+
+net <- graph_from_data_frame(d=tolist, directed=T) 
+
+
+E(net)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+
+
+node.size<-setNames(c(7,31,10,7,6,16,11,5,5,4,12,4), c("SL","USFWS","P","FO","N","SW","BLM","C","R","SG","USFS","M"))
+  #so not setting in the same order 
+#V(net)$label <- NA
+E(net)$width <- E(net)$value
+
+plot(net, vertex.size=node.size)
+
+l <- layout_in_circle(net)
+
+plot(net, rescale=F, vertex.color="white", edge.color= "black", vertex.label.color="black", vertex.size=node.size, layout = l)
+
+
+## source of code - https://stackoverflow.com/questions/23209802/placing-vertex-label-outside-a-circular-layout-in-igraph
+radian.rescale <- function(x, start=0, direction=1) {
+  c.rotate <- function(x) (x + start) %% (2 * pi) * direction
+  c.rotate(scales::rescale(x, c(0, 2 * pi), range(x)))
+}
+
+
+n <- 12
+#g <- erdos.renyi.game(n, 0.5)
+## Obviously labeling in this way this only makes sense for graphs
+## laid out as a circle to begin with
+
+lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
+
+plot(net, rescale=F, vertex.color="white", edge.color= "black", vertex.label.color="black", vertex.size=node.size, layout = l, vertex.label.dist=4,
+     vertex.label.degree=lab.locs, vertex.label.cex	= .5)
+```
+
+** Need to fix numbers so node size correlates to new orientation - first want to fix merge in dataframe then come back to.. 
+
+Try looking at again? Not sure if there is a way to offset in proportion to the number of characters in label?
+
+Caption: 
+node = org type
+node size = # of species that all parnters categorized as that org works on
+edge width = # of species two orgs work on together 
+Note: now where there use to be a SB (state both), this category has been duplicated into both SL and SW
+
+<br>
+
+
+
+##### 5. Distribution of Actions 
+```{r}
+df <- docspef
+df[,c(4:14)] <- sapply(df[ ,c(4:14)], as.numeric)
+
+names(df) <- c("Scientific.name", "agreement.number", "partner.in.agreement", "Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy",               
+                            "Research", "Education","Instiutional Development", "Funding")
+
+colsum <- (as.data.frame(colSums(df[,c(4:14)])) #creating dataframe so can plot
+  %>% rownames_to_column()) #making sure that dataframe has rownames to set as x and y 
+
+colsum <- colsum  %>% rename(count = `colSums(df[, c(4:14)])`) #renaming column produced by colsums
+
+colsum <- colsum %>% arrange(count)
+  
+ggplot(colsum) + geom_bar(mapping = aes(x = reorder(rowname, -count), y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Action Category")
+```
+
+
+
+##### 6. Actions done by player type [for all players]
+
+
+
+```{r}
+
+orgtyp_start
+```
 
 
 
