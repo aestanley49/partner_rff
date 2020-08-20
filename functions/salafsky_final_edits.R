@@ -23,7 +23,7 @@ tableofPandA[which(tableofPandA$partner.in.agreement == "Kentucky Coal Associati
 tableofPandA[which(tableofPandA$partner.in.agreement == "Air force, BLM, ???"),1] <- "Air force, BLM"
 #Air force, BLM, ???	Lepidium papilliferum	SLICKSPOT PEPPERGRASS - Removed the "???" in this string, EIT stands for "Enhanced Training in Idaho"
 
-tableofPandA[which(tableofPandA$partner.in.agreement == "** I think this refers to all: ICC Interagency Coordinating Committee"),1]  <- "Anza-Borrego State Park, Arizona Game and Fish Yuma, California Department of Fish and Game, California State Parks, Ocotillo Wells, BLM El Centro, BLM Palm Springs, BLM Yuma, US Bureau of Reclamation Yuma, USFWS Carlsbad, USFWS Phoenix, US Marine Corps Air Station Yuma, US Naval Air Facility El Centro, US Navy SW Division"
+tableofPandA[which(tableofPandA$partner.in.agreement == "** I think this refers to all: ICC Interagency Coordinating Committee"),1]  <- "Anza-Borrego Desert State Park, Arizona Game and Fish Department, California Department of Fish and Game, California State Parks, Ocotillo Wells State Vehicular Recreation Area, BLM El Centro, BLM Palm Springs, BLM Yuma, US Bureau of Reclamation Yuma, USFWS Carlsbad, USFWS Phoenix, US Marine Corps Air Station Yuma, US Naval Air Facility El Centro, US Navy SW Division"
 # ** I think this refers to all: ICC Interagency Coordinating Committee	Phrynosoma mcallii	FLAT-TAILED HORNED LIZARD
 # change to :: Anza-Borrego State Park, Arizona Game and Fish Yuma, California Department of Fish and Game, California State Parks, Ocotillo Wells, BLM El Centro, BLM Palm Springs, BLM Yuma, US Bureau of Reclamation Yuma, USFWS Carlsbad, USFWS Phoenix, US Marine Corps Air Station Yuma, US Naval Air Facility El Centro, US Navy SW Division
 
