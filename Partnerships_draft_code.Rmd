@@ -7,6 +7,9 @@ output:
   word_document: default
 ---
 
+Annabelle to do : write figures to jpg or tiff 
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -279,23 +282,60 @@ orgtyp_start[which(orgtyp_start$partner.in.agreement == "Illinois Department of 
 
 
 
-###?????? unsure how to categorize 
-# U.S. Army Corps of Engineers
-# having issues getting edits to stick for Mississippi Department of Wildlife & Mississippi Museum of Natural Sciences ((should just be one partner unit))
+### The original ? (now fixed)
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "U.S. Army Corps of Engineers"),16] <- "M"
+# U.S. Army Corps of Engineers --> based on USA jobs this is actually Military 
 
 # Kentucky Coal Association -- registered as 501(c)6 non-profit organization
-# can't find Kentucky Coal Country Association on web (even though listed as seperate partner in agreement)
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Kentucky Coal Association"),16] <- "N"
+
 # West Kentucky Coal Association (also listed as NGO)
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Western Kentucky Coal Association"),16] <- "N"
+
 # Kentucky Farm Bureau
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Kentucky Farm Bureau"),16] <- "N"
+
 # Oregon Plant Conservation Program - part of state gov that does plant management and R --> double list?
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Oregon Plant Conservation Program"),16] <- "DL"
+
 # Doesn't seem to fit - Utah Governor Public Lands Policy Coordination Office --> SG???
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Utah Governor Public Lands Policy Coordination Office"),16] <- "SG"
+
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "unspecified landowner"),16] <- "P"
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "neighboring land owners"),16] <- "P"
+
+
+# having issues getting edits to stick for Mississippi Department of Wildlife & Mississippi Museum of Natural Sciences ((should just be one partner unit))
+    ## So can actually delete duplicated rows because they don't have any vales in action columns (only 1 of the 3 does...) then will rename 
+
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Mississippi Museum of Natural Sciences"),3] <- "Mississippi Department of Wildlife & Mississippi Museum of Natural Sciences"
+
+## assigning as both Reserach and SW
+orgtyp_start[which(orgtyp_start$partner.in.agreement == "Mississippi Department of Wildlife & Mississippi Museum of Natural Sciences"),16] <- "RSW"
+
+orgtyp_start <- orgtyp_start[-which(orgtyp_start$partner.in.agreement == "Mississippi Department of Wildlife"),] 
+
+orgtyp_start <- orgtyp_start[-which(orgtyp_start$partner.in.agreement == "Fisheries and Parks - Mississippi Museum of Natural Sciences (MMNS)"),] 
+
+
+# can't find Kentucky Coal Country Association on web (even though listed as seperate partner in agreement)
+orgtyp_start <- orgtyp_start[-which(orgtyp_start$partner.in.agreement == "Kentucky Coal Country Association"),] 
+
+
+###### The remaining ?????? 
+###########################    Redband Core Group
+###########################    ALL (all parties)
+
 
 
 orgtyp_start <- orgtyp_start[-which(is.na(orgtyp_start$type_of_org)),]
+
+
 ## remove NAs so don't effect network later
 ## note - this isn't a long term solution and should be able to comment/delete this later once all partners are assigned groups
-
-
 
 ```
 
@@ -330,17 +370,46 @@ orgtyp_base3[which(orgtyp_base3$rowname == 11),17] <- "SW"
 orgtyp_base3[which(orgtyp_base3$rowname == 12),17] <- "SL"  
 #then need to remove first column so has same dimensions as original df 
 orgtyp_base3 <- orgtyp_base3[,-c(1)]
+
+## repeat for Oregon Plant Conservation Program - part of state gov that does plant management and R --> double list?
+
+
+orgtyp_base4 <-     orgtyp_base2 %>%  
+        filter(type_of_org=="DL") %>% 
+        uncount(dummy) %>% 
+   rownames_to_column()
+
+orgtyp_base4[which(orgtyp_base4$rowname == 1),17] <- "SG"
+orgtyp_base4[which(orgtyp_base4$rowname == 2),17] <- "R"
+
+orgtyp_base4 <- orgtyp_base4[,-c(1)]
+
+## And again for.. 
+##orgtyp_start[which(orgtyp_start$partner.in.agreement == "Mississippi Department of Wildlife & Mississippi Museum of Natural Sciences"),16] <- "RSW"
+
+orgtyp_base5 <-     orgtyp_base2 %>%  
+        filter(type_of_org=="RSW") %>% 
+        uncount(dummy) %>% 
+   rownames_to_column()
+
+orgtyp_base5[which(orgtyp_base5$rowname == 1),17] <- "SW"
+orgtyp_base5[which(orgtyp_base5$rowname == 2),17] <- "R"
+
+orgtyp_base5 <- orgtyp_base5[,-c(1)]
+
         
 #now remove old dataset with SB and join with this new one (rbind should work bc order doesn't matter)
 
 orgtyp_base2 <- orgtyp_base2[-which(orgtyp_base2$type_of_org == "SB"),]
+orgtyp_base2 <- orgtyp_base2[-which(orgtyp_base2$type_of_org == "DL"),]
+orgtyp_base2 <- orgtyp_base2[-which(orgtyp_base2$type_of_org == "RSW"),]
 
 #orgtyp_base2 <- orgtyp_base2 %>%  
   #      filter(type_of_org !="SB") #removes all rows that have SB 
 # so this doesn't actually work because need NAs for other parts of code to work 
 
 #then join 
-orgtyp_done <- rbind(orgtyp_base2, orgtyp_base3)
+orgtyp_done <- rbind(orgtyp_base2, orgtyp_base3,orgtyp_base4, orgtyp_base5)
 #orgtyp_done <- rbind.fill(orgtyp_base2, orgtyp_base3)
 
 ```
@@ -368,6 +437,9 @@ tidy_orgtyp <- orgtyp2 %>% group_by(Scientific.name) %>% pivot_wider(names_from 
 orgtyp <- as.data.frame(tidy_orgtyp)
 
 e <- tidy_orgtyp %>% mutate_all(na_if, "NULL")
+
+#setting column names so that they stop moving everytime 
+e <- e[,c("Common.name","BLM","FO","USFS","USFWS","P","SL","SG","R","M","C","SW","N")]
 
 f <- as.data.frame(e)
 
@@ -424,9 +496,9 @@ tadjmat <- orgtype_adjmat
 
 
 #set row and column names 
-rownames(tadjmat) <- c("BLM", "Federal Other", "USFS", "USFWS","Reserach","Military","Corporation","Private Landowner", "State Wildlife", "NGO", "State Land", "State Government")
+rownames(tadjmat) <- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
 
-colnames(tadjmat)<- c("BLM", "Federal Other", "USFS", "USFWS","Reserach","Military","Corporation","Private Landowner", "State Wildlife", "NGO", "State Land", "State Government")
+colnames(tadjmat)<- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
 
 tadjmat[lower.tri(tadjmat)] <- NA
 diag(tadjmat) <- NA
@@ -446,7 +518,7 @@ E(net)$arrow.size <- .02 #determine size of arrows (this makes the heads real sm
 
 
 
-node.size<-setNames(c(7,31,10,7,6,16,11,5,5,4,12,4), c("SL","USFWS","P","FO","N","SW","BLM","C","R","SG","USFS","M"))
+node.size<-setNames(c(14,11,12,34,9,10,5,4,4,5,18,6), c("BLM","FO","USFS","USFWS","P","SL","SG","R","M","C","SW","N"))
   #so not setting in the same order 
 #V(net)$label <- NA
 E(net)$width <- E(net)$value
@@ -474,9 +546,54 @@ lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
 
 plot(net, rescale=F, vertex.color="white", edge.color= "black", vertex.label.color="black", vertex.size=node.size, layout = l, vertex.label.dist=4,
      vertex.label.degree=lab.locs, vertex.label.cex	= .5)
+
+
+## will rescale node size so doesn't cut off
+plot(net, rescale=F, vertex.color="white", edge.color= "black", vertex.label.color="black", vertex.size=node.size*.5, layout = l, vertex.label.dist=4,
+     vertex.label.degree=lab.locs, vertex.label.cex	= .5)
+## Even now still is a bit cut off and can't see size differences :/ 
 ```
 
-** Need to fix numbers so node size correlates to new orientation - first want to fix merge in dataframe then come back to.. 
+Network statistics:
+-	Average degree = ave number of orgs/type of orgs that work together
+      Average degree is simply the average number of edges per node in the graph. It is relatively straightforward to calculate:: Total Edges/Total Nodes =Average Degree
+
+-	Average weighted degree – weights of links between nodes = average number of ?? on by partners averages 
+-	Modularity – groups of parnters that cluster together
+Seems straightforward - https://igraph.org/r/doc/modularity.igraph.html
+For nodes themselves (either partners or partner types)
+-	Can calculate centrality 
+Notes on options provided in tutorial
+
+Average degree
+```{r}
+## total edges 
+te <- length(E(net))
+
+#total nodes
+ve <- length(V(net))
+
+Average_degree <- te/ve
+Average_degree
+```
+
+Average weighted degree
+```{r}
+
+```
+
+Modularity
+ membership??
+```{r}
+modularity(net)
+```
+
+centrality
+```{r}
+
+```
+
+
 
 Try looking at again? Not sure if there is a way to offset in proportion to the number of characters in label?
 
@@ -488,7 +605,9 @@ Note: now where there use to be a SB (state both), this category has been duplic
 
 <br>
 
+<br>
 
+<br>
 
 ##### 5. Distribution of Actions 
 ```{r}
@@ -516,9 +635,1086 @@ ggplot(colsum) + geom_bar(mapping = aes(x = reorder(rowname, -count), y = count)
 
 ```{r}
 
-orgtyp_start
+orgtyp_done
 ```
 
 
 
 
+C = Corporation
+no. species = 6
+no. partners = 11
+```{r echo=FALSE, include=FALSE}
+
+
+C <- orgtyp_done[which(orgtyp_done$type_of_org == "C"),]
+
+
+
+C <- C[,-c(1:3,15:16)] #remove non numeric columns
+tC <- t(C)   #transform
+C <- t(tC)   #was coming up as non numeric so tranformed again to overwrite
+
+matC <- tC %*%  C
+
+
+
+#set row and column names 
+rownames(matC) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+colnames(matC)<- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+
+########### put into network analysis code 
+
+
+matC[lower.tri(matC)] <- NA
+diag(matC) <- NA
+
+Clist <- matC %>% melt() 
+Clist <- Clist[-which(is.na(Clist$value)),]
+
+Cnet <- graph_from_data_frame(d=Clist, directed=T) 
+
+E(Cnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+node.size<-setNames(c(8,3,1,0,0,6,1,5,0,8,3), c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding"))
+ 
+
+
+
+E(Cnet)$width <- E(Cnet)$value 
+
+radian.rescale <- function(x, start=0, direction=1) {
+  c.rotate <- function(x) (x + start) %% (2 * pi) * direction
+  c.rotate(scales::rescale(x, c(0, 2 * pi), range(x)))
+}
+
+n <- 11
+
+lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
+
+plot(Cnet, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+
+```
+
+one solution to cut off where Land Water Management and Conservation Planning are currently getting cut off might be to switch them with one of the one letter labels?
+try here...
+
+switch w law and edu
+Didn't work :/ managed to switch labels but values didn't move
+
+*** New place to start problem solving right here... 
+
+
+C = Corporation
+no. species = 5
+no. partners = 11
+```{r include=FALSE}
+
+C <- orgtyp_done[which(orgtyp_done$type_of_org == "C"),]
+
+
+
+C <- C[,-c(1:3,15:16)] #remove non numeric columns
+tC <- t(C)   #transform
+C <- t(tC)   #was coming up as non numeric so tranformed again to overwrite
+
+matC <- tC %*%  C
+
+
+
+#set row and column names 
+rownames(matC) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+colnames(matC)<- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+
+
+##try re ordering matrix here
+
+matC2 <- matC[c(4,2,3,1,5,9,7,8,6,10,11),c(4,2,3,1,5,9,7,8,6,10,11)]
+
+
+
+########### put into network analysis code 
+
+
+matC2[lower.tri(matC)] <- NA
+diag(matC2) <- NA
+
+Clista2 <- matC2 %>% melt() 
+Clista2 <- Clista2[-which(is.na(Clista2$value)),]
+
+Cnet2 <- graph_from_data_frame(d=Clista2, directed=T) 
+
+E(Cnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+
+node.size<-setNames(c(0,3,1,8,0,0,1,5,6,8,3), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+ 
+
+
+
+E(Cnet2)$width <- E(Cnet2)$value 
+
+radian.rescale <- function(x, start=0, direction=1) {
+  c.rotate <- function(x) (x + start) %% (2 * pi) * direction
+  c.rotate(scales::rescale(x, c(0, 2 * pi), range(x)))
+}
+
+n <- 11
+
+lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
+
+plot(Cnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+
+```
+
+
+Military 
+no. species = 4
+no. partners = 11
+```{r include=FALSE}
+M <- orgtyp_done[which(orgtyp_done$type_of_org == "M"),]
+
+
+
+M <- M[,-c(1:3,15:16)] #remove non numeric columns
+tM <- t(M)   #transform
+M <- t(tM)   #was coming up as non numeric so tranformed again to overwrite
+
+matM <- tM %*%  M
+
+
+
+#set row and column names 
+rownames(matM) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+colnames(matM)<- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+
+
+##try re ordering matrix here
+
+matM2 <- matM[c(4,2,3,1,5,9,7,8,6,10,11),c(4,2,3,1,5,9,7,8,6,10,11)]
+
+
+
+########### put into network analysis code 
+
+
+matM2[lower.tri(matM)] <- NA
+diag(matM2) <- NA
+
+Mlista2 <- matM2 %>% melt() 
+Mlista2 <- Mlista2[-which(is.na(Mlista2$value)),]
+
+Mnet2 <- graph_from_data_frame(d=Mlista2, directed=T) 
+
+E(Mnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+
+node.size<-setNames(c(0,3,1,6,1,0,1,4,3,2,0), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+ 
+
+
+
+E(Mnet2)$width <- E(Mnet2)$value 
+
+radian.rescale <- function(x, start=0, direction=1) {
+  c.rotate <- function(x) (x + start) %% (2 * pi) * direction
+  c.rotate(scales::rescale(x, c(0, 2 * pi), range(x)))
+}
+
+n <- 11
+
+lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
+
+plot(Mnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+
+```
+
+
+
+P = Private landowner
+no. species = 9
+no. partners = 12
+```{r include=FALSE}
+P <- orgtyp_done[which(orgtyp_done$type_of_org == "P"),]
+
+P <- P[,-c(1:3,15:16)] #remove non numeric columns
+tP <- t(P)   #transform
+P <- t(tP)   #was coming up as non numeric so tranformed again to overwrite
+
+matP <- tP %*%  P
+
+
+
+#set row and column names 
+rownames(matP) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+colnames(matP)<- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+
+
+##try re ordering matrix here
+
+matP2 <- matP[c(4,2,3,1,5,9,7,8,6,10,11),c(4,2,3,1,5,9,7,8,6,10,11)]
+
+
+
+########### put into network analysis code 
+
+
+matP2[lower.tri(matP)] <- NA
+diag(matP2) <- NA
+
+Plista2 <- matP2 %>% melt() 
+Plista2 <- Plista2[-which(is.na(Plista2$value)),]
+
+Pnet2 <- graph_from_data_frame(d=Plista2, directed=T) 
+
+E(Pnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+
+node.size<-setNames(c(0,5,0,9,0,0,1,2,5,6,4), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+ 
+
+
+
+E(Pnet2)$width <- E(Pnet2)$value 
+
+radian.rescale <- function(x, start=0, direction=1) {
+  c.rotate <- function(x) (x + start) %% (2 * pi) * direction
+  c.rotate(scales::rescale(x, c(0, 2 * pi), range(x)))
+}
+
+n <- 11
+
+lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
+
+plot(Pnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+```
+
+
+
+SW = State Wildlife (Agency) 
+no. species = 20
+no. partners = 28
+```{r include=FALSE}
+### Have cut off issues with this one 
+
+SW <- orgtyp_done[which(orgtyp_done$type_of_org == "SW"),]
+
+SW <- SW[,-c(1:3,15:16)] #remove non numeric columns
+tSW <- t(SW)   #transform
+SW <- t(tSW)   #was coming up as non numeric so tranformed again to overwrite
+
+matSW <- tSW %*%  SW
+
+
+
+#set row and column names 
+rownames(matSW) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+colnames(matSW)<- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+
+
+##try re ordering matrix here
+
+matSW2 <- matSW[c(4,2,3,1,5,9,7,8,6,10,11),c(4,2,3,1,5,9,7,8,6,10,11)]
+
+
+
+########### put into network analysis code 
+
+
+matSW2[lower.tri(matSW)] <- NA
+diag(matSW2) <- NA
+
+SWlista2 <- matSW2 %>% melt() 
+SWlista2 <- SWlista2[-which(is.na(SWlista2$value)),]
+
+SWnet2 <- graph_from_data_frame(d=SWlista2, directed=T) 
+
+E(SWnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+
+node.size<-setNames(c(7,6,4,16,1,7,12,14,15,14,6), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+ 
+
+
+
+E(SWnet2)$width <- E(SWnet2)$value 
+
+radian.rescale <- function(x, start=0, direction=1) {
+  c.rotate <- function(x) (x + start) %% (2 * pi) * direction
+  c.rotate(scales::rescale(x, c(0, 2 * pi), range(x)))
+}
+
+n <- 11
+
+lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
+
+plot(SWnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+```
+
+
+
+
+BLM
+no. species = 14
+no. partners = 18
+```{r include=FALSE}
+### Have cut off issues with this one 
+
+BLM <- orgtyp_done[which(orgtyp_done$type_of_org == "BLM"),]
+
+BLM <- BLM[,-c(1:3,15:16)] #remove non numeric columns
+tBLM <- t(BLM)   #transform
+BLM <- t(tBLM)   #was coming up as non numeric so tranformed again to overwrite
+
+matBLM <- tBLM %*%  BLM
+
+
+
+#set row and column names 
+rownames(matBLM) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+colnames(matBLM)<- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+##try re ordering matrix here
+
+matBLM2 <- matBLM[c(4,2,3,1,5,9,7,8,6,10,11),c(4,2,3,1,5,9,7,8,6,10,11)]
+
+
+########### put into network analysis code 
+
+
+matBLM2[lower.tri(matBLM)] <- NA
+diag(matBLM2) <- NA
+
+BLMlista2 <- matBLM2 %>% melt() 
+BLMlista2 <- BLMlista2[-which(is.na(BLMlista2$value)),]
+
+BLMnet2 <- graph_from_data_frame(d=BLMlista2, directed=T) 
+
+E(BLMnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+
+node.size<-setNames(c(1,4,0,12,0,5,2,6,9,7,4), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+ 
+
+E(BLMnet2)$width <- E(BLMnet2)$value 
+
+radian.rescale <- function(x, start=0, direction=1) {
+  c.rotate <- function(x) (x + start) %% (2 * pi) * direction
+  c.rotate(scales::rescale(x, c(0, 2 * pi), range(x)))
+}
+
+n <- 11
+
+lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
+
+plot(BLMnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+```
+
+
+
+USFWS
+no. species = 34
+no. partners = 43
+```{r include=FALSE}
+### Have cut off issues with this one 
+
+USFWS <- orgtyp_done[which(orgtyp_done$type_of_org == "USFWS"),]
+
+USFWS <- USFWS[,-c(1:3,15:16)] #remove non numeric columns
+tUSFWS <- t(USFWS)   #transform
+USFWS <- t(tUSFWS)   #was coming up as non numeric so tranformed again to overwrite
+
+matUSFWS <- tUSFWS %*%  USFWS
+
+
+
+#set row and column names 
+rownames(matUSFWS) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+colnames(matUSFWS)<- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+##try re ordering matrix here
+
+matUSFWS2 <- matUSFWS[c(4,2,3,1,5,9,7,8,6,10,11),c(4,2,3,1,5,9,7,8,6,10,11)]
+
+
+########### put into network analysis code 
+
+
+matUSFWS2[lower.tri(matUSFWS)] <- NA
+diag(matUSFWS2) <- NA
+
+USFWSlista2 <- matUSFWS2 %>% melt() 
+USFWSlista2 <- USFWSlista2[-which(is.na(USFWSlista2$value)),]
+
+USFWSnet2 <- graph_from_data_frame(d=USFWSlista2, directed=T) 
+
+E(USFWSnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+
+node.size<-setNames(c(1,6,4,10,1,12,15,13,13,22,15), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+ 
+
+E(USFWSnet2)$width <- E(USFWSnet2)$value 
+
+radian.rescale <- function(x, start=0, direction=1) {
+  c.rotate <- function(x) (x + start) %% (2 * pi) * direction
+  c.rotate(scales::rescale(x, c(0, 2 * pi), range(x)))
+}
+
+n <- 11
+
+lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
+
+plot(USFWSnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+```
+note on this one I ended up changing vertex.label.dist but still haviing trouble with cut offs 
+
+
+
+FO = Federal Other
+no. species = 11
+no. partners = 14
+```{r include=FALSE}
+FO <- orgtyp_done[which(orgtyp_done$type_of_org == "FO"),]
+
+FO <- FO[,-c(1:3,15:16)] #remove non numeric columns
+tFO <- t(FO)   #transform
+FO <- t(tFO)   #was coming up as non numeric so tranformed again to overwrite
+
+matFO <- tFO %*%  FO
+
+
+#set row and column names 
+rownames(matFO) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+colnames(matFO)<- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+##try re ordering matrix here
+
+matFO2 <- matFO[c(4,2,3,1,5,9,7,8,6,10,11),c(4,2,3,1,5,9,7,8,6,10,11)]
+
+
+########### put into network analysis code 
+
+
+matFO2[lower.tri(matFO)] <- NA
+diag(matFO2) <- NA
+
+FOlista2 <- matFO2 %>% melt() 
+FOlista2 <- FOlista2[-which(is.na(FOlista2$value)),]
+
+FOnet2 <- graph_from_data_frame(d=FOlista2, directed=T) 
+
+E(FOnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+
+node.size<-setNames(c(1,2,1,7,1,5,2,6,8,7,1), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+ 
+
+E(FOnet2)$width <- E(FOnet2)$value 
+
+radian.rescale <- function(x, start=0, direction=1) {
+  c.rotate <- function(x) (x + start) %% (2 * pi) * direction
+  c.rotate(scales::rescale(x, c(0, 2 * pi), range(x)))
+}
+
+n <- 11
+
+lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
+
+plot(FOnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+```
+
+
+N = NGO
+no. species = 7
+no. partners = 9
+```{r include=FALSE}
+N <- orgtyp_done[which(orgtyp_done$type_of_org == "N"),]
+
+N <- N[,-c(1:3,15:16)] #remove non numeric columns
+tN <- t(N)   #transform
+N <- t(tN)   #was coming up as non numeric so tranformed again to overwrite
+
+matN <- tN %*%  N
+
+
+
+#set row and column names 
+rownames(matN) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+colnames(matN)<- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+##try re ordering matrix here
+
+matN2 <- matN[c(4,2,3,1,5,9,7,8,6,10,11),c(4,2,3,1,5,9,7,8,6,10,11)]
+
+
+########### put into network analysis code 
+
+
+matN2[lower.tri(matN)] <- NA
+diag(matN2) <- NA
+
+Nlista2 <- matN2 %>% melt() 
+Nlista2 <- Nlista2[-which(is.na(Nlista2$value)),]
+
+Nnet2 <- graph_from_data_frame(d=Nlista2, directed=T) 
+
+E(Nnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+
+node.size<-setNames(c(0,0,1,4,1,2,2,3,5,6,2), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+ 
+
+E(Nnet2)$width <- E(Nnet2)$value 
+
+radian.rescale <- function(x, start=0, direction=1) {
+  c.rotate <- function(x) (x + start) %% (2 * pi) * direction
+  c.rotate(scales::rescale(x, c(0, 2 * pi), range(x)))
+}
+
+n <- 11
+
+lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
+
+plot(Nnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+```
+
+
+
+
+R = Reserach 
+no. species = 4
+no. partners = 4
+```{r include=FALSE}
+R <- orgtyp_done[which(orgtyp_done$type_of_org == "R"),]
+
+R <- R[,-c(1:3,15:16)] #remove non numeric columns
+tR <- t(R)   #transform
+R <- t(tR)   #was coming up as non numeric so tranformed again to overwrite
+
+matR <- tR %*%  R
+
+#set row and column names 
+rownames(matR) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+colnames(matR)<- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+##try re ordering matrix here
+
+matR2 <- matR[c(4,2,3,1,5,9,7,8,6,10,11),c(4,2,3,1,5,9,7,8,6,10,11)]
+
+
+########### put into network analysis code 
+
+
+matR2[lower.tri(matR)] <- NA
+diag(matR2) <- NA
+
+Rlista2 <- matR2 %>% melt() 
+Rlista2 <- Rlista2[-which(is.na(Rlista2$value)),]
+
+Rnet2 <- graph_from_data_frame(d=Rlista2, directed=T) 
+
+E(Rnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+
+node.size<-setNames(c(0,2,0,0,0,0,0,1,1,2,1), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+ 
+
+E(Rnet2)$width <- E(Rnet2)$value 
+
+radian.rescale <- function(x, start=0, direction=1) {
+  c.rotate <- function(x) (x + start) %% (2 * pi) * direction
+  c.rotate(scales::rescale(x, c(0, 2 * pi), range(x)))
+}
+
+n <- 11
+
+lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
+
+plot(Rnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+```
+
+
+
+
+SG = State Governmnet
+no. species = 5
+no. partners = 6
+```{r include=FALSE}
+SG <- orgtyp_done[which(orgtyp_done$type_of_org == "SG"),]
+
+SG <- SG[,-c(1:3,15:16)] #remove non numeric columns
+tSG <- t(SG)   #transform
+SG <- t(tSG)   #was coming up as non numeric so tranformed again to overwrite
+
+matSG <- tSG %*%  SG
+
+#set row and column names 
+rownames(matSG) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+colnames(matSG)<- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+##try re ordering matrix here
+
+matSG2 <- matSG[c(4,2,3,1,5,9,7,8,6,10,11),c(4,2,3,1,5,9,7,8,6,10,11)]
+
+
+########### put into network analysis code 
+
+
+matSG2[lower.tri(matSG)] <- NA
+diag(matSG2) <- NA
+
+SGlista2 <- matSG2 %>% melt() 
+SGlista2 <- SGlista2[-which(is.na(SGlista2$value)),]
+
+SGnet2 <- graph_from_data_frame(d=SGlista2, directed=T) 
+
+E(SGnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+
+node.size<-setNames(c(0,1,0,2,0,1,0,0,2,2,3), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+ 
+
+E(SGnet2)$width <- E(SGnet2)$value 
+
+radian.rescale <- function(x, start=0, direction=1) {
+  c.rotate <- function(x) (x + start) %% (2 * pi) * direction
+  c.rotate(scales::rescale(x, c(0, 2 * pi), range(x)))
+}
+
+n <- 11
+
+lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
+
+plot(SGnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+```
+
+
+
+USFS
+no. species = 12
+no. partners = 12
+```{r include=FALSE}
+USFS <- orgtyp_done[which(orgtyp_done$type_of_org == "USFS"),]
+
+USFS <- USFS[,-c(1:3,15:16)] #remove non numeric columns
+tUSFS <- t(USFS)   #transform
+USFS <- t(tUSFS)   #was coming up as non numeric so tranformed again to overwrite
+
+matUSFS <- tUSFS %*%  USFS
+
+#set row and column names 
+rownames(matUSFS) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+colnames(matUSFS)<- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+##try re ordering matrix here
+
+matUSFS2 <- matUSFS[c(4,2,3,1,5,9,7,8,6,10,11),c(4,2,3,1,5,9,7,8,6,10,11)]
+
+
+########### put into network analysis code 
+
+
+matUSFS2[lower.tri(matUSFS)] <- NA
+diag(matUSFS2) <- NA
+
+USFSlista2 <- matUSFS2 %>% melt() 
+USFSlista2 <- USFSlista2[-which(is.na(USFSlista2$value)),]
+
+USFSnet2 <- graph_from_data_frame(d=USFSlista2, directed=T) 
+
+E(USFSnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+
+node.size<-setNames(c(0,5,3,11,1,2,4,9,6,4,3), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+ 
+
+E(USFSnet2)$width <- E(USFSnet2)$value 
+
+radian.rescale <- function(x, start=0, direction=1) {
+  c.rotate <- function(x) (x + start) %% (2 * pi) * direction
+  c.rotate(scales::rescale(x, c(0, 2 * pi), range(x)))
+}
+
+n <- 11
+
+lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
+
+plot(USFSnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+```
+
+
+
+
+
+SL
+no. species = 11 
+no. partners = 16
+```{r include=FALSE}
+### Have cut off issues with this one 
+
+SL <- orgtyp_done[which(orgtyp_done$type_of_org == "SL"),]
+
+SL <- SL[,-c(1:3,15:16)] #remove non numeric columns
+tSL <- t(SL)   #transform
+SL <- t(tSL)   #was coming up as non numeric so tranformed again to overwrite
+
+matSL <- tSL %*%  SL
+
+#set row and column names 
+rownames(matSL) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+colnames(matSL)<- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+##try re ordering matrix here
+
+matSL2 <- matSL[c(4,2,3,1,5,9,7,8,6,10,11),c(4,2,3,1,5,9,7,8,6,10,11)]
+
+
+########### put into network analysis code 
+
+
+matSL2[lower.tri(matSL)] <- NA
+diag(matSL2) <- NA
+
+SLlista2 <- matSL2 %>% melt() 
+SLlista2 <- SLlista2[-which(is.na(SLlista2$value)),]
+
+SLnet2 <- graph_from_data_frame(d=SLlista2, directed=T) 
+
+E(SLnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+
+node.size<-setNames(c(3,2,0,12,0,5,5,5,10,7,5), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+ 
+
+E(SLnet2)$width <- E(SLnet2)$value 
+
+radian.rescale <- function(x, start=0, direction=1) {
+  c.rotate <- function(x) (x + start) %% (2 * pi) * direction
+  c.rotate(scales::rescale(x, c(0, 2 * pi), range(x)))
+}
+
+n <- 11
+
+lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
+
+plot(SLnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+```
+
+
+
+<br>
+
+
+<br>
+
+
+<br>
+
+
+<br>
+
+
+
+###For each type of org. make bar graph of action frequency
+(below is the frequency - in Data_exploration_S have the same graphs but as a proportion)
+
+
+C = Corporation
+no. species = 5
+no. partners = 11
+```{r echo=FALSE}
+done <- orgtyp_done[,-c(1:3,15)]
+
+C <- orgtyp_done[which(orgtyp_done$type_of_org == "C"),]
+
+C <- done[which(done$type_of_org == "C"),]
+
+prop <- C 
+prop <- colSums(prop[,-c(12)])
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+ggplot(prop, aes(x = rowname, y = prop)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Frequency of each action for org type: Coroporation") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Frequency")
+```
+
+
+
+M = Military 
+no. species = 4
+no. partners = 11
+```{r echo=FALSE}
+done <- orgtyp_done[,-c(1:3,15)]
+
+M <- orgtyp_done[which(orgtyp_done$type_of_org == "M"),]
+
+M <- done[which(done$type_of_org == "M"),]
+
+prop <- M
+prop <- colSums(prop[,-c(12)])
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+ggplot(prop, aes(x = rowname, y = prop)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Frequency of each action for org type: Military") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Frequency")
+```
+
+
+P = Private landowner
+no. species = 9
+no. partners = 12
+```{r echo=FALSE}
+done <- orgtyp_done[,-c(1:3,15)]
+
+P <- orgtyp_done[which(orgtyp_done$type_of_org == "P"),]
+
+P <- done[which(done$type_of_org == "P"),]
+
+prop <- P
+prop <- colSums(prop[,-c(12)])
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+ggplot(prop, aes(x = rowname, y = prop)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Frequency of each action for org type: Private Landowner") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Frequency")
+```
+
+SW = State Wildlife (Agency)
+no. species = 20
+no. partners = 28
+```{r echo=FALSE}
+done <- orgtyp_done[,-c(1:3,15)]
+
+SW <- orgtyp_done[which(orgtyp_done$type_of_org == "SW"),]
+
+SW <- done[which(done$type_of_org == "SW"),]
+
+prop <- SW
+prop <- colSums(prop[,-c(12)])
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+ggplot(prop, aes(x = rowname, y = prop)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Frequency of each action for org type: State Wildlife (Agency)") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Frequency")
+```
+
+
+BLM
+no. species = 14
+no. partners = 18
+```{r echo=FALSE}
+done <- orgtyp_done[,-c(1:3,15)]
+
+BLM <- orgtyp_done[which(orgtyp_done$type_of_org == "BLM"),]
+
+BLM <- done[which(done$type_of_org == "BLM"),]
+
+prop <- BLM
+prop <- colSums(prop[,-c(12)])
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+ggplot(prop, aes(x = rowname, y = prop)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Frequency of each action for org type: BLM") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Frequency")
+```
+
+
+
+USFWS
+no. species = 31
+no. partners = 34
+```{r echo=FALSE}
+done <- orgtyp_done[,-c(1:3,15)]
+
+USFWS <- orgtyp_done[which(orgtyp_done$type_of_org == "USFWS"),]
+
+USFWS <- done[which(done$type_of_org == "USFWS"),]
+
+prop <- USFWS
+prop <- colSums(prop[,-c(12)])
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+ggplot(prop, aes(x = rowname, y = prop)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Frequency of each action for org type: USFWS") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Frequency")
+```
+
+
+FO = Federal Other
+no. species = 11
+no. partners = 14
+```{r echo=FALSE}
+done <- orgtyp_done[,-c(1:3,15)]
+
+FO <- orgtyp_done[which(orgtyp_done$type_of_org == "FO"),]
+
+FO <- done[which(done$type_of_org == "FO"),]
+
+prop <- FO
+prop <- colSums(prop[,-c(12)])
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+ggplot(prop, aes(x = rowname, y = prop)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Frequency of each action for org type: Federal Other") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Frequency")
+```
+
+
+N = NGO
+no. species = 6
+no. partners = 9
+```{r echo=FALSE}
+done <- orgtyp_done[,-c(1:3,15)]
+
+N <- orgtyp_done[which(orgtyp_done$type_of_org == "N"),]
+
+N <- done[which(done$type_of_org == "N"),]
+
+prop <- N
+prop <- colSums(prop[,-c(12)])
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+ggplot(prop, aes(x = rowname, y = prop)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Frequency of each action for org type: NGO") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Frequency")
+```
+
+
+R = Reserach 
+no. species = 4
+no. partners = 4
+```{r echo=FALSE}
+done <- orgtyp_done[,-c(1:3,15)]
+
+R <- orgtyp_done[which(orgtyp_done$type_of_org == "R"),]
+
+R <- done[which(done$type_of_org == "R"),]
+
+prop <- R
+prop <- colSums(prop[,-c(12)])
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+ggplot(prop, aes(x = rowname, y = prop)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Frequency of each action for org type: Reserach") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Frequency")
+```
+
+
+SG = State Governmnet
+no. species = 5
+no. partners = 6
+```{r echo=FALSE}
+done <- orgtyp_done[,-c(1:3,15)]
+
+SG <- orgtyp_done[which(orgtyp_done$type_of_org == "SG"),]
+
+SG <- done[which(done$type_of_org == "SG"),]
+
+prop <- SG
+prop <- colSums(prop[,-c(12)])
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+ggplot(prop, aes(x = rowname, y = prop)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Frequency of each action for org type: State Governmnet") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Frequency")
+```
+
+
+USFS
+no. species = 12
+no. partners = 12
+```{r}
+done <- orgtyp_done[,-c(1:3,15)]
+
+USFS <- orgtyp_done[which(orgtyp_done$type_of_org == "USFS"),]
+
+USFS <- done[which(done$type_of_org == "USFS"),]
+
+prop <- USFS
+prop <- colSums(prop[,-c(12)])
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+ggplot(prop, aes(x = rowname, y = prop)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Frequency of each action for org type: USFS") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Frequency")
+```
+
+
+SL
+no. species = 11
+no. partners = 16
+```{r echo=FALSE}
+done <- orgtyp_done[,-c(1:3,15)]
+
+SL <- orgtyp_done[which(orgtyp_done$type_of_org == "SL"),]
+
+SL <- done[which(done$type_of_org == "SL"),]
+
+prop <- SL
+prop <- colSums(prop[,-c(12)])
+prop <- as.data.frame(prop)
+prop <- prop  %>% rownames_to_column()
+
+ggplot(prop, aes(x = rowname, y = prop)) + 
+    geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Frequency of each action for org type: State Land") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Frequency")
+```
+
+
+
+
+<br>
+
+
+<br>
+
+
+<br>
+
+
+### Add network statistics for 
+- entire dataset 
+- type categories 
