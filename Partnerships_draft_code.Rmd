@@ -148,6 +148,14 @@ ordered <- nopartners %>% arrange(-tally)
 #ordered$Scientific.name
 
 ggplot(ordered) + geom_bar(mapping = aes(x = reorder(Scientific.name, -tally), y = tally), stat = "identity") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Common Name") + scale_y_continuous(name ="# of partners working on species") 
+
+
+#write to jpeg
+jpeg(file = "output/FiguresForPaper_8_31/#ofPartnersPerSpecies.jpg")
+ggplot(ordered) + geom_bar(mapping = aes(x = reorder(Scientific.name, -tally), y = tally), stat = "identity") + theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Common Name") + scale_y_continuous(name ="# of partners working on species") 
+#Save the file 
+dev.off()
+
 ```
 
 
@@ -180,7 +188,13 @@ count <- as.data.frame(count)
 
 count <- count %>% rownames_to_column() 
 
-ggplot(count) + geom_histogram(mapping = aes(x = count), stat = "count")
+ggplot(count) + geom_histogram(mapping = aes(x = count), stat = "count") + scale_y_continuous(name ="Count") + scale_x_continuous(name ="The Number of Species that a Partner works on")
+
+#write to jpeg
+jpeg(file = "output/FiguresForPaper_8_31/SpeciesPerPartner.jpg")
+ggplot(count) + geom_histogram(mapping = aes(x = count), stat = "count") + scale_y_continuous(name ="Count") + scale_x_continuous(name ="The Number of Species That a Partner Works on")
+#Save the file 
+dev.off()
 ```
 This is including agency offices which is why fed agency numbers are lower 
 Also break in y axis has something to do with scale_y_discrete but I can't figure out what yet.. 
@@ -518,7 +532,7 @@ E(net)$arrow.size <- .02 #determine size of arrows (this makes the heads real sm
 
 
 
-node.size<-setNames(c(14,11,12,34,9,10,5,4,4,5,18,6), c("BLM","FO","USFS","USFWS","P","SL","SG","R","M","C","SW","N"))
+node.size<-setNames(c(14,11,12,34,11,10,6,5,5,5,19,6), c("BLM","FO","USFS","USFWS","P","SL","SG","R","M","C","SW","N"))
   #so not setting in the same order 
 #V(net)$label <- NA
 E(net)$width <- E(net)$value
@@ -552,6 +566,15 @@ plot(net, rescale=F, vertex.color="white", edge.color= "black", vertex.label.col
 plot(net, rescale=F, vertex.color="white", edge.color= "black", vertex.label.color="black", vertex.size=node.size*.5, layout = l, vertex.label.dist=4,
      vertex.label.degree=lab.locs, vertex.label.cex	= .5)
 ## Even now still is a bit cut off and can't see size differences :/ 
+
+
+
+jpeg(file = "output/FiguresForPaper_8_31/PartnerTypesThatWorkTogether.jpg")
+plot(net, rescale=F, vertex.color="white", edge.color= "black", vertex.label.color="black", vertex.size=node.size*.5, layout = l, vertex.label.dist=4,
+     vertex.label.degree=lab.locs, vertex.label.cex	= .5)
+#Save the file 
+dev.off()
+
 ```
 
 Network statistics:
@@ -625,6 +648,13 @@ colsum <- colsum  %>% rename(count = `colSums(df[, c(4:14)])`) #renaming column 
 colsum <- colsum %>% arrange(count)
   
 ggplot(colsum) + geom_bar(mapping = aes(x = reorder(rowname, -count), y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Action Category")
+
+
+
+jpeg(file = "output/FiguresForPaper_8_31/DistributionOfActions.jpg")
+ggplot(colsum) + geom_bar(mapping = aes(x = reorder(rowname, -count), y = count), stat = "identity")+ theme(axis.text.x = element_text(angle = 90)) + scale_x_discrete(name ="Action Category") + scale_y_continuous(name ="Count")
+#Save the file 
+dev.off()
 ```
 
 
@@ -696,6 +726,7 @@ n <- 11
 lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
 
 plot(Cnet, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+
 
 ```
 
@@ -772,6 +803,12 @@ lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
 
 plot(Cnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
 
+
+jpeg(file = "output/FiguresForPaper_8_31/ActionsDoneByPlayerType_Corporation.jpg")
+plot(Cnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+#Save the file 
+dev.off()
+
 ```
 
 
@@ -820,7 +857,7 @@ E(Mnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
 
 
-node.size<-setNames(c(0,3,1,6,1,0,1,4,3,2,0), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+node.size<-setNames(c(5,3,1,9,1,5,6,9,6,7,0), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
  
 
 
@@ -837,6 +874,13 @@ n <- 11
 lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
 
 plot(Mnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+
+
+#write to jpeg
+jpeg(file = "output/FiguresForPaper_8_31/ActionsDoneByPlayerType_Military.jpg")
+plot(Mnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+#Save the file 
+dev.off()
 
 ```
 
@@ -885,7 +929,7 @@ E(Pnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
 
 
-node.size<-setNames(c(0,5,0,9,0,0,1,2,5,6,4), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+node.size<-setNames(c(0,6,0,10,0,0,1,3,5,6,4), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
  
 
 
@@ -902,6 +946,14 @@ n <- 11
 lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
 
 plot(Pnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+
+
+#write to jpeg
+jpeg(file = "output/FiguresForPaper_8_31/ActionsDoneByPlayerType_PrivateLandowner.jpg")
+plot(Pnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+#Save the file 
+dev.off()
+
 ```
 
 
@@ -951,7 +1003,7 @@ E(SWnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
 
 
-node.size<-setNames(c(7,6,4,16,1,7,12,14,15,14,6), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+node.size<-setNames(c(8,6,5,19,1,10,15,17,17,17,6), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
  
 
 
@@ -968,6 +1020,14 @@ n <- 11
 lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
 
 plot(SWnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+
+
+#write to jpeg
+jpeg(file = "output/FiguresForPaper_8_31/ActionsDoneByPlayerType_StateWildlifeAgency.jpg")
+plot(SWnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+#Save the file 
+dev.off()
+
 ```
 
 
@@ -1015,7 +1075,7 @@ E(BLMnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads rea
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
 
 
-node.size<-setNames(c(1,4,0,12,0,5,2,6,9,7,4), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+node.size<-setNames(c(4,4,0,15,0,8,6,10,12,10,4), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
  
 
 E(BLMnet2)$width <- E(BLMnet2)$value 
@@ -1030,6 +1090,14 @@ n <- 11
 lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
 
 plot(BLMnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+
+
+#write to jpeg
+jpeg(file = "output/FiguresForPaper_8_31/ActionsDoneByPlayerType_BLM.jpg")
+plot(BLMnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+#Save the file 
+dev.off()
+
 ```
 
 
@@ -1076,7 +1144,7 @@ E(USFWSnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads r
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
 
 
-node.size<-setNames(c(1,6,4,10,1,12,15,13,13,22,15), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+node.size<-setNames(c(4,6,4,13,1,15,18,16,15,25,15), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
  
 
 E(USFWSnet2)$width <- E(USFWSnet2)$value 
@@ -1090,7 +1158,14 @@ n <- 11
 
 lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
 
-plot(USFWSnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+plot(USFWSnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up
+
+#write to jpeg
+jpeg(file = "output/FiguresForPaper_8_31/ActionsDoneByPlayerType_USFWS.jpg")
+plot(USFWSnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up
+#Save the file 
+dev.off()
+
 ```
 note on this one I ended up changing vertex.label.dist but still haviing trouble with cut offs 
 
@@ -1135,7 +1210,7 @@ E(FOnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
 
 
-node.size<-setNames(c(1,2,1,7,1,5,2,6,8,7,1), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+node.size<-setNames(c(3,2,1,8,1,6,4,8,9,8,1), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
  
 
 E(FOnet2)$width <- E(FOnet2)$value 
@@ -1150,6 +1225,13 @@ n <- 11
 lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
 
 plot(FOnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+
+#write to jpeg
+jpeg(file = "output/FiguresForPaper_8_31/ActionsDoneByPlayerType_FederalOther.jpg")
+plot(FOnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+#Save the file 
+dev.off()
+
 ```
 
 
@@ -1193,7 +1275,7 @@ E(Nnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
 
 
-node.size<-setNames(c(0,0,1,4,1,2,2,3,5,6,2), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+node.size<-setNames(c(0,0,4,7,1,2,2,3,8,6,2), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
  
 
 E(Nnet2)$width <- E(Nnet2)$value 
@@ -1208,6 +1290,14 @@ n <- 11
 lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
 
 plot(Nnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+
+
+#write to jpeg
+jpeg(file = "output/FiguresForPaper_8_31/ActionsDoneByPlayerType_NGO.jpg")
+plot(Nnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4, vertex.label.degree=lab.locs) ## note the node sizes were scaled up
+#Save the file 
+dev.off()
+
 ```
 
 
@@ -1251,7 +1341,7 @@ E(Rnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
 
 
-node.size<-setNames(c(0,2,0,0,0,0,0,1,1,2,1), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+node.size<-setNames(c(0,2,1,0,0,0,0,1,1,2,1), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
  
 
 E(Rnet2)$width <- E(Rnet2)$value 
@@ -1266,6 +1356,14 @@ n <- 11
 lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
 
 plot(Rnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+
+
+
+#write to jpeg
+jpeg(file = "output/FiguresForPaper_8_31/ActionsDoneByPlayerType_Reserach.jpg")
+plot(Rnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up
+#Save the file 
+dev.off()
 ```
 
 
@@ -1309,7 +1407,7 @@ E(SGnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
 
 
-node.size<-setNames(c(0,1,0,2,0,1,0,0,2,2,3), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+node.size<-setNames(c(0,1,0,3,0,1,0,0,3,3,3), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
  
 
 E(SGnet2)$width <- E(SGnet2)$value 
@@ -1324,6 +1422,14 @@ n <- 11
 lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
 
 plot(SGnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+
+
+#write to jpeg
+jpeg(file = "output/FiguresForPaper_8_31/ActionsDoneByPlayerType_StateGovernmnet.jpg")
+plot(SGnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+#Save the file 
+dev.off()
+
 ```
 
 
@@ -1381,6 +1487,15 @@ n <- 11
 lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
 
 plot(USFSnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+
+
+
+#write to jpeg
+jpeg(file = "output/FiguresForPaper_8_31/ActionsDoneByPlayerType_USFS.jpg")
+plot(USFSnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up
+#Save the file 
+dev.off()
+
 ```
 
 
@@ -1427,7 +1542,7 @@ E(SLnet2)$arrow.size <- .02 #determine size of arrows (this makes the heads real
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
 
 
-node.size<-setNames(c(3,2,0,12,0,5,5,5,10,7,5), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+node.size<-setNames(c(6,2,0,13,0,8,8,8,11,10,5), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
  
 
 E(SLnet2)$width <- E(SLnet2)$value 
@@ -1442,6 +1557,14 @@ n <- 11
 lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
 
 plot(SLnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+
+
+#write to jpeg
+jpeg(file = "output/FiguresForPaper_8_31/ActionsDoneByPlayerType_StateLandManagement.jpg")
+plot(SLnet2, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size*2,  vertex.label.dist=4.65, vertex.label.degree=lab.locs) ## note the node sizes were scaled up 
+#Save the file 
+dev.off()
+
 ```
 
 
