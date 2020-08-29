@@ -42,7 +42,6 @@ tableofPandA[which(tableofPandA$partner.in.agreement == "All parties"),1] <- "Pa
 # ******Also need to code in all for this one
 tableofPandA[which(tableofPandA$partner.in.agreement == "ALL (all parties)"),1] <- "Anza-Borrego Desert State Park, Arizona Game and Fish Department, BLM, BLM El Centro, BLM Palm Springs, BLM Yuma, Bureau of Reclamation, California Department of Fish and Game, California Department of Parks and Recreation, California State Parks, Ocotillo Wells State Vehicular Recreation Area, U.S. Marine Corps, U.S. Navy, US Bureau of Reclamation Yuma, US Marine Corps Air Station Yuma, US Naval Air Facility El Centro, US Navy SW Division, USFWS, USFWS Carlsbad, USFWS Phoenix"
 
-
 #### taken from multipartnerstrings.R function so that have edits all in one place 
 
 
