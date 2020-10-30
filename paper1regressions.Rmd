@@ -1,0 +1,71 @@
+---
+title: "regressions_for_paper"
+author: "Annabelle"
+date: "10/19/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Goal for script: 
+- lets make one base dataset with all predictors and check for correlation.. then make all necessary models 
+
+- starting point for preexisting models outlined in word doc "Regression Summaries for Partnerships" but only interested in using action data as potential predictor NOT response for this paper 
+
+##Set up file structure 
+```{r, include = FALSE}
+## setup the file structure so that this markdown document is in the main project folder along with the other folders noted below
+
+DataSource <- "./data" # input raw dataset goes here
+output.dir <-"./output" # output dataset writes to here
+functions.dir <- "./functions" # directory for functions 
+
+source(file.path(functions.dir,'FormatData.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'cleaning_salafsky.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'FormatwCollabs.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'salafsky_final_edits.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'multipartnerstrings.R')) # any functions that are called up by this markdown document need to be sourced here
+
+## general functions that need to be read in. I like to put them at the top so they are easier to deal with when they change version (inevitable)
+library(tidyverse)
+```
+
+
+##load in different datasets
+```{r, echo = FALSE, include = FALSE}
+finaldf <- read.csv(paste0(DataSource,"/finalSdataset_8_29.csv"), stringsAsFactors = FALSE) #removing end piece  ## codesalafsky.csv is the rawest data that function runs on
+finaldf$X <- NULL #was inserting column named X this removes it 
+
+## Need to make it so each row is spcies specific 
+finaldf$partner.in.agreement <- NULL
+finaldf <- finaldf[,-c(14,15)]
+finaldf <- finaldf %>% 
+  group_by(Scientific.name, agreement.number) %>%  #want to select first all the same scientific names and then individual agreeements (that way if there are multiple agreements dont sum partner actions across agreements)
+  summarise_each(funs(sum)) #works as col sum 
+## so from above would be species x agreement specific.. for just species specific see below --> 
+finaldf$agreement.number <- NULL
+finaldf <- finaldf %>% 
+  group_by(Scientific.name) %>% summarise_each(funs(sum)) #works as col sum 
+
+
+## so new actsum variable
+actsumvar <- finaldf
+#do rowsum calc
+actsumvar <- actsumvar %>% mutate("actsum" = rowSums(actsumvar[,c(2:12)]))
+
+
+## new actpartsum variable
+actpartsumvar <- finaldf %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+actpartsumvar <- actpartsumvar %>% mutate("actpartsum" = rowSums(actpartsumvar[,c(2:12)]))
+
+
+```
+
+
+So slight problem - have tdata3 in CodeforOverview but only the salafsky subset so can't substitute new predictors .. need to ask tyler for new dataset 
+
+Also need to seperate out plant vs vertebrate taxa coding 
+
