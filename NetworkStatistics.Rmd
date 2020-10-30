@@ -10,6 +10,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 parent script: Partnerships_draft_code.Rmd
+Next steps - figure out why statistics calculations for centrality don't make sense
+chi square and fishers exact 
 
 ##Set up file structure 
 ```{r, include = FALSE}
@@ -226,8 +228,13 @@ E(salfTnet)$arrow.size <- .02 #determine size of arrows (this makes the heads re
 
 E(salfTnet)$width <- E(salfTnet)$value 
 
+salfTmat <- tdf %*% df
+node.size <- diag(salfTmat)
+cname <- colnames(salfTmat)
 
-plot(salfTnet, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, vertex.size=node.size) 
+node.size<-setNames(node.size, cname)
+
+plot(salfTnet, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, vertex.size=node.size, layout=layout_in_circle) 
 #removed - layout=layout_in_circle,
 
 ##plot(salfTnet, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, vertex.size=node.size) 
@@ -241,7 +248,8 @@ plot(salfTnet, vertex.color="white", edge.color= "black", vertex.label.color="bl
 #dev.off()
 
 ```
-
+So issue here is don't want to manually enter the names and node sizes so had just commented it out.. that's why having problem printing because node.size hasn't been definied in current code.. 
+I think this has been solved but it is hard to check 
 
 
 
@@ -249,6 +257,67 @@ Do network stats for total partners in salafsky subset here!! ****
 ```{r}
 
 ```
+
+
+Average degree: Every node has # of edges conected so accross all nodes in network, on average what is the # of edges connected to each node 
+```{r}
+#mean(degree(net), mode = "total") this didn't work 
+salfTmat <- tdf %*% df
+diag(salfTmat) <- NA
+
+#change to 1s and 0s so can get degree
+simplified_mat <- salfTmat %>% replace((. > 0),1)
+
+added <- rowSums(simplified_mat, na.rm = TRUE) #this gives the correct number of edges across each node
+
+dim(salfTmat)
+
+#now find the average
+sum(added)/130 #total number of nodes (partners is 131 so 131-1)
+
+mean(added) #comment above is why values are differenet 
+
+```
+** I don't think degree(net) is correct bc there is no connection between military and coporation but it says 11 anyway 
+
+Average weighted degree
+```{r}
+added <- rowSums(salfTmat, na.rm = TRUE) #this gives the correct number of edges across each node
+
+#now find the average
+sum(added)/130 #131-1 is number of nodes where the same node isn't connected to itself
+
+mean(added) #comment above is why values are differenet 
+```
+
+Modularity
+```{r}
+salfTnet <- graph_from_data_frame(d=salfTmatlist, directed=T) 
+modularity(net)
+```
+note: make membership vectors that are type categories - run newman girvan function furst 
+run on entire dataset 
+future ref - https://rpubs.com/shestakoff/sna_lab5
+
+
+centrality: Eigenvector
+```{r}
+eigen_centrality(salfTnet, directed=F, weights=NA)
+
+#centr_eigen(net, directed=T, normalized=T)
+```
+
+
+centrality: Betweenness
+```{r}
+betweenness(salfTnet, directed=F, weights=NA)
+
+edge_betweenness(salfTnet, directed=F, weights=NA)
+
+centr_betw(salfTnet, directed=T, normalized=T) ## this gives out put but changes when change directed (I don't think our network is directed)
+```
+
+
 
 
 ####This is network for entrie dataframe where:
@@ -282,15 +351,19 @@ E(EDnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real 
 
 E(EDnet)$width <- E(EDnet)$value 
 
+EDmat <- tED %*% ED
+node.size <- diag(EDmat)
+cname <- colnames(EDmat)
+
 plot(EDnet, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size)
 ```
-
+Same fix from previous matrix (with correct names added) seems to work here!
 not sure if there are any lines at all here... 
 
 filter > 1 to make sure working correctly
 ```{r Eval = FALSE}
-EDmatlist <- EDmat %>% melt() 
-EDmatlist <- EDmatlist[which(EDmatlist$value > 1),]
+#EDmatlist <- EDmat %>% melt() 
+#EDmatlist <- EDmatlist[which(EDmatlist$value > 1),]
 
 EDnet <- graph_from_data_frame(d=EDmatlist, directed=T) 
 
@@ -306,6 +379,68 @@ Do network stats for total partners in salafsky subset here!! ****
 ```{r}
 
 ```
+
+
+Average degree: Every node has # of edges conected so accross all nodes in network, on average what is the # of edges connected to each node 
+```{r}
+#mean(degree(net), mode = "total") this didn't work 
+EDmat <- tED %*% ED
+diag(EDmat) <- NA
+
+#change to 1s and 0s so can get degree
+EDmatsimplified_mat <- EDmat %>% replace((. > 0),1)
+
+added <- rowSums(EDmatsimplified_mat, na.rm = TRUE) #this gives the correct number of edges across each node
+
+dim(EDmat)
+
+#now find the average
+sum(added)/291 #total number of nodes (partners is 292 so 292-1)
+
+mean(added) #comment above is why values are differenet 
+
+```
+** I don't think degree(net) is correct bc there is no connection between military and coporation but it says 11 anyway 
+
+Average weighted degree
+```{r}
+added <- rowSums(EDmat, na.rm = TRUE) #this gives the correct number of edges across each node
+
+#now find the average
+sum(added)/291 #292-1 is number of nodes where the same node isn't connected to itself
+
+mean(added) #comment above is why values are differenet 
+```
+
+Modularity
+```{r}
+Ednet <- graph_from_data_frame(d=EDmatlist, directed=T) 
+modularity(Ednet)
+```
+note: make membership vectors that are type categories - run newman girvan function furst 
+run on entire dataset 
+future ref - https://rpubs.com/shestakoff/sna_lab5
+
+
+centrality: Eigenvector
+```{r}
+eigen_centrality(Ednet, directed=F, weights=NA)
+
+#centr_eigen(net, directed=T, normalized=T)
+```
+
+
+centrality: Betweenness
+```{r}
+betweenness(Ednet, directed=F, weights=NA)
+
+edge_betweenness(Ednet, directed=F, weights=NA)
+
+centr_betw(Ednet, directed=T, normalized=T) ## this gives out put but changes when change directed (I don't think our network is directed)
+```
+
+
+
 
 
 
@@ -327,7 +462,10 @@ colnames(tadjmat)<- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowne
 tadjmat[lower.tri(tadjmat)] <- NA
 diag(tadjmat) <- NA
 
-tolist <- tadjmat %>% melt() 
+tadjmat <- tadjmat %>% rownames_to_column()
+
+#tolist <- tadjmat %>% melt() ## the melt function wasn't working correctly but now it should be 
+tolist <- melt(tadjmat, id = "rowname")
 tolist <- tolist[-which(is.na(tolist$value)),]
 
 
@@ -427,7 +565,7 @@ mean(added) #comment above is why values are differenet
 Modularity
 ```{r}
 net <- graph_from_data_frame(d=tolist, directed=T) 
-#modularity(net)
+modularity(net)
 ```
 note: make membership vectors that are type categories - run newman girvan function furst 
 run on entire dataset 
@@ -479,4 +617,11 @@ Notes on options provided in tutorial
 
 
 Fisher's exact and chi square calculations 
+
+
+
+
+
+
+
 
