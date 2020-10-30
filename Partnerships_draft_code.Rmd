@@ -7,7 +7,8 @@ output:
   word_document: default
 ---
 
-Annabelle to do : write figures to jpg or tiff 
+Note: network stats are a bit scattered because doc was put together for figure creation (most should be at the bottom..)
+Up next - try and see why there arn't many edges in big networks.. plus do stats
 
 
 ```{r setup, include=FALSE}
@@ -429,6 +430,13 @@ orgtyp_done <- rbind(orgtyp_base2, orgtyp_base3,orgtyp_base4, orgtyp_base5)
 ```
 
 
+Final dataset with action counts, partners, both sci and common names and assigned org types
+Write to csv and put in data folder
+```{r}
+write.csv(orgtyp_done, paste(DataSource,"/finalSdataset_8_29.csv", sep = "")) 
+```
+
+
 
 d
 
@@ -577,44 +585,6 @@ dev.off()
 
 ```
 
-Network statistics:
--	Average degree = ave number of orgs/type of orgs that work together
-      Average degree is simply the average number of edges per node in the graph. It is relatively straightforward to calculate:: Total Edges/Total Nodes =Average Degree
-
--	Average weighted degree – weights of links between nodes = average number of ?? on by partners averages 
--	Modularity – groups of parnters that cluster together
-Seems straightforward - https://igraph.org/r/doc/modularity.igraph.html
-For nodes themselves (either partners or partner types)
--	Can calculate centrality 
-Notes on options provided in tutorial
-
-Average degree
-```{r}
-## total edges 
-te <- length(E(net))
-
-#total nodes
-ve <- length(V(net))
-
-Average_degree <- te/ve
-Average_degree
-```
-
-Average weighted degree
-```{r}
-
-```
-
-Modularity
- membership??
-```{r}
-modularity(net)
-```
-
-centrality
-```{r}
-
-```
 
 
 
@@ -1838,6 +1808,379 @@ ggplot(prop, aes(x = rowname, y = prop)) +
 <br>
 
 
-### Add network statistics for 
+## Add network statistics for 
+Note, for networks already created above, some code has been repeated to have all code needed to create network and code for network statistic in the same location within this script 
+
 - entire dataset 
+    - Salafsky
+    - all partners
 - type categories 
+
+
+A make network for entire dataset 
+This is network for entrie dataframe where:
+nodes = actions
+edges = partners
+```{r check_zero,  eval = FALSE, include=FALSE}
+allnet <- orgtyp_done
+
+#remove replicated rows (was only done for where needed to double list org types )
+
+allnet <- allnet[,-c(16)]
+
+##trial remove duplicates
+#dupes <- get_dupes(allnet) #which rows are duplicated
+#nodupes <- distinct(dupes) #now have 1/2 number = worked
+
+## checking in this dataset 
+allnet <- distinct(allnet)
+
+#now remove all numeric columns 
+allnet <- allnet[,c(4:14)]
+
+zeros1 <- remove_empty(allnet, which = "rows") # not finding any all zeros? 
+#make 0 == NULL then re run 
+
+zeros[which(zeros$X1..Land.Water.Management == 0),1] <- NA # 11 is the column called 'land water management'
+zeros[which(zeros$X2..Species.Management== 0),2] <- NA
+zeros[which(zeros$X3..Awareness.raising== 0),3] <- NA
+zeros[which(zeros$X4..law.enforcement.and.prosecution== 0),4] <- NA
+zeros[which(zeros$X5..livelihood..economic.and.moral.incentrives== 0),5] <- NA
+zeros[which(zeros$X6..Conservation.Design.and.Planning== 0),6] <- NA
+zeros[which(zeros$X7..Legal.and.Policy.frameworks == 0),7] <- NA
+zeros[which(zeros$X8..Research.and.monitoring== 0),8] <- NA
+zeros[which(zeros$X9..Education.and.Training== 0),9] <- NA
+zeros[which(zeros$X10..Institutional.Development== 0),10] <- NA
+zeros[which(zeros$funding == 0),11] <- NA
+
+## now start actual calcs 
+allnet <- orgtyp_done
+
+#remove replicated rows (was only done for where needed to double list org types )
+allnet <- allnet[,-c(16)]
+allnet <- distinct(allnet)
+
+#now remove all numeric columns 
+allnet <- allnet[,c(4:14)]
+tan <- t(allnet)
+allnet <- t(tan)
+
+mat_allnet <- tan %*%  allnet
+```
+Note - stopped because this wasn't the node/edge set up that we wanted... correct on below 
+
+
+####This is network for entrie dataframe where:
+Salafsky dataset.. 
+nodes = partners
+edges = species
+
+1. recombine so that each row is a species and all partners are in string
+```{r}
+allnet <- orgtyp_done
+#remove replicated rows (was only done for where needed to double list org types )
+allnet <- allnet[,-c(16)]
+allnet <- distinct(allnet)
+
+allnet <- allnet[,c(1,3,15)]
+
+
+### get rid of repeating partner names for same species so that don't get list in result 
+
+allnet2 <- allnet %>% group_by(Scientific.name, Common.name) %>% distinct(partner.in.agreement)
+
+## Didn't need dumb loop!!!
+change2 <-  allnet2 %>% pivot_wider(names_from = partner.in.agreement, values_from = Scientific.name)
+
+#this was was got originally so can check 
+#change <-  allnet %>% pivot_wider(names_from = partner.in.agreement, values_from = varname)
+## based on differences in dim [15] should be that many repetitions.. 
+
+## Didn't need dumb loop!!!
+
+
+names <- change2[,c(1,2)]
+#change all values to 1s and 0s
+change2[!is.na(change2)] <- 1
+change2 <- change2[,-c(1)]
+#change3 <- cbind(names,change2)  ##not sure why but this isn't working so can't reconnect sci names with values
+change2[is.na(change2)] <- 0
+
+
+## make matrix
+
+# first need to unlist
+mydf <- change2
+df <- cbind(mydf[!sapply(mydf, is.list)], 
+      (t(apply(mydf[sapply(mydf, is.list)], 1, unlist))))
+#now go from character to numeric
+
+for(i in 1:131){
+  df[,i] <- as.numeric(df[,i])  # silly hack because it wouldn't let me change columns to numeric in one go??
+}
+
+tdf <- t(df)
+df <- t(tdf) #another hack to make numeric
+
+#matrix!
+salfTmat <- tdf %*% df
+
+salfTmat[lower.tri(salfTmat)] <- NA
+diag(salfTmat) <- NA
+
+salfTmatlist <- salfTmat %>% melt() 
+salfTmatlist <- salfTmatlist[-which(is.na(salfTmatlist$value)),]
+
+salfTnet <- graph_from_data_frame(d=salfTmatlist, directed=T) 
+
+E(salfTnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+### commenting this out because unless needed it's going to be a real pain to feed in mannually 
+#node.size<-setNames(c(6,2,0,13,0,8,8,8,11,10,5), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+ 
+
+E(salfTnet)$width <- E(salfTnet)$value 
+
+
+plot(salfTnet, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, vertex.size=node.size) 
+#removed - layout=layout_in_circle,
+
+plot(salfTnet, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, vertex.size=node.size) 
+
+
+
+##trying to make sure this is working --> layout=layout_in_circle seems to remove edge display 
+jpeg(file = "output/entiredatasettest.jpg")
+plot(salfTnet, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size) 
+#Save the file 
+dev.off()
+
+
+```
+
+
+
+Do network stats for total partners in salafsky subset here!! ****
+```{r}
+
+```
+
+
+####This is network for entrie dataframe where:
+Larger (non salafsky subset) dataset.. 
+nodes = partners
+edges = species
+
+EditedData made way earlier in script 
+```{r}
+tED <- t(EditedData[,-c(1:3)])
+ED <- t(tED) #another hack to make numeric
+
+#matrix!
+EDmat <- tED %*% ED
+
+EDmat[lower.tri(EDmat)] <- NA
+diag(EDmat) <- NA
+
+EDmatlist <- EDmat %>% melt() 
+EDmatlist <- EDmatlist[-which(is.na(EDmatlist$value)),]
+
+EDnet <- graph_from_data_frame(d=EDmatlist, directed=T) 
+
+E(EDnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+### commenting this out because unless needed it's going to be a real pain to feed in mannually 
+#node.size<-setNames(c(6,2,0,13,0,8,8,8,11,10,5), c("Law","Species Management", "Awareness","Land Water Management","Econ","Education", "Policy", "Research", "Conservation Planning","Instiutional Development", "Funding"))
+ 
+
+E(EDnet)$width <- E(EDnet)$value 
+
+plot(EDnet, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size)
+```
+
+not sure if there are any lines at all here... 
+
+filter > 1 to make sure working correctly
+```{r Eval = FALSE}
+EDmatlist <- EDmat %>% melt() 
+EDmatlist <- EDmatlist[which(EDmatlist$value > 1),]
+
+EDnet <- graph_from_data_frame(d=EDmatlist, directed=T) 
+
+E(EDnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+
+E(EDnet)$width <- E(EDnet)$value 
+
+plot(EDnet, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size)
+```
+
+
+Do network stats for total partners in salafsky subset here!! ****
+```{r}
+
+```
+
+
+
+####This org type network from salafsky dataset:
+(note, could be done with larger dataset...)
+nodes = org type
+edges = species
+
+orgtype_adjmat made earlier in script 
+```{r echo=FALSE, include=FALSE}
+tadjmat <- orgtype_adjmat
+
+
+#set row and column names 
+rownames(tadjmat) <- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
+
+colnames(tadjmat)<- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
+
+tadjmat[lower.tri(tadjmat)] <- NA
+diag(tadjmat) <- NA
+
+tolist <- tadjmat %>% melt() 
+tolist <- tolist[-which(is.na(tolist$value)),]
+
+
+#library(igraph)
+
+net <- graph_from_data_frame(d=tolist, directed=T) 
+
+
+E(net)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
+#V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
+#V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
+
+node.size<-setNames(c(14,11,12,34,11,10,6,5,5,5,19,6), c("BLM","FO","USFS","USFWS","P","SL","SG","R","M","C","SW","N"))
+  #so not setting in the same order 
+#V(net)$label <- NA
+E(net)$width <- E(net)$value
+
+plot(net, vertex.size=node.size)
+
+l <- layout_in_circle(net)
+
+plot(net, rescale=F, vertex.color="white", edge.color= "black", vertex.label.color="black", vertex.size=node.size, layout = l)
+
+
+## source of code - https://stackoverflow.com/questions/23209802/placing-vertex-label-outside-a-circular-layout-in-igraph
+radian.rescale <- function(x, start=0, direction=1) {
+  c.rotate <- function(x) (x + start) %% (2 * pi) * direction
+  c.rotate(scales::rescale(x, c(0, 2 * pi), range(x)))
+}
+
+
+n <- 12
+#g <- erdos.renyi.game(n, 0.5)
+## Obviously labeling in this way this only makes sense for graphs
+## laid out as a circle to begin with
+
+lab.locs <- radian.rescale(x=1:n, direction=-1, start=0)
+
+plot(net, rescale=F, vertex.color="white", edge.color= "black", vertex.label.color="black", vertex.size=node.size, layout = l, vertex.label.dist=4,
+     vertex.label.degree=lab.locs, vertex.label.cex	= .5)
+
+
+## will rescale node size so doesn't cut off
+#plot(net, rescale=F, vertex.color="white", edge.color= "black", vertex.label.color="black", vertex.size=node.size*.5, layout = l, vertex.label.dist=4,
+#     vertex.label.degree=lab.locs, vertex.label.cex	= .5)
+## Even now still is a bit cut off and can't see size differences :/ 
+```
+Commented out layout modifications so doesn't look as nice but still same network 
+
+Network stats for org types 
+Average degree: Every node has # of edges conected so accross all nodes in network, on average what is the # of edges connected to each node 
+```{r}
+#mean(degree(net), mode = "total") this didn't work 
+
+##taken from creating matrix in earlier script
+tadjmat <- orgtype_adjmat
+#set row and column names 
+rownames(tadjmat) <- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
+colnames(tadjmat)<- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
+diag(tadjmat) <- NA
+
+
+#change to 1s and 0s so can get degree
+simplified_mat <- tadjmat %>% replace((. > 0),1)
+
+added <- rowSums(simplified_mat, na.rm = TRUE) #this gives the correct number of edges across each node
+
+#now find the average
+sum(added)/11 #12 is number of nodes in network but nodes can't be connected to themselves so makes sense to use 11??
+
+mean(added) #comment above is why values are differenet 
+
+```
+** I don't think degree(net) is correct bc there is no connection between military and coporation but it says 11 anyway 
+
+Average weighted degree
+```{r}
+added <- rowSums(tadjmat, na.rm = TRUE) #this gives the correct number of edges across each node
+
+#now find the average
+sum(added)/11 #12 is number of nodes in network but nodes can't be connected to themselves so makes sense to use 11??
+
+mean(added) #comment above is why values are differenet 
+
+
+
+## Old attempt // scrapwork 
+#strength(net, vids = V(net),
+#  loops = FALSE, weights = wts)
+#(net)$weight <- wts
+#mean(degree(net))
+#tadjmat <- orgtype_adjmat
+#wts <- colSums(tadjmat)
+#sumwts <- sum(wts)
+#sumwts
+```
+Modularity
+```{r}
+modularity(net)
+```
+note: make membership vectors that are type categories - run newman girvan function furst 
+run on entire dataset 
+future ref - https://rpubs.com/shestakoff/sna_lab5
+
+
+centrality: Eigenvector
+```{r}
+eigen_centrality(net, directed=F, weights=NA)
+
+centr_eigen(net, directed=T, normalized=T)
+```
+
+
+centrality: Betweenness
+```{r}
+betweenness(net, directed=F, weights=NA)
+
+edge_betweenness(net, directed=F, weights=NA)
+
+centr_betw(net, directed=T, normalized=T) ## this gives out put but changes when change directed (I don't think our network is directed)
+```
+
+
+<br>
+
+<br>
+
+Initial thoughts 
+
+Network statistics:
+-	Average degree = ave number of orgs/type of orgs that work together
+      Average degree is simply the average number of edges per node in the graph. It is relatively straightforward to calculate:: Total Edges/Total Nodes =Average Degree
+
+-	Average weighted degree – weights of links between nodes = average number of ?? on by partners averages 
+-	Modularity – groups of parnters that cluster together
+Seems straightforward - https://igraph.org/r/doc/modularity.igraph.html
+For nodes themselves (either partners or partner types)
+-	Can calculate centrality 
+Notes on options provided in tutorial
