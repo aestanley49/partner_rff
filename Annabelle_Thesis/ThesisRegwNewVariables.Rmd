@@ -213,6 +213,7 @@ par(mfrow = c(1, 1))
 AIC(lm2)
 #check_overdispersion(lm2)
 ```
+
 ```{r lm2}
 lm2 <- lm(log(count_w_FedAg_w_collab) ~ area_x +percentpublic + taxa + nsumemploy + total_x_x,data = allregFedAg)
 #withou log 
