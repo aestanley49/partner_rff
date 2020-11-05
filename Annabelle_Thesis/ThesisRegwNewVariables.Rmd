@@ -56,6 +56,9 @@ tableofPandA <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPa
 ## New csv made for changes made as final cleaning steps (replacing partner strings that were "all" with relevant partner names)
 modPA <- salafsky_final_edits(tableofPandA)
 docspef <- multipartnerstrings(modPA)
+
+tdata2 <- read.csv(paste0(DataSource,"/tyler_merged_shannon_federal_variables_june.csv"), stringsAsFactors = FALSE) #data provided by tyler 
+
 ```
 
 
