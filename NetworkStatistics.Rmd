@@ -314,7 +314,7 @@ betweenness(salfTnet, directed=F, weights=NA)
 
 edge_betweenness(salfTnet, directed=F, weights=NA)
 
-centr_betw(salfTnet, directed=T, normalized=T) ## this gives out put but changes when change directed (I don't think our network is directed)
+centr_betw(salfTnet, directed=F, normalized=T) ## this gives out put but changes when change directed (I don't think our network is directed)
 ```
 
 
@@ -438,7 +438,6 @@ edge_betweenness(Ednet, directed=F, weights=NA)
 
 centr_betw(Ednet, directed=T, normalized=T) ## this gives out put but changes when change directed (I don't think our network is directed)
 ```
-
 
 
 
@@ -576,7 +575,7 @@ centrality: Eigenvector
 ```{r}
 eigen_centrality(net, directed=F, weights=NA)
 
-centr_eigen(net, directed=T, normalized=T)
+centr_eigen(net, directed=F, normalized=T)
 ```
 
 
@@ -589,6 +588,13 @@ edge_betweenness(net, directed=F, weights=NA)
 centr_betw(net, directed=T, normalized=T) ## this gives out put but changes when change directed (I don't think our network is directed)
 ```
 
+
+Following new tutorial - https://www.datacamp.com/community/tutorials/centrality-network-analysis-R
+```{r}
+closeness(net, mode = "all")
+```
+Q - why are the calculations treating all nodes the same? 
+recommends using some form of PCA to find out which measure of centrality to use (apparently there are more than listed in other tutorial)
 
 <br>
 
@@ -618,9 +624,91 @@ Notes on options provided in tutorial
 
 Fisher's exact and chi square calculations 
 
+## Org types
+so because we have an identy matrix, I think we need a different function
+I think I need to use cortest.mat in psych package but can't seem to download the package (this would mean that the test is set to see if matrix differs from 0 or other values so would have to make expected results matrix to compare with?) - https://www.rdocumentation.org/packages/psych/versions/1.0-58/topics/mat.cortest
+```{r}
+
+#source - http://www.sthda.com/english/wiki/chi-square-test-of-independence-in-r
+chisq <- chisq.test(orgtype_adjmat)
+chisq
+round(chisq$expected,2) ## expected values don't make sense to me 
+
+
+round(chisq$residuals, 3)
+
+library(corrplot)
+corrplot(chisq$residuals, is.cor = FALSE)
+
+### trying approach that addresses identity matrix 
+  # sources (see link above chunk)
+  # plus - http://www.statpower.net/Content/312/Lecture%20Slides/MatrixExpectedValue.pdf - slide 7 
+
+library("psych")
+
+normal.cortest(orgtype_adjmat, R2 = NULL, n1 = NULL, n2 = NULL, fisher = TRUE)
+
+## need to generate an R2 but I don't know how to do that 
+
+cortest.mat(orgtype_adjmat,R2=NULL,n1=NULL,n2 = NULL)
+
+```
+note - had some problems installing package - ended up responding no to "Do you want to install from sources the package which needs compilation? (Yes/no/cancel)"
+
+
+## Partner type actions
+I think this lends itself to chi square much more easily 
+```{r}
+### need to check that sdata is the latest version of the dataset 
+
+sdata <- read_csv(paste(DataSource,"/tableofpartnersandactions.csv", sep = "")) #this csv is produced at end of cleaning_salafsky.R function 
+sdata <- sdata %>% select(-X1) #remove X1 column that is getting produced 
+
+
+alldf <- sdata #change variable name 
+
+species <- alldf[,c(2,10:20)] #unable to knit with select so indexed 
+
+eachsp <- species %>% group_by(Scientific.name) %>% summarise_each(funs(sum)) 
+
+onesandzeros <- eachsp %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+
+## so now have datasets set up, try and do analysis (not for one with binary data [onesandzeros], may need to check methods)
+
+df <- eachsp
+#need to set col1 to rowname or will be read as numeric 
+rownames(df) <- df$Scientific.name
+df$Scientific.name <- NULL
+
+chisq <- chisq.test(df)
+chisq
+
+chisq$observed
+
+round(chisq$expected,2)
+
+round(chisq$residuals, 3)
+
+##corrplot(chisq$residuals, is.cor = FALSE) #dataset is too big for this to currently work
 
 
 
+######
+## try with fisher's
+cortest.normal(df, R2 = NULL, n1 = NULL, n2 = NULL, fisher = TRUE)
+## I don't know if this is running right - might not get expected values generated (would need to set them)
+
+
+#discription says used to tell if they difer from 0 so lets try with other dataset 
+df2 <- onesandzeros
+rownames(df2) <- df$Scientific.name
+df2$Scientific.name <- NULL
+
+cortest.normal(df2, R2 = NULL, n1 = NULL, n2 = NULL, fisher = TRUE)
+#ns = sample size but idk what this would be 
+
+
+```
 
 
 
