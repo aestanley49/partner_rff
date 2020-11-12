@@ -31,11 +31,17 @@ source(file.path(functions.dir,'multipartnerstrings.R')) # any functions that ar
 
 ## general functions that need to be read in. I like to put them at the top so they are easier to deal with when they change version (inevitable)
 library(tidyverse)
+library(janitor)
 ```
 
 
 ##load in different datasets
 ```{r, echo = FALSE, include = FALSE}
+
+PartnersDataModified <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/PartnersDataModified.csv"), 
+                                stringsAsFactors = FALSE, na = c("", " ", "NA"))
+newpdata <- FormatwCollabs(PartnersDataModified)
+
 finaldf <- read.csv(paste0(DataSource,"/finalSdataset_8_29.csv"), stringsAsFactors = FALSE) #removing end piece  ## codesalafsky.csv is the rawest data that function runs on
 finaldf$X <- NULL #was inserting column named X this removes it 
 
@@ -55,17 +61,306 @@ finaldf <- finaldf %>%
 actsumvar <- finaldf
 #do rowsum calc
 actsumvar <- actsumvar %>% mutate("actsum" = rowSums(actsumvar[,c(2:12)]))
-
+actsumvar <- actsumvar[,c(1,13)]
 
 ## new actpartsum variable
 actpartsumvar <- finaldf %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
 actpartsumvar <- actpartsumvar %>% mutate("actpartsum" = rowSums(actpartsumvar[,c(2:12)]))
+actpartsumvar <- actpartsumvar[,c(1,13)]
 
+tdata <- read.csv(paste0(DataSource,"/Updated_variables.csv"), stringsAsFactors = FALSE) #data provided by tyler 
+tdata <- tdata %>%  as_tibble() #now can use stringr packages 
+tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
+######need to add to regression later
+tdata2 <- read.csv(paste0(DataSource,"/tyler_merged_shannon_federal_variables_june.csv"), stringsAsFactors = FALSE) #data provided by tyler 
+
+tdata3 <- read.csv(paste0(DataSource,"/tyler_nonsalafskysp_shannon_h_species_11_11_2020.csv"), stringsAsFactors = FALSE) #data provided by tyler 
+tdata3 <- tdata3 %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
+tdata3 <- rename(tdata3, scientific_name = scientific_name_x_x) #all other columns with scientific names are set up as this 
+
+plustwo <- read.csv(paste0(DataSource, "/two_additional_species.csv"), stringsAsFactors = FALSE) #also shared by tyler for the additional two species that had data missing before 
+plustwo <- plustwo %>%  as_tibble() #now can use stringr packages 
+plustwo <- plustwo %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
+#turns out only needed one of these species 
+plustwo <- plustwo[1,]
 
 ```
 
 
 So slight problem - have tdata3 in CodeforOverview but only the salafsky subset so can't substitute new predictors .. need to ask tyler for new dataset 
 
-Also need to seperate out plant vs vertebrate taxa coding 
+** need to merge tdata2 with script that has finalized partner counts and see which are missing**
 
+
+Want to put together dataset with number of partners as response and the following as predictors:
+- actpartsumvar, actsumvar, area, percept public land, taxa: plants, taxa: vert, nsumeploy, threats, shannon's h 
+```{r}
+## remove species without partner data
+newpdata <- newpdata[-which(is.na(newpdata$partner_names)),]
+#this is the list of species we want to work with
+# now only want to select count of partners that includes both the collaborators and the federal agency offices
+newpdata <- newpdata[,c(1:2,10)]
+
+## join plus two (all same variables just for 1 species with tdata)
+#first had to make df the same dim so rbind would work 
+plustwo$modified <- NULL
+plustwo$year_listed_or_precluded <- NULL
+tdata$x_1 <- NULL
+tdata <- tdata[,-c(4:12)]
+
+tdata <- rbind(tdata, setNames(plustwo, names(tdata))) ## even though names weren't the same, the columns all lined up correctly so this hack let me just combine them 
+               
+
+# need to modify taxa data so have vert and plants as seperate columns 
+#taxa <- tdata %>% select(scientific_name, common_name, species_group_x_x) #[columns 3,4,16] select isn't working.. 
+taxa <- tdata [,c(2,3,6)]
+taxa$plants <- c(0)
+taxa[which(taxa$species_group_x_x == "Flowering Plants"),4] <- 1
+taxa$vert <- c(0)
+taxa[which(taxa$species_group_x_x == "Fishes"),5] <- 1
+taxa[which(taxa$species_group_x_x == "Mammals"),5] <- 1
+taxa[which(taxa$species_group_x_x == "Reptiles"),5] <- 1
+taxa[which(taxa$species_group_x_x == "Amphibians"),5] <- 1
+
+
+## need to make nsumeployment variable 
+# employ <- tdata %>% select(scientific_name, common_name, employmentconstruction, employmentforest, employmentfarm, employmentmining) ## select isn't working.. 
+employ <- tdata[,c(2,3,46:49)]
+employ[is.na(employ)] <- 0
+employ <- employ %>% mutate("nsumemploy" = rowSums(employ[,-c(1:2)]))
+#employ <- employ  %>% select(scientific_name, common_name, nsumemploy)
+employ <- employ[, c(1,2,7)]
+
+#tdata_othervariables <- tdata %>% select(scientific_name, common_name, total_x_x, area_x, percentpublic)
+tdata_othervariables <- tdata[,c(2,3,16, 22,56)]
+
+
+#rejoin all modified tyler data
+tdata1 <- tdata_othervariables %>% full_join(employ, by = c("scientific_name", "common_name"))
+tdata1 <- tdata1 %>% full_join(taxa, by = c("scientific_name", "common_name"))
+
+#add shannon's H data
+
+tdata3 <- tdata3[,c(3,6)]
+tdata3[26,1] <- "Moxostoma sp 2"  ## renaming Moxostoma sp. so that join will work 
+tdata4 <- newpdata %>% full_join(tdata3, by = "scientific_name")
+tdata2 <- tdata2[,c(4,17)]
+tdata4 <- tdata4 %>% full_join(tdata2, by = "scientific_name")
+#need to combin the two shannon_h columns that formed 
+tdata4["Erigeron basalticus","fed_shannon_h.x"] <- 0 #one species had values in both datasets
+tdata4 <- tdata4 %>% mutate("shannon_h" = rowSums(tdata4[,c(4,5)], na.rm = TRUE))
+#can remove non true 0s by getting rid of NAs in different columns 
+
+
+#species missing data 
+## Nysius wekiuicola
+## Thymallus arcticus - DPS species 
+#Chorizanthe parryi var fernandina - I also think this one has a different name
+
+
+##make mega dataset
+tdata5 <- tdata4 %>% full_join(tdata1)
+#add actions (created in chunk above)
+## need to rename scientific name column first 
+actsumvar <- rename(actsumvar, scientific_name = Scientific.name)
+actpartsumvar <- rename(actpartsumvar, scientific_name = Scientific.name)
+tdata5 <- tdata5 %>% full_join(actsumvar)
+tdata5 <- tdata5 %>% full_join(actpartsumvar)
+
+
+## remove columns that aren't needed
+tdata5 <- tdata5[,-c(4,5,11)]
+
+
+## remove species with no partner data
+tdata5 <- tdata5[-which(is.na(tdata5$count_w_FedAg_w_collab)),]
+```
+
+
+
+
+```{r Correlation Matrix}
+# Correlation Matrix of Predictors vs Responses ##
+## modified some code from http://handlesman.blogspot.com/2011/03/matrix-plot-with-confidence-intervals.html
+#Not working because of NAs in data - getting error that x is not numeric 
+  #might actually be that was reading footprint data as not numeric
+
+tdata5 <- tdata5 %>% rename("Area" = area_x) 
+tdata5 <- tdata5 %>% rename("Threats" = total_x_x)
+tdata5 <- tdata5 %>% rename("Partners" = count_w_FedAg_w_collab)
+tdata5 <- tdata5 %>% rename("Employment" = nsumemploy)
+#tdata5 <- tdata5 %>% rename("PercentPublicLand" = percentpublic)
+
+
+#set up
+PredictorsOnlyPixel <- tdata5[,c(3)]
+PredictAndResponsePixel <- tdata5[,-c(1:2)]
+PredictAndResponseGrid <- tdata5[,-c(1:2)]
+  
+# put histograms on the diagonal panel	
+panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
+{
+  usr <- par("usr"); on.exit(par(usr))			# not sure what usr is for?
+  par(usr = c(usr[1:2],0,1.5))
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)			# make the hist 
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col="grey", ...)  # defines what the histogram is going to look like
+}
+
+# put correlations on the upper panels,
+panel.cor <- function(x, y, digits=2, prefix="", cex.var, ...)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- var(x, y,use="everything")				############## changed all cor to var
+  txt <- format(c(r, 0.123456789), digits=digits)[1]
+  prefix <- "r = "
+  rc <- var.test(x,y,method = c("pearson"))				## calculate pearsons rho for upper grid
+  txt <- paste(prefix,txt,sep="")
+  text(0.5, 0.5, txt, cex = 1)
+}
+
+## plot a correlation matrix plot that uses the functions specified above to say what to plot where
+      ## this was taken directly from website and still not plotting r values for all 
+##pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+
+##Pixel level
+
+pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+
+
+allnumbers <- tdata5[,-c(1:2)]
+cor(allnumbers, method = "pearson") ## not getting correlation because rm.na=T isn't working 
+
+var(allnumbers, na.rm = TRUE) ## this works!
+
+
+vif(lm(Partners ~ shannon_h + Area + percentpublic + Employment + plants +vert +actsum +actpartsum + Threats,data = allnumbers))
+
+```
+
+
+Regressions to try 
+- Original model in thesis
+- change nsum with shannon_h and switch taxa 
+- add actions 
+
+Others?? 
+
+
+Original thesis model 
+```{r}
+lm1 <- lm(log(Partners) ~ vert + percentpublic + Area + shannon_h + Threats, data=allnumbers)
+
+summary(lm1)
+
+#par(mfrow = c(1, 1))
+plot(lm1)
+
+qqPlot(residuals(lm1))
+par(mfrow = c(1, 1))
+
+#plot(predicted(lm2), residuals(lm2))
+#hist(residuals(lm2))
+# how add CI equivalent around q-q plot? 
+AIC(lm1)
+```
+
+
+Switching two predictors 
+```{r}
+lm2 <- lm(log(Partners) ~ plants + percentpublic + Area + Employment + Threats, data=allnumbers)
+
+summary(lm2)
+
+#par(mfrow = c(1, 1))
+plot(lm2)
+
+qqPlot(residuals(lm2))
+par(mfrow = c(1, 1))
+
+#plot(predicted(lm2), residuals(lm2))
+#hist(residuals(lm2))
+# how add CI equivalent around q-q plot? 
+AIC(lm2)
+```
+
+
+Original with actpartsum
+```{r}
+lm3 <- lm(log(Partners) ~ vert + percentpublic + Area + shannon_h + Threats + actpartsum, data=allnumbers)
+
+summary(lm3)
+
+#par(mfrow = c(1, 1))
+plot(lm3)
+
+qqPlot(residuals(lm3))
+par(mfrow = c(1, 1))
+
+#plot(predicted(lm2), residuals(lm2))
+#hist(residuals(lm2))
+# how add CI equivalent around q-q plot? 
+AIC(lm3)
+```
+
+
+Original with actsum
+```{r}
+lm4 <- lm(log(Partners) ~ vert + percentpublic + Area + shannon_h + Threats + actsum, data=allnumbers)
+
+summary(lm4)
+
+#par(mfrow = c(1, 1))
+plot(lm3)
+
+qqPlot(residuals(lm4))
+par(mfrow = c(1, 1))
+
+#plot(predicted(lm2), residuals(lm2))
+#hist(residuals(lm2))
+# how add CI equivalent around q-q plot? 
+AIC(lm4)
+```
+
+
+Adjusted with actpartsum
+```{r}
+lm4 <- lm(log(Partners) ~ vert + percentpublic + Area + shannon_h + Threats +actpartsum, data=allnumbers)
+
+summary(lm4)
+
+#par(mfrow = c(1, 1))
+plot(lm4)
+
+qqPlot(residuals(lm4))
+par(mfrow = c(1, 1))
+
+#plot(predicted(lm2), residuals(lm2))
+#hist(residuals(lm2))
+# how add CI equivalent around q-q plot? 
+AIC(lm4)
+```
+
+
+Adjusted with actsum
+```{r}
+lm5 <- lm(log(Partners) ~ vert + percentpublic + Area + shannon_h + Threats +actsum, data=allnumbers)
+
+summary(lm5)
+
+#par(mfrow = c(1, 1))
+plot(lm5)
+
+qqPlot(residuals(lm5))
+par(mfrow = c(1, 1))
+
+#plot(predicted(lm2), residuals(lm2))
+#hist(residuals(lm2))
+# how add CI equivalent around q-q plot? 
+AIC(lm5)
+```
