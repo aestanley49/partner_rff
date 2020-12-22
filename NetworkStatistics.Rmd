@@ -39,6 +39,7 @@ library(car) #for function qqplot
 library(knitr) #for making tables form kable 
 library(data.table) #function setnames() allows to set multiple column names in one line of code 
 library(igraph)
+library(corrplot) #for visualizing chi square results 
 ```
 
 ##load in different datasets
@@ -85,6 +86,37 @@ for (i in 1:nrow(EditedData)) {
 ```
 
 
+<br>
+
+Create new orgtype_adjmat where combine N, C and R and add M to FO
+*** I don't think should be using finalSdataset... should start from orgtype_done (also note, I'm not seeing differences between these two dataframes.. so need to check what's happening here****)
+---> start here... 
+```{r}
+
+moddf <- finaldf
+
+#change categories
+moddf[which(moddf$type_of_org == "N"),16] <- "O"
+moddf[which(moddf$type_of_org == "C"),16] <- "O"
+moddf[which(moddf$type_of_org == "R"),16] <- "O"
+
+moddf[which(moddf$type_of_org == "M"),16] <- "FO"
+
+
+
+
+
+
+## create adjmat
+moddf <- moddf[,-c(1,2,3,15,16)] #remove non numeric columns
+tdf <- t(moddf)   #transform
+moddf <- t(tdf)  #rawdf was coming up as non numeric so tranformed again to overwrite
+
+trial1 <- moddf %*%  tdf
+
+```
+
+
 
 <br>
 
@@ -102,6 +134,7 @@ A make network for entire dataset
 This is network for entrie dataframe where:
 nodes = actions
 edges = partners
+#### Skip me
 ```{r check_zero,  eval = FALSE, include=FALSE}
 orgtyp_done <- finaldf
 
@@ -261,7 +294,7 @@ Do network stats for total partners in salafsky subset here!! ****
 
 Average degree: Every node has # of edges conected so accross all nodes in network, on average what is the # of edges connected to each node 
 ```{r}
-#mean(degree(net), mode = "total") this didn't work 
+##mean(degree(salfTnet), mode = "total") #this didn't work 
 salfTmat <- tdf %*% df
 diag(salfTmat) <- NA
 
@@ -277,24 +310,45 @@ sum(added)/130 #total number of nodes (partners is 131 so 131-1)
 
 mean(added) #comment above is why values are differenet 
 
+
+########## Post question on stack overflow
+
+salfTmat <- tdf %*% df
+diag(salfTmat) <- NA 
+#change to 1s and 0s so can get degree
+simplified_mat <- salfTmat %>% replace((. > 0),1)
+salfTmatlist <- simplified_mat %>% melt() 
+salfTnet <- graph_from_data_frame(d=subset(salfTmatlist, value>0), directed=F) 
+mean(degree(salfTnet), mode = "total") 
+
 ```
 ** I don't think degree(net) is correct bc there is no connection between military and coporation but it says 11 anyway 
 
 Average weighted degree
 ```{r}
 added <- rowSums(salfTmat, na.rm = TRUE) #this gives the correct number of edges across each node
-
 #now find the average
 sum(added)/130 #131-1 is number of nodes where the same node isn't connected to itself
-
 mean(added) #comment above is why values are differenet 
+
+
+####### Post question on stack overflow 
+
+salfTmat <- tdf %*% df
+salfTmatlist <- salfTmat %>% melt() 
+salfTnet <- graph_from_data_frame(d=subset(salfTmatlist, value>0), directed=F) 
+mean(degree(salfTnet), mode = "total") 
 ```
 
 Modularity
 ```{r}
-salfTnet <- graph_from_data_frame(d=salfTmatlist, directed=T) 
-modularity(net)
+salfTnet <- graph_from_data_frame(d=salfTmatlist, directed=F) 
+
+cl <- clusters(salfTnet)$membership
+modularity(salfTnet, cl)
 ```
+## source of new code - https://stackoverflow.com/questions/14337391/finding-modularity-and-community-membership
+
 note: make membership vectors that are type categories - run newman girvan function furst 
 run on entire dataset 
 future ref - https://rpubs.com/shestakoff/sna_lab5
@@ -366,19 +420,11 @@ filter > 1 to make sure working correctly
 #EDmatlist <- EDmatlist[which(EDmatlist$value > 1),]
 
 EDnet <- graph_from_data_frame(d=EDmatlist, directed=T) 
-
 E(EDnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
-
 E(EDnet)$width <- E(EDnet)$value 
-
 plot(EDnet, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size)
 ```
 
-
-Do network stats for total partners in salafsky subset here!! ****
-```{r}
-
-```
 
 
 Average degree: Every node has # of edges conected so accross all nodes in network, on average what is the # of edges connected to each node 
@@ -386,36 +432,59 @@ Average degree: Every node has # of edges conected so accross all nodes in netwo
 #mean(degree(net), mode = "total") this didn't work 
 EDmat <- tED %*% ED
 diag(EDmat) <- NA
-
 #change to 1s and 0s so can get degree
 EDmatsimplified_mat <- EDmat %>% replace((. > 0),1)
 
 added <- rowSums(EDmatsimplified_mat, na.rm = TRUE) #this gives the correct number of edges across each node
-
 dim(EDmat)
 
 #now find the average
 sum(added)/291 #total number of nodes (partners is 292 so 292-1)
-
 mean(added) #comment above is why values are differenet 
 
+
+
+
+########## Post question on stack overflow
+
+EDmat <- tED %*% ED
+diag(EDmat) <- NA
+#change to 1s and 0s so can get degree
+simp_EDmat <- EDmat %>% replace((. > 0),1)
+EDmatlist <- simp_EDmat %>% melt() 
+EDnet <- graph_from_data_frame(d=subset(EDmatlist, value>0), directed=F) 
+mean(degree(EDnet), mode = "total") 
 ```
 ** I don't think degree(net) is correct bc there is no connection between military and coporation but it says 11 anyway 
 
 Average weighted degree
 ```{r}
 added <- rowSums(EDmat, na.rm = TRUE) #this gives the correct number of edges across each node
-
 #now find the average
 sum(added)/291 #292-1 is number of nodes where the same node isn't connected to itself
-
 mean(added) #comment above is why values are differenet 
+
+
+
+########## Post question on stack overflow
+
+EDmat <- tED %*% ED
+diag(EDmat) <- NA
+#change to 1s and 0s so can get degree
+EDmatlist <- EDmat %>% melt() 
+EDnet <- graph_from_data_frame(d=subset(EDmatlist, value>0), directed=F) 
+mean(degree(EDnet), mode = "total") 
+
 ```
 
 Modularity
 ```{r}
-Ednet <- graph_from_data_frame(d=EDmatlist, directed=T) 
-modularity(Ednet)
+Ednet <- graph_from_data_frame(d=EDmatlist, directed=F) 
+cl <- clusters(Ednet)$membership
+modularity(Ednet, cl)
+
+
+
 ```
 note: make membership vectors that are type categories - run newman girvan function furst 
 run on entire dataset 
@@ -529,13 +598,22 @@ diag(tadjmat) <- NA
 
 #change to 1s and 0s so can get degree
 simplified_mat <- tadjmat %>% replace((. > 0),1)
-
 added <- rowSums(simplified_mat, na.rm = TRUE) #this gives the correct number of edges across each node
-
 #now find the average
 sum(added)/11 #12 is number of nodes in network but nodes can't be connected to themselves so makes sense to use 11??
-
 mean(added) #comment above is why values are differenet 
+
+
+
+
+########## Post question on stack overflow
+
+tadjmat <- orgtype_adjmat
+diag(tadjmat) <- NA
+simp_tadjmat <- tadjmat %>% replace((. > 0),1)
+tlist <- simp_tadjmat %>% melt() 
+tnet <- graph_from_data_frame(d=subset(tlist, value>0), directed=F) 
+mean(degree(tnet), mode = "total") 
 
 ```
 ** I don't think degree(net) is correct bc there is no connection between military and coporation but it says 11 anyway 
@@ -560,6 +638,18 @@ mean(added) #comment above is why values are differenet
 #wts <- colSums(tadjmat)
 #sumwts <- sum(wts)
 #sumwts
+
+
+
+
+########## Post question on stack overflow
+
+tadjmat <- orgtype_adjmat
+diag(tadjmat) <- NA
+tlist <- tadjmat %>% melt() 
+tnet <- graph_from_data_frame(d=subset(tlist, value>0), directed=F) 
+mean(degree(tnet), mode = "total") 
+
 ```
 Modularity
 ```{r}
@@ -634,11 +724,17 @@ chisq <- chisq.test(orgtype_adjmat)
 chisq
 round(chisq$expected,2) ## expected values don't make sense to me 
 
-
 round(chisq$residuals, 3)
 
-library(corrplot)
+chisq$stdres ## adjusted pearson residuals - https://www.cscu.cornell.edu/news/statnews/95_conttableresid.pdf
+#note - different value between ^ and  chisq$residuals even when take into account rounding
+
+
 corrplot(chisq$residuals, is.cor = FALSE)
+
+contrib <- 100*chisq$residuals^2/chisq$statistic
+round(contrib, 3)
+corrplot(contrib, is.cor = FALSE)
 
 ### trying approach that addresses identity matrix 
   # sources (see link above chunk)
@@ -658,12 +754,14 @@ note - had some problems installing package - ended up responding no to "Do you 
 
 ## Partner type actions
 I think this lends itself to chi square much more easily 
-```{r}
+This isn't the table we want
+```{r, eval = FALSE, include=FALSE}
 ### need to check that sdata is the latest version of the dataset 
 
 sdata <- read_csv(paste(DataSource,"/tableofpartnersandactions.csv", sep = "")) #this csv is produced at end of cleaning_salafsky.R function 
-sdata <- sdata %>% select(-X1) #remove X1 column that is getting produced 
+#sdata <- sdata %>% select(-X1) #remove X1 column that is getting produced 
 
+sdata$X1 <- NULL
 
 alldf <- sdata #change variable name 
 
@@ -706,10 +804,44 @@ df2$Scientific.name <- NULL
 
 cortest.normal(df2, R2 = NULL, n1 = NULL, n2 = NULL, fisher = TRUE)
 #ns = sample size but idk what this would be 
-
-
 ```
 
+
+set up so partner types on rows and actions in cols
+```{r}
+partnertypeactions <- finaldf
+partnertypeactions <- partnertypeactions[,c(4:14,16)] #only selecting partner types and actions
+
+
+partnertypeactions <- partnertypeactions %>% group_by(type_of_org) %>% summarise_each(funs(sum)) 
+
+rownames(partnertypeactions) <- partnertypeactions$type_of_org
+partnertypeactions$type_of_org <- NULL
+
+colnames(partnertypeactions) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+chisq <- chisq.test(partnertypeactions)
+chisq
+
+chisq$observed
+
+round(chisq$expected,2)
+
+round(chisq$residuals, 3)
+
+
+corrplot(chisq$residuals, is.cor = FALSE)
+
+contrib <- 100*chisq$residuals^2/chisq$statistic
+round(contrib, 3)
+corrplot(contrib, is.cor = FALSE)
+```
+
+
+Try to do fishers exact on regular data
+```{r}
+fish <- fisher.test(df)
+```
 
 
 
