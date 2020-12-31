@@ -2,7 +2,9 @@
 title: "NetworkStatistics"
 author: "Annabelle"
 date: "9/27/2020"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -40,6 +42,8 @@ library(knitr) #for making tables form kable
 library(data.table) #function setnames() allows to set multiple column names in one line of code 
 library(igraph)
 library(corrplot) #for visualizing chi square results 
+library(NetIndices) #trying for network analyses
+library(CINNA)
 ```
 
 ##load in different datasets
@@ -88,10 +92,10 @@ for (i in 1:nrow(EditedData)) {
 
 <br>
 
-Create new orgtype_adjmat where combine N, C and R and add M to FO
+####IGNORE... Create new orgtype_adjmat where combine N, C and R and add M to FO
 *** I don't think should be using finalSdataset... should start from orgtype_done (also note, I'm not seeing differences between these two dataframes.. so need to check what's happening here****)
 ---> start here... 
-```{r}
+```{r eval=F}
 
 moddf <- finaldf
 
@@ -101,11 +105,6 @@ moddf[which(moddf$type_of_org == "C"),16] <- "O"
 moddf[which(moddf$type_of_org == "R"),16] <- "O"
 
 moddf[which(moddf$type_of_org == "M"),16] <- "FO"
-
-
-
-
-
 
 ## create adjmat
 moddf <- moddf[,-c(1,2,3,15,16)] #remove non numeric columns
@@ -186,12 +185,12 @@ mat_allnet <- tan %*%  allnet
 Note - stopped because this wasn't the node/edge set up that we wanted... correct on below 
 
 
-####This is network for entrie dataframe where:
+###This is network for entrie dataframe where:
 Salafsky dataset.. 
 nodes = partners
 edges = species
 
-1. recombine so that each row is a species and all partners are in string
+####1. recombine so that each row is a species and all partners are in string
 ```{r}
 orgtyp_done <- finaldf
 
@@ -219,6 +218,7 @@ change2 <-  allnet2 %>% pivot_wider(names_from = partner.in.agreement, values_fr
 
 names <- change2[,c(1,2)]
 #change all values to 1s and 0s
+change2 <- as.data.frame(change2)
 change2[!is.na(change2)] <- 1
 change2 <- change2[,-c(1)]
 #change3 <- cbind(names,change2)  ##not sure why but this isn't working so can't reconnect sci names with values
@@ -286,13 +286,13 @@ I think this has been solved but it is hard to check
 
 
 
-Do network stats for total partners in salafsky subset here!! ****
-```{r}
-
-```
+#### Network stats for total partners in salafsky subset 
 
 
-Average degree: Every node has # of edges conected so accross all nodes in network, on average what is the # of edges connected to each node 
+##### Average degree: Every node has # of edges conected so accross all nodes in network, on average what is the # of edges connected to each node 
+Web resources/links
+- 
+
 ```{r}
 ##mean(degree(salfTnet), mode = "total") #this didn't work 
 salfTmat <- tdf %*% df
@@ -319,13 +319,18 @@ diag(salfTmat) <- NA
 simplified_mat <- salfTmat %>% replace((. > 0),1)
 salfTmatlist <- simplified_mat %>% melt() 
 salfTnet <- graph_from_data_frame(d=subset(salfTmatlist, value>0), directed=F) 
-mean(degree(salfTnet), mode = "total") 
+mean(degree(salfTnet, mode = "out", loops = FALSE)) #normalize?
 
 ```
 ** I don't think degree(net) is correct bc there is no connection between military and coporation but it says 11 anyway 
 
-Average weighted degree
+##### Average weighted degree
+Web resources/links
+- 
 ```{r}
+salfTmat <- tdf %*% df
+diag(salfTmat) <- NA 
+
 added <- rowSums(salfTmat, na.rm = TRUE) #this gives the correct number of edges across each node
 #now find the average
 sum(added)/130 #131-1 is number of nodes where the same node isn't connected to itself
@@ -340,19 +345,89 @@ salfTnet <- graph_from_data_frame(d=subset(salfTmatlist, value>0), directed=F)
 mean(degree(salfTnet), mode = "total") 
 ```
 
-Modularity
+##### Modularity
+Web resources/links
+- 
+- need to have preset membership or groups within the graph and then can look at modularity or connectivity based on those predefined groups 
+- 
+- https://stackoverflow.com/questions/9471906/what-are-the-differences-between-community-detection-algorithms-in-igraph
+    - Different types of community detection programs 
+- https://stackoverflow.com/questions/20313608/the-correct-use-and-interpretation-of-modularity?rq=1
+    - walktrap.community example 
+- https://stackoverflow.com/questions/59054635/problem-with-igraph-modularity-function-in-r
+    - exmplaination of membership in modularity function
+- https://stackoverflow.com/questions/25287032/modularity-calculation-for-weighted-graphs-in-igraph
+    - fastgreedy.community example 
+- https://stackoverflow.com/questions/14337391/finding-modularity-and-community-membership
+
+- https://rpubs.com/shestakoff/sna_lab5
+    - edge betweeness and greedy examples
+    
+    
+Note that ?membership in r console provides list of functions to deal with the result of network community detection
+  
 ```{r}
-salfTnet <- graph_from_data_frame(d=salfTmatlist, directed=F) 
+salfTnet <- graph_from_data_frame(d=subset(salfTmatlist, value>0), directed=F) 
 
 cl <- clusters(salfTnet)$membership
 modularity(salfTnet, cl)
+
+
+modularity(salfTnet, V(salfTnet)) ## I think this was found in a tutorial..? Most likely to work for entire graph 
+
+
+## not for entire graph but for edges that are most likely “between” communities
+ebc <- edge.betweenness.community(salfTnet)
+ceb <- cluster_edge_betweenness(salfTnet) ## I think this is the same function? Getting the same results
+modularity(salfTnet,membership(ebc))
+
+plot(ebc, salfTnet)
+
+sizes(ebc)
+modularity(ebc, salfTnet)
+
+## transitivity 
+transitivity(salfTnet, type = "global")
+
+
+### looks like best options would be either:
+#### walk trap community (wtc)
+#### fastgreedy community (fgc)
+
+### wtc
+
+wtc <- walktrap.community(salfTnet)
+wtc
+
+sizes(wtc)
+modularity(wtc, salfTnet)
+
+modularity(wtc)
+plot(wtc,salfTnet)
+
+dendPlot(wtc, mode="hclust", rect = 24)
+
+### fgc
+
+#fc2<-fastgreedy.community(salfTnet) #### error: fast-greedy community finding works only on graphs without multiple edges, Invalid value
+#plot(fc2,g2)
+
 ```
-## source of new code - https://stackoverflow.com/questions/14337391/finding-modularity-and-community-membership
+--> source of new code - https://stackoverflow.com/questions/14337391/finding-modularity-and-community-membership
 
 note: make membership vectors that are type categories - run newman girvan function furst 
 run on entire dataset 
 future ref - https://rpubs.com/shestakoff/sna_lab5
 
+New notes 12/28 - 
+I don't know why with ebc and wtc plot is showing ones with loops back to self.. Unless this is looping to another partner in cluster?? 
+Either way, both functions are finding 24 groups which is cool!
+
+
+##### Centrality 
+Web resources/links
+- 
+- https://www.datacamp.com/community/tutorials/centrality-network-analysis-R
 
 centrality: Eigenvector
 ```{r}
@@ -360,8 +435,6 @@ eigen_centrality(salfTnet, directed=F, weights=NA)
 
 #centr_eigen(net, directed=T, normalized=T)
 ```
-
-
 centrality: Betweenness
 ```{r}
 betweenness(salfTnet, directed=F, weights=NA)
@@ -372,6 +445,26 @@ centr_betw(salfTnet, directed=F, normalized=T) ## this gives out put but changes
 ```
 
 
+Following new tutorial - https://www.datacamp.com/community/tutorials/centrality-network-analysis-R
+```{r}
+
+salfTnet <- graph_from_data_frame(d=subset(salfTmatlist, value>0), directed=F) 
+
+closeness.cent <- closeness(salfTnet, mode="all")
+
+
+degree.cent <- centr_degree(salfTnet, mode = "all") ### this is unresolved 
+degree.cent$res
+
+
+
+## see if can ID proper centrality function 
+proper_centralities(salfTnet)
+
+visualize_graph(salfTnet , centrality.type="Average Distance")
+```
+
+<br>
 
 
 ####This is network for entrie dataframe where:
@@ -453,12 +546,28 @@ diag(EDmat) <- NA
 simp_EDmat <- EDmat %>% replace((. > 0),1)
 EDmatlist <- simp_EDmat %>% melt() 
 EDnet <- graph_from_data_frame(d=subset(EDmatlist, value>0), directed=F) 
-mean(degree(EDnet), mode = "total") 
+mean(degree(EDnet, mode = "total") )
+
+
+
+
+## graphing degree
+
+deg <- degree(EDnet, mode = "total")
+deg <- as.data.frame(deg)
+
+deg <- deg %>% rownames_to_column()
+
+ggplot(deg) + geom_bar(mapping = aes(x = rowname, y = deg), stat = "identity")+ theme(axis.text.x = element_text(angle = 1)) + scale_x_discrete(name ="Name of Partner")
+
 ```
 ** I don't think degree(net) is correct bc there is no connection between military and coporation but it says 11 anyway 
 
 Average weighted degree
 ```{r}
+EDmat <- tED %*% ED
+diag(EDmat) <- NA
+
 added <- rowSums(EDmat, na.rm = TRUE) #this gives the correct number of edges across each node
 #now find the average
 sum(added)/291 #292-1 is number of nodes where the same node isn't connected to itself
@@ -479,11 +588,40 @@ mean(degree(EDnet), mode = "total")
 
 Modularity
 ```{r}
-Ednet <- graph_from_data_frame(d=EDmatlist, directed=F) 
-cl <- clusters(Ednet)$membership
-modularity(Ednet, cl)
+#Ednet <- graph_from_data_frame(d=EDmatlist, directed=F) 
+EDnet <- graph_from_data_frame(d=subset(EDmatlist, value>0), directed=F) 
+#cl <- clusters(Ednet)$membership
+#modularity(Ednet, cl)
+
+## not for entire graph but for edges that are most likely “between” communities
+ebc <- edge.betweenness.community(EDnet)
+modularity(EDnet,membership(ebc))
+
+plot(ebc, EDnet)
 
 
+## transitivity 
+transitivity(EDnet, type = "global")
+
+
+
+### looks like best options would be either:
+#### walk trap community (wtc)
+#### fastgreedy community (fgc)
+
+### wtc
+
+wtc <- walktrap.community(EDnet)
+wtc
+modularity(wtc)
+plot(wtc,EDnet)
+
+dendPlot(wtc, mode="hclust", rect = 24)
+
+##try printing dendrogram so can actually see it 
+
+ggsave(filename = "output/Ednet_mod_dendplot.jpg", plot = dendPlot(wtc, mode="hclust", rect = 24))
+myPlot <- dendPlot(wtc, mode="hclust", rect = 24)
 
 ```
 note: make membership vectors that are type categories - run newman girvan function furst 
@@ -492,15 +630,13 @@ future ref - https://rpubs.com/shestakoff/sna_lab5
 
 
 centrality: Eigenvector
-```{r}
+```{r eval=FALSE}
 eigen_centrality(Ednet, directed=F, weights=NA)
 
 #centr_eigen(net, directed=T, normalized=T)
 ```
-
-
 centrality: Betweenness
-```{r}
+```{r eval=FALSE}
 betweenness(Ednet, directed=F, weights=NA)
 
 edge_betweenness(Ednet, directed=F, weights=NA)
@@ -508,7 +644,28 @@ edge_betweenness(Ednet, directed=F, weights=NA)
 centr_betw(Ednet, directed=T, normalized=T) ## this gives out put but changes when change directed (I don't think our network is directed)
 ```
 
+New centrality method .. Following new tutorial - https://www.datacamp.com/community/tutorials/centrality-network-analysis-R
+```{r}
+EDnet <- graph_from_data_frame(d=subset(EDmatlist, value>0), directed=F) 
 
+closeness.cent <- closeness(EDnet, mode="all") ## Importance measured  by how close a node is to other nodes
+
+
+graph.betweenness<-betweenness(EDnet,v=V(EDnet), directed = F) #need to figure out how to set weight edge attribute - right now weights not considered so result isn't accurate 
+graph.edge.betweenness<-edge.betweenness(EDnet,e=E(EDnet), directed = F)
+
+
+degree.cent <- centr_degree(EDnet, mode = "all", loops = FALSE) ### this is unresolved 
+degree.cent$res
+
+
+## see if can ID proper centrality function 
+proper_centralities(EDnet)
+
+
+visualize_graph( EDnet , centrality.type="Average Distance")
+
+```
 
 
 
@@ -538,6 +695,7 @@ tolist <- tolist[-which(is.na(tolist$value)),]
 
 
 #library(igraph)
+###net <- graph_from_data_frame(d=subset(tolist, value>0), directed=F)
 
 net <- graph_from_data_frame(d=tolist, directed=T) 
 
@@ -554,6 +712,7 @@ E(net)$width <- E(net)$value
 #plot(net, vertex.size=node.size)
 
 l <- layout_in_circle(net)
+###l <- layout_with_fr(net)
 
 plot(net, rescale=F, vertex.color="white", edge.color= "black", vertex.label.color="black", vertex.size=node.size, layout = l)
 
@@ -585,6 +744,7 @@ Commented out layout modifications so doesn't look as nice but still same networ
 
 Network stats for org types 
 Average degree: Every node has # of edges conected so accross all nodes in network, on average what is the # of edges connected to each node 
+(also refered to as link density)
 ```{r}
 #mean(degree(net), mode = "total") this didn't work 
 
@@ -603,30 +763,44 @@ added <- rowSums(simplified_mat, na.rm = TRUE) #this gives the correct number of
 sum(added)/11 #12 is number of nodes in network but nodes can't be connected to themselves so makes sense to use 11??
 mean(added) #comment above is why values are differenet 
 
-
+##### ^^^^ This answer is right ********
 
 
 ########## Post question on stack overflow
 
 tadjmat <- orgtype_adjmat
+rownames(tadjmat) <- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
+colnames(tadjmat)<- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
 diag(tadjmat) <- NA
+tadjmat <- tadjmat %>% rownames_to_column()
+rname <- tadjmat[,c(1)]
 simp_tadjmat <- tadjmat %>% replace((. > 0),1)
-tlist <- simp_tadjmat %>% melt() 
-tnet <- graph_from_data_frame(d=subset(tlist, value>0), directed=F) 
-mean(degree(tnet), mode = "total") 
+simp_tadjmat <- simp_tadjmat[,-c(1)]
+simp_tadjmat <- cbind(rname, simp_tadjmat) #was looking rowname wih replace function so simple hack to keep it here 
+tolist <- melt(simp_tadjmat, id = "rname")
+tnet <- graph_from_data_frame(d=subset(tolist, value>0), directed=F)
+mean(degree(tnet, v = V(tnet), mode = "in", loops = F))
+
+graph.density(tnet, loop=FALSE)
+edge_density(tnet, loops = FALSE)
+
+
+test.graph.adj <- get.adjacency(tnet, sparse=F)
+test.graph.properties<-GenInd(test.graph.adj)
+test.graph.properties$LD 
 
 ```
 ** I don't think degree(net) is correct bc there is no connection between military and coporation but it says 11 anyway 
 
 Average weighted degree
 ```{r}
+### fix this later ...  
 added <- rowSums(tadjmat, na.rm = TRUE) #this gives the correct number of edges across each node
 
 #now find the average
 sum(added)/11 #12 is number of nodes in network but nodes can't be connected to themselves so makes sense to use 11??
 
 mean(added) #comment above is why values are differenet 
-
 
 
 ## Old attempt // scrapwork 
@@ -645,16 +819,63 @@ mean(added) #comment above is why values are differenet
 ########## Post question on stack overflow
 
 tadjmat <- orgtype_adjmat
+rownames(tadjmat) <- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
+colnames(tadjmat)<- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
 diag(tadjmat) <- NA
-tlist <- tadjmat %>% melt() 
-tnet <- graph_from_data_frame(d=subset(tlist, value>0), directed=F) 
+tadjmat <- tadjmat %>% rownames_to_column()
+tolist <- melt(tadjmat, id = "rowname")
+tnet <- graph_from_data_frame(d=subset(tolist, value>0), directed=F) 
 mean(degree(tnet), mode = "total") 
+
+
+graph.density(tnet, loop=FALSE)
+
+
+
+
+
+###check calc
+
+
+test.graph.adj <- get.adjacency(tnet, sparse=F)
+test.graph.properties<-GenInd(test.graph.adj)
+test.graph.properties$LD 
+
+
 
 ```
 Modularity
 ```{r}
-net <- graph_from_data_frame(d=tolist, directed=T) 
-modularity(net)
+#net <- graph_from_data_frame(d=tolist, directed=T)
+tnet <- graph_from_data_frame(d=subset(tolist, value>0), directed=F) 
+#modularity(net)
+
+
+# Transitivity measures the probability that the adjacent vertices of a vertex are connected. This is sometimes also called the clustering coefficient.
+transitivity(tnet, type = "global")
+
+## not for entire graph but for edges that are most likely “between” communities
+ebc <- edge.betweenness.community(tnet)
+#modularity(tnet,membership(tnet))
+
+plot(ebc, tnet)
+
+### looks like best options would be either:
+#### walk trap community (wtc)
+#### fastgreedy community (fgc)
+
+### wtc
+
+wtc <- walktrap.community(tnet)
+wtc
+#modularity(tnet)
+plot(wtc,tnet)
+
+#dendPlot(wtc, mode="hclust")
+
+?membership
+
+is_hierarchical(wtc)
 ```
 note: make membership vectors that are type categories - run newman girvan function furst 
 run on entire dataset 
@@ -663,27 +884,54 @@ future ref - https://rpubs.com/shestakoff/sna_lab5
 
 centrality: Eigenvector
 ```{r}
-eigen_centrality(net, directed=F, weights=NA)
+eigen_centrality(tnet, directed=F, weights=NA)
 
-centr_eigen(net, directed=F, normalized=T)
+centr_eigen(tnet, directed=F, normalized=T)
 ```
-
-
 centrality: Betweenness
 ```{r}
-betweenness(net, directed=F, weights=NA)
+betweenness(tnet, directed=F, weights=NA)
 
-edge_betweenness(net, directed=F, weights=NA)
+edge_betweenness(tnet, directed=F, weights=NA)
 
-centr_betw(net, directed=T, normalized=T) ## this gives out put but changes when change directed (I don't think our network is directed)
+centr_betw(tnet, directed=T, normalized=T) ## this gives out put but changes when change directed (I don't think our network is directed)
 ```
-
 
 Following new tutorial - https://www.datacamp.com/community/tutorials/centrality-network-analysis-R
 ```{r}
-closeness(net, mode = "all")
+
+tadjmat <- orgtype_adjmat
+rownames(tadjmat) <- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
+colnames(tadjmat)<- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
+tadjmat <- tadjmat %>% rownames_to_column()
+diag(tadjmat) <- NA
+tolist <- melt(tadjmat, id = "rowname")
+tnet <- graph_from_data_frame(d=subset(tolist, value>0), directed=F)
+
+
+
+closeness.cent <- closeness(tnet, mode="all") ## Importance measured  by how close a node is to other nodes
+
+
+graph.betweenness<-betweenness(tnet,v=V(tnet), directed = F) #need to figure out how to set weight edge attribute - right now weights not considered so result isn't accurate 
+graph.edge.betweenness<-edge.betweenness(tnet,e=E(tnet), directed = F)
+
+
+
+degree.cent <- centr_degree(tnet, mode = "all", loops = FALSE) ### this is unresolved 
+degree.cent$res
+
+
+
+## see if can ID proper centrality function 
+proper_centralities(tnet)
+
+
+visualize_graph( tnet , centrality.type="Average Distance")
+
 ```
-Q - why are the calculations treating all nodes the same? 
+Q - why are the calculations treating all nodes the same? --> I think I've fixed this problem by changing how the igraph object is made (re stackoverflow q)
+Note -- "highest centrality values through the whole network. This means that these nodes have equally important roles in the flow of the network."
 recommends using some form of PCA to find out which measure of centrality to use (apparently there are more than listed in other tutorial)
 
 <br>
@@ -712,9 +960,9 @@ Notes on options provided in tutorial
 
 
 
-Fisher's exact and chi square calculations 
+##Fisher's exact and chi square calculations 
 
-## Org types
+### Org types
 so because we have an identy matrix, I think we need a different function
 I think I need to use cortest.mat in psych package but can't seem to download the package (this would mean that the test is set to see if matrix differs from 0 or other values so would have to make expected results matrix to compare with?) - https://www.rdocumentation.org/packages/psych/versions/1.0-58/topics/mat.cortest
 ```{r}
@@ -742,18 +990,213 @@ corrplot(contrib, is.cor = FALSE)
 
 library("psych")
 
-normal.cortest(orgtype_adjmat, R2 = NULL, n1 = NULL, n2 = NULL, fisher = TRUE)
+#normal.cortest(orgtype_adjmat, R2 = NULL, n1 = NULL, n2 = NULL, fisher = TRUE)
 
 ## need to generate an R2 but I don't know how to do that 
 
-cortest.mat(orgtype_adjmat,R2=NULL,n1=NULL,n2 = NULL)
+#cortest.mat(orgtype_adjmat,R2=NULL,n1=NULL,n2 = NULL)
 
 ```
 note - had some problems installing package - ended up responding no to "Do you want to install from sources the package which needs compilation? (Yes/no/cancel)"
 
 
-## Partner type actions
+Try to do fishers exact on regular data
+```{r}
+#fish <- fisher.test(df)
+```
+
+<br>
+<br>
+
+##Set up chi square so that combining different columns
+
+original code from Partnerships_draft_code.Rmd which creates orgtype_adjmat
+```{r}
+g <- read.csv(paste0("/usr/local/bin/store/partner_rff/output/orgtype_adjmat.csv"), stringsAsFactors = FALSE)
+#remove first column 
+g <- g[,-c(1)]
+
+##tg <- (t(g))
+###write.csv(tg, "/usr/local/bin/store/partner_rff/output/orgtype_adjmat_part2.csv")
+h <- read.csv(paste0("/usr/local/bin/store/partner_rff/output/orgtype_adjmat_part2.csv"), stringsAsFactors = FALSE)
+#remove first column 
+
+rownames(h) <- h$X #set partnernames as rownames
+h[,1] <- NULL #then remove column 
+
+####orgtype_adjmat <- as.matrix(h) %*% as.matrix(g)
+```
+
+options to combine:
+- all state information
+- federal other + military
+- R+C+N
+
+###Version 1: Create smallest version of chi square 
+```{r}
+simpledata <- g
+
+#combine
+data <- simpledata %>% mutate("privateother" = rowSums(simpledata[,c(8,10,12)]))
+data <- data %>% mutate("federal other" = rowSums(data[,c(2,9)]))
+data <- data %>% mutate("state_all" = rowSums(data[,c(6,7,11)]))
+
+#removed cols
+data <- data[,-c(8,10,12,2,9,6,7,11)]
+
+#change to 1s and 0s
+data <- data %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+
+tg <- (t(data))
+
+orgtype_2 <- as.matrix(tg) %*% as.matrix(data)
+#diag(orgtype_2) <- NA Can't add this line or will violate chisq "x' must be nonnegative and finite"
+
+
+
+###### chi square 
+
+chisq <- chisq.test(orgtype_2)
+chisq
+
+chisq$observed
+
+round(chisq$expected,2)
+
+round(chisq$residuals, 3)
+
+corrplot(chisq$residuals, is.cor = FALSE)
+```
+
+
+###Version 2: Keep state wildlife seperate from other information
+
+```{r}
+simpledata <- g
+
+#combine
+data <- simpledata %>% mutate("privateother" = rowSums(simpledata[,c(8,10,12)]))
+data <- data %>% mutate("federal other" = rowSums(data[,c(2,9)]))
+data <- data %>% mutate("state_other" = rowSums(data[,c(6,7)]))
+
+#removed cols
+data <- data[,-c(8,10,12,2,9,6,7)]
+
+#change to 1s and 0s
+data <- data %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+
+tg <- (t(data))
+
+orgtype_3 <- as.matrix(tg) %*% as.matrix(data)
+
+###### chi square 
+
+chisq <- chisq.test(orgtype_3)
+chisq
+
+chisq$observed
+
+round(chisq$expected,2) #12 / 64  = 18% of expected counts are less than 5 so assumption not violated
+
+round(chisq$residuals, 3)
+
+corrplot(chisq$residuals, is.cor = FALSE)
+```
+
+
+
+
+### Partner type actions
 I think this lends itself to chi square much more easily 
+
+set up so partner types on rows and actions in cols
+```{r}
+partnertypeactions <- finaldf
+partnertypeactions <- partnertypeactions[,c(4:14,16)] #only selecting partner types and actions
+
+
+partnertypeactions <- partnertypeactions %>% group_by(type_of_org) %>% summarise_each(funs(sum)) 
+
+partnertypeactions <- as.data.frame(partnertypeactions)
+
+
+rownames(partnertypeactions) <- partnertypeactions$type_of_org
+partnertypeactions$type_of_org <- NULL
+
+#combine
+
+privateother <- partnertypeactions[c(2,5,7),-c(1)]
+privateother <- privateother %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total")))
+federal_other <- partnertypeactions[c(3,4),]
+federal_other <- federal_other %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total")))
+state_other <- partnertypeactions[c(8:10),]
+state_other <- state_other %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total")))
+
+
+
+colnames(partnertypeactions) <- c("type_of_org", "Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+
+chisq <- chisq.test(partnertypeactions[,-c(1)])
+chisq
+
+chisq$observed
+
+round(chisq$expected,2)
+
+round(chisq$residuals, 3)
+
+
+corrplot(chisq$residuals, is.cor = FALSE)
+
+contrib <- 100*chisq$residuals^2/chisq$statistic
+round(contrib, 3)
+corrplot(contrib, is.cor = FALSE)
+```
+Note - violate chi square assumption here.. re make data table with new combinations?? 
+
+
+Make new combinations of org types here as well... 
+
+V1 - smallest combination possible 
+```{r}
+partnertypeactions <- finaldf
+partnertypeactions <- partnertypeactions[,c(4:14,16)] #only selecting partner types and actions
+
+
+partnertypeactions <- partnertypeactions %>% group_by(type_of_org) %>% summarise_each(funs(sum)) 
+
+rownames(partnertypeactions) <- partnertypeactions$type_of_org
+##partnertypeactions$type_of_org <- NULL
+
+colnames(partnertypeactions) <- c("type_of_org", "Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
+
+
+chisq <- chisq.test(partnertypeactions[,-c(1)])
+chisq
+
+chisq$observed
+
+round(chisq$expected,2)
+
+round(chisq$residuals, 3)
+
+
+corrplot(chisq$residuals, is.cor = FALSE)
+
+contrib <- 100*chisq$residuals^2/chisq$statistic
+round(contrib, 3)
+corrplot(contrib, is.cor = FALSE)
+```
+
+
+
+
+
+
+
+###Scrap work.... 
+
 This isn't the table we want
 ```{r, eval = FALSE, include=FALSE}
 ### need to check that sdata is the latest version of the dataset 
@@ -802,46 +1245,8 @@ df2 <- onesandzeros
 rownames(df2) <- df$Scientific.name
 df2$Scientific.name <- NULL
 
-cortest.normal(df2, R2 = NULL, n1 = NULL, n2 = NULL, fisher = TRUE)
+#cortest.normal(df2, R2 = NULL, n1 = NULL, n2 = NULL, fisher = TRUE)
 #ns = sample size but idk what this would be 
 ```
-
-
-set up so partner types on rows and actions in cols
-```{r}
-partnertypeactions <- finaldf
-partnertypeactions <- partnertypeactions[,c(4:14,16)] #only selecting partner types and actions
-
-
-partnertypeactions <- partnertypeactions %>% group_by(type_of_org) %>% summarise_each(funs(sum)) 
-
-rownames(partnertypeactions) <- partnertypeactions$type_of_org
-partnertypeactions$type_of_org <- NULL
-
-colnames(partnertypeactions) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
-
-chisq <- chisq.test(partnertypeactions)
-chisq
-
-chisq$observed
-
-round(chisq$expected,2)
-
-round(chisq$residuals, 3)
-
-
-corrplot(chisq$residuals, is.cor = FALSE)
-
-contrib <- 100*chisq$residuals^2/chisq$statistic
-round(contrib, 3)
-corrplot(contrib, is.cor = FALSE)
-```
-
-
-Try to do fishers exact on regular data
-```{r}
-fish <- fisher.test(df)
-```
-
 
 
