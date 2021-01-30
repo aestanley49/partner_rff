@@ -1,0 +1,293 @@
+"","rowname","vector"
+"1","USFWS",1
+"2","NRCS",0.972689814037777
+"3","USGS",0.961053883439003
+"4","New Engalnd Cottontail Conservation Initiative",0.947933657065569
+"5","Trust for Public Land",0.947933657065569
+"6","American Forest Foundation",0.947933657065569
+"7","Connecticut Audubon Society",0.947933657065569
+"8","New Hampshire Fish and Game Department",0.947933657065569
+"9","University of New Hampshire",0.947933657065569
+"10","Pheasants Forever",0.947933657065568
+"11","Northeast Forest and Fire Management",0.947933657065568
+"12","Lyme Timber Company",0.947933657065568
+"13","Orenda Wildlife Land Trust",0.947933657065568
+"14","Trustees of Reservations",0.947933657065568
+"15","White Memorial Foundation",0.947933657065568
+"16","National Fish and Wildlife Foundation",0.947933657065568
+"17","Monterey Preservation Land Trust",0.947933657065568
+"18","Scarborough Land Trust",0.947933657065568
+"19","York Land Trust",0.947933657065568
+"20","Northeast Association of Fish and Wildlife Agencies",0.947933657065568
+"21","Rhode Island Division of Fish and Wildlife",0.947933657065568
+"22","Connecticute Department of Energy and Environmental Protection",0.947933657065568
+"23","Massachusetts Division of Fisheries and Wildlife",0.947933657065568
+"24","University of Rhode Island College of Envionment and Life Sciences",0.947933657065568
+"25","University of New Hampshire Cooperative Extenson",0.947933657065568
+"26","EDF",0.947933657065568
+"27","Lyme Land Conservation Trust",0.947933657065568
+"28","Wells National Esturarine Research Reserve",0.947933657065568
+"29","Amrican Bird Conservancy",0.947933657065568
+"30","Sustainable Forestry Initiative",0.947933657065568
+"31","Berkshire Natural Resources Council",0.947933657065568
+"32","Woodcock Limited",0.947933657065568
+"33","WCS Queens Zoo",0.947933657065568
+"34","Audubon Connecticut",0.947933657065568
+"35","Open Space Institute",0.947933657065568
+"36","Audubon New York",0.947933657065568
+"37","Quail Forever",0.947933657065568
+"38","Quality Deer Management Association",0.947933657065568
+"39","National Wild Turkey Federation",0.947933657065568
+"40","Narrow River Land Trust",0.947933657065568
+"41","Nantucket Conservation Foundation",0.947933657065568
+"42","Avalonia Land Conservancy",0.947933657065568
+"43","Wildlife Management Institute",0.947933657065568
+"44","Becket Land Trust",0.947933657065568
+"45","Massachusetts National Guard",0.947933657065568
+"46","Maine Department of Inland Fisheries and Wildlife",0.947933657065568
+"47","Mashpee Wampanoag Tribe",0.947933657065567
+"48","Roger Williams Park Zoo",0.947933657065567
+"49","Doris Duke Charitable Foundation",0.947933657065567
+"50","Ruffed Grouse Society/American Woodcock Society",0.947933657065567
+"51","New York Division of Fish Wildlife and Marine Resources",0.947933657065567
+"52","Wildlife Conservation Society",0.947933657065567
+"53","BLM",0.0730484543254174
+"54","The Nature Conservancy",0.0645212890966111
+"55","NPS",0.0596731790216746
+"56","Farm Service Agency",0.0504856239931495
+"57","Utah School and Institutional Trust Lands Administration",0.0480182209941451
+"58","Utah Governors Public Lands Policy Coordination Office",0.0480182209941451
+"59","Uintah County",0.048018220994145
+"60","Rio Blanco County",0.048018220994145
+"61","Utah Division of Wildlife Resources",0.048018220994145
+"62","Washington State Department of Natural Resources",0.0479155292327192
+"63","Washington State Department of Fish and Wildlife",0.0479155292327192
+"64","Portland General Electric",0.0479155292327191
+"65","agricultural landowners and other stakeholders",0.0479155292327191
+"66","Threemile Canyon Farms",0.0479155292327191
+"67","South Douglas Conservation District",0.0479155292327191
+"68","Foster Creek Conservation District",0.047915529232719
+"69","USFS",0.0459313258976464
+"70","Kentucky Department of Fish and Wildlife Resources",0.0450459543970062
+"71","BLM Dillon Field Office",0.0418875616872722
+"72","Madison County",0.0418875616872722
+"73","Montana Department of Fish Wildlife and Parks",0.0418875616872722
+"74","Montana Department of Natural Resources and Conservation",0.0418875616872722
+"75","Beaverhead County",0.0418875616872721
+"76","Georgia Department of Natural Resources",0.0348698517891278
+"77","Georgia Power",0.0332176929887406
+"78","Mecklenburg County Park and Recreation North Carolina",0.0332176929887406
+"79","Clemson University",0.0332176929887405
+"80","Georgia Department of Transportation",0.0332176929887404
+"81","North Carolina Department of Agriculture & Consumer Services Plant Conservation Program",0.0332176929887404
+"82","North Carolina Botanical Garden",0.0318154736111009
+"83","State Botanical Garden of Georgia",0.0318154736111009
+"84","The Citadel",0.0318154736111009
+"85","Georgia Natural Heritage Program",0.0318154736111009
+"86","North Carolina Natural Heritage Program",0.0318154736111009
+"87","Atlanta Botanical Garden",0.0318154736111009
+"88","Army Corps of Engineers",0.0318154736111009
+"89","Alabama Natural Heritage Program",0.0318154736111008
+"90","South Carolina Natural Heritage Program",0.0318154736111007
+"91","California Department of Parks and Recreation",0.0315293110689834
+"92","Nevada Division of State Parks",0.0315020534558426
+"93","Nevada Natural Heritage Program",0.0306884120649116
+"94","California Department of Fish and Game",0.0287949195124329
+"95","Nevada Department of Wildlife",0.0286259416262134
+"96","USFWS Southwest Region",0.0282017842851043
+"97","Center of Excellence for Hazardous Materials Management",0.0281911892082466
+"98","Texas A&M University",0.0281911892082466
+"99","Texas Comptroller of Public Accounts",0.0281911892082466
+"100","Texas Interagency Task Force on Economic Growth and Endangered Species",0.0281911892082466
+"101","Texas Department of Agriculture",0.0281911892082466
+"102","Texas Farm Bureau",0.0281911892082466
+"103","Texas Wildlife Association",0.0281911892082466
+"104","Texas Parks and Wildlife Department",0.0281911892082465
+"105","University of Texas System - University Lands",0.0281911892082465
+"106","Texas and Southwestern Cattle Raisers Association",0.0281911892082465
+"107","Texas Association of Business",0.0281911892082465
+"108","Railroad Commission of Texas",0.0281911892082465
+"109","Texas Royalty Council",0.0281911892082465
+"110","Texas Oil and Gas Association",0.0281911892082464
+"111","Center for Natural Lands Management",0.0280189125378164
+"112","Private entities",0.0278721023621127
+"113","Enefit American Oil",0.0278721023621127
+"114","BLM Vernal Field Office",0.0278721023621127
+"115","USFWS Utah Ecological Services Field Office",0.0278721023621127
+"116","USFWS Western Colorado Field Office",0.0278721023621127
+"117","Red Butte Garden Red Leaf Resources Inc",0.0278721023621127
+"118","SITLA",0.0278721023621127
+"119","BLM White River Field Office",0.0278721023621126
+"120","ESMF funds",0.0278721023621126
+"121","California Department of Fish and Wildlife",0.0274156724172085
+"122","Nevada Department of Transportation",0.0263039395611681
+"123","Boulder City",0.0263039395611681
+"124","Nevada Department of Conservation and Natural Resources",0.026303939561168
+"125","U.S. Air Force",0.026303939561168
+"126","Clark County",0.026303939561168
+"127","California State Lands Commission",0.0258802484668153
+"128","Tahoe Lakefront Owners's Association",0.0258802484668153
+"129","League to Save Lake Tahoe",0.0258802484668152
+"130","Nevada Division of Forestry",0.0258802484668152
+"131","Nevada Division of State Lands",0.0258802484668152
+"132","California Tahoe Conservancy",0.0258802484668152
+"133","Tahoe Regional Planning Agency",0.0258802484668151
+"134","BLM Utah",0.0247548458514898
+"135","BLM Colorado",0.0247548458514898
+"136","Desert Research Institute",0.0246118556987087
+"137","Illinois Department of Natural Resources",0.0236999371552861
+"138","Indiana Department of Natural Resources",0.0236999371552861
+"139","Kentucky Farm Bureau",0.0236999371552861
+"140","Kentucky Natural Resources and Environmental Cabinet",0.0236999371552861
+"141","Office of Surface Mining Reclamation and Enforcement",0.0236999371552861
+"142","Kentucky Coal Association",0.023699937155286
+"143","Kentucky Coal Country Association",0.023699937155286
+"144","Western Kentucky Coal Association",0.023699937155286
+"145","Kentucky Ecological Services Field Office",0.022210707818996
+"146","Owner of the Beaver Cave property",0.022210707818996
+"147","Kentucky State Nature Preserves Commission",0.022210707818996
+"148","Kentucky Division of Forestry",0.022210707818996
+"149","Arizona Game and Fish Department",0.0221613952462916
+"150","unspecified landowners",0.0221444112978566
+"151","USFWS Region 2",0.0221444112978566
+"152","Yavapai County",0.0221444112978566
+"153","Verde Watershed Association",0.0221444112978566
+"154","Arizona Ecological Services Field Office",0.0221444112978566
+"155","Idaho Department of Fish and Game",0.0219971494166032
+"156","City of Carlsbad",0.0219735191685231
+"157","City of NCCP",0.0219735191685231
+"158","City of San Marcos",0.0219735191685231
+"159","California Resources Agency",0.0219735191685231
+"160","Duke Energy Carolinas",0.0215172548234908
+"161","Eastern Band of Cherokee Indians",0.0215172548234908
+"162","North Carolina Wildlife Resources Commission",0.0215172548234908
+"163","Tennessee Valley Authority",0.0215172548234908
+"164","Nevada Division of Wildlife",0.0210010942919473
+"165","USDA",0.0210010942919473
+"166","Soulen Livestock Company Inc. (Soulen Livestock)",0.0204012284202839
+"167","Idaho Governor's Office of Species Conservation",0.0204012284202839
+"168","San Diego Gas and Electric Company",0.0201349892678795
+"169","Southern conservation corporation",0.019571431473847
+"170","California State Parks",0.00713597710517808
+"171","Riverside County Habitat Conservation Agency",0.00713597710517803
+"172","Riverside Land Conservancy",0.00713597710517803
+"173","California Department of Forestry and Fire Protection",0.00713597710517799
+"174","Metropolitan Water District",0.00713597710517799
+"175","Riverside County Environmental Programs Department",0.00713597710517799
+"176","San Diego State University Field Stations Program",0.00713597710517799
+"177","USFWS Carlsbad Fish and Wildlife Office",0.00713597710517799
+"178","City of Riverside Park and Recreation Department",0.00713597710517794
+"179","Riverside County Regional Park and Open-Space District",0.00713597710517794
+"180","University of California Riverside",0.00713597710517794
+"181","US Navy",0.00713597710517794
+"182","US Marine Corps",0.00713597710517794
+"183","US Customs and Border Protection",0.00713597710517789
+"184","Colorado Parks and Wildlife",0.00414557244580133
+"185","Vermejo Park Ranch",0.00414557244580129
+"186","Colorado Division of Parks and Wildlife",0.00414557244580129
+"187","New Mexico Department of Game and Fish",0.00414557244580126
+"188","Mescalero Apache Nation",0.00414557244580124
+"189","Taos Pueblo",0.00414557244580124
+"190","USFWS Albuquerque New Mexico Ecological Services Field Office",0.00414557244580119
+"191","Jicarilla Apache Nation",0.00414557244580119
+"192","Trout Unlimited",0.00414557244580119
+"193","California Department of Transportation (caltrans)",0.00292236340454564
+"194","Pacific Gas and Electric",0.00292236340454561
+"195","US Air Force",0.00201817262983629
+"196","Idaho Department of Lands",0.00201817262983628
+"197","Office of Species Conservation",0.00201817262983627
+"198","Idaho Army National Guard",0.00201817262983627
+"199","Nongovernmental Cooperator Representative",0.00201817262983627
+"200","Bureau of Reclamation Yuma",0.000797756279342066
+"201","USFWS Carlsbad Field Office",0.000797756279342066
+"202","US Naval Air Facility-El Centro",0.000797756279342066
+"203","several ICC agencies",0.000797756279342066
+"204","US Marine Corps Air Station Yuma",0.000797756279342018
+"205","US Navy SW Division San Diego",0.000797756279342018
+"206","Arizona Game and Fish",0.000797756279342018
+"207","California Department of Parks and Recreation Off-Highway Motor Vehicle Division Ocotillo Wells State Recreational Vehicle Area",0.000797756279342018
+"208","Reserva de la Biosfera Alto Golfo de California y Delta del Rio Colorado",0.000797756279342018
+"209","Reserva de la Biosfera el Pinacate y Gran Desierto de Altar",0.000797756279342018
+"210","BLM El Centro",0.000797756279341971
+"211","BLM Palm Springs",0.000797756279341971
+"212","BLM Yuma District",0.000797756279341971
+"213","BLM California Desert District",0.000797756279341971
+"214","USFWS Phoenix Field Office",0.000797756279341971
+"215","California Department of Parks and Recreation Anza Borrego Desert State Park",0.000797756279341875
+"216","Hearest Corporation",0.000638540730991738
+"217","Siskiyou County Board of Supervisors",0.000638540730991714
+"218","Sierra Pacific Industries",0.000638540730991702
+"219","John Hancock Mutual Life Insurace Company",0.000638540730991678
+"220","USFS Shasta Trinity National Forest",0.000638540730991666
+"221","Bob McIntsh (Private landowner)",0.000638540730991666
+"222","USFWS Sacramento Fish and Wildlife office",0.000638540730991654
+"223","private landowners of Cow Head Lake Cow Head Slough and California reach of Barrel Creek (four owners all CA signatories)",0.000611423528815306
+"224","the California Farm Bureau Federation",0.000611423528815306
+"225","principal permittees on BLM lands within the drainage",0.000611423528815295
+"226","California and Modoc County Cattlemen's Associations",0.000611423528815295
+"227","BLM Surprise Field Office",0.000611423528815295
+"228","USFWS Southern Nevada Fish and Wildlife Office",0.000571434444993757
+"229","cooperator (unspecified landowner)",0.000571434444993745
+"230","USFS Southwestern Region",0.000551949288576128
+"231","USFWS Ventura Fish and Wildlife Office",0.00054727490736976
+"232","Newhall Land Farming Company",0.00054727490736976
+"233","Department of Forest and Rangeland Stewardship Colorado State University",0.000491304785187535
+"234","NPS  Death Valley Office",0.000491304785187535
+"235","USFS Coronado National Forest Safford Ranger District",0.000442388402736603
+"236","USFWS Arizona Ecological Services Field Office",0.000442388402736597
+"237","USFS Coconino National Forest",0
+"238","USFS Kaibab National Forest",0
+"239","USFS Tonto National Forest",0
+"240","USFWS Oregon State Office",0
+"241","USFS Rouge River NF",0
+"242","USFS Klamath National Forest",0
+"243","USFS Scott River and Oak Knoll Ranger Districts",0
+"244","Oregon Plant Conservation Program",0
+"245","Mississippi Army National Guard",0
+"246","USFS DeSoto National Forest",0
+"247","Mississippi Department of Wildlife Fisheries and Parks",0
+"248","USFS Minidoka Ranger District",0
+"249","USFS Sawtooth National Forest",0
+"250","Utah Division of Parks and Recreation",0
+"251","BLM Utah State office",0
+"252","USFWS Utah Field Office",0
+"253","California Department of Fish and Wildlife Natural Heritage Division Endangered plant program",0
+"254","California Department of Fish and Wildlife Northern region",0
+"255","USFS Pacific Southwest Region Eagle Lake Ranger District Lassen national Forest",0
+"256","Oregon Natural Heritage Program",0
+"257","USFS Rouge River National Forest",0
+"258","Utah Department of Natural Resources",0
+"259","BLM Provo Area Office",0
+"260","Bureau of Reclamation Upper Colorado Region",0
+"261","Utah Reclamation Mitigation and Conservation Commission",0
+"262","Confederated Tribes of the Goshute Reservation",0
+"263","Central Utah Water Conservancy District",0
+"264","Otero County",0
+"265","USFWS Ecological Services New Mexico Field Office",0
+"266","USFS Lincoln National Forest",0
+"267","USFWS Montana Ecological Services Office",0
+"268","USFWS Bozeman Fish Technology center",0
+"269","Montana State University",0
+"270","Montana Fish Wildlife and Parks",0
+"271","EPA",0
+"272","Army Corps of Engineers (COE)",0
+"273","University of Hawaii",0
+"274","USFS Fishlake National Forest",0
+"275","BLM Utah State Office",0
+"276","BLM Richfield Field Office",0
+"277","BLM Price Field Office",0
+"278","Alcoa Power Generating Inc",0
+"279","USFWS Service Asheville Field Office",0
+"280","UFWS Service Arizona Ecological Services Field Office",0
+"281","USFWS Southeast Region",0
+"282","USFWS Snake River Fish and Wildlife office",0
+"283","Kane County",0
+"284","Department of Biology San Diego State University",0
+"285","USFWS Pacific Southwest Region Sacramento Office",0
+"286","USFS Nalamath National Forest",0
+"287","Southern Nevada Water Authority",0
+"288","Village of Cloudcroft",0
+"289","neighboring land owners",0
+"290","Group 70 International Inc",0
+"291","NPS Capitol Reef National Park",0
+"292","North Carolina Plant Conservation Program",0
