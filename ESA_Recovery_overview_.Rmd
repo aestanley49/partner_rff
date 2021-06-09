@@ -1,0 +1,194 @@
+---
+title: "ESA_Recovery_overview_doc"
+author: "Annabelle"
+date: "6/7/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Introduction 
+We are trying to answer the following Qs (which are the same as in the "Overview" doc)
+1.	What are the conservation initiatives for a species 
+2.	What are the actions specified in the federal register important for the species? 
+3.	Who are the organizations/players involved in doing these conservation initiatives? 
+4.	What are the actions each organization is doing (optional?)
+
+This document has the summary statistics for questions 1 & 2 (added 06/07/2021) and each section is question specific 
+
+Notes
+- Slight issue - missing at least 10 species data from tyler for initial draft of data (10 out of 38 species) ... is this data accessible from the drives?? 
+
+
+##Set up file structure 
+```{r, include = FALSE}
+## setup the file structure so that this markdown document is in the main project folder along with the other folders noted below
+
+DataSource <- "./data" # input raw dataset goes here
+output.dir <-"./output" # output dataset writes to here
+functions.dir <- "./functions" # directory for functions 
+
+#source(file.path(functions.dir,'FormatData.R')) # any functions that are called up by this markdown document need to be sourced here
+# we don't have any functions for this dataset yet... 
+
+
+library(plyr) #for function "join_all" also note, there can be issue loading this after dplyr (which is why it's at the top)
+library(readr)
+library(readxl)
+library(tidyverse)
+library(dplyr)
+library(janitor) #used in cleaning 
+library(stringr)
+library(knitr) #for making tables form kable 
+library(data.table) #function setnames() allows to set multiple column names in one line of code 
+```
+
+##load in different datasets
+```{r, echo = FALSE, include = FALSE}
+initiatves_partners <- read_excel(paste0("/usr/local/bin/store/partner_rff/data/AS12_Jun_7_21_codingdata.xlsx"), sheet = "initiatves_partners", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
+               )
+
+proactive <- read_excel(paste0("/usr/local/bin/store/partner_rff/data/AS12_Jun_7_21_codingdata.xlsx"), sheet = "threats", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
+               )
+
+
+#dataset that tyler sent, contains a number of predictors 
+tdata <- read.csv(paste0(DataSource,"/Updated_variables.csv"), stringsAsFactors = FALSE) #shared by tyler
+tdata <- tdata %>%  as_tibble() #now can use stringr packages 
+tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
+#additional two species not in tdata
+plustwo <- read.csv(paste0(DataSource, "/two_additional_species.csv"), stringsAsFactors = FALSE) #also shared by tyler for the additional two species that had data missing before 
+plustwo <- plustwo %>%  as_tibble() #now can use stringr packages 
+plustwo <- plustwo %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
+
+```
+
+
+##Modify datasets
+```{r, echo = FALSE, include = FALSE}
+initiatves_partners <- initiatves_partners[,-c(30:80)] # not using the end of this data sheet
+
+## Subset only for species that we are using (this was decided by placing an "x" in the first column) so..
+sub_initiatves_partners <- initiatves_partners[which(initiatves_partners$post_5_25 == "x"),]
+
+## removal all NAs for "RowSpecificInfo"
+sub_initiatves_partners <- sub_initiatves_partners[-which(is.na(sub_initiatves_partners$RowSpecInfo)),]
+
+################
+
+##### get the same species set that we use in dataset above by.. 
+## getting names of species in initiatives subset 
+sub_initiatves_partners <- initiatves_partners[which(initiatves_partners$post_5_25 == "x" | initiatves_partners$post_5_25 == "X"),]
+
+names <- sub_initiatves_partners[,c(3,4)]
+names <- names %>% distinct(scientific_name)
+## then joining with proactive dataset 
+
+proactive <- left_join(names, proactive)
+
+proactive <- proactive[,-c(3:10, 20:31)] ## removed excess columns 
+names <- proactive[,c(1,2)]
+#proactive_sub <- proactive[,-c(1,2)]
+#change all values to 1s and 0s
+
+proactive <- as.data.frame(proactive)
+proactive[!is.na(proactive)] <- 1
+proactive[is.na(proactive)] <- 0
+
+proactive <- proactive[,-c(1,2)]
+
+proactive2 <- cbind(names, proactive)
+
+
+##### Need to pull in range, threats and taxa information for species 
+
+```
+
+## 1.	What are the conservation initiatives for a species 
+
+#### 1 - Summary stats
+
+- Number of iniatitves per species
+- # iniatives per species (mean, median, quartiles)
+- Count of efforts, agreements, groups per species 
+
+
+```{r}
+#### - Number of iniatitves per species
+
+#number of partners in each of the agreements
+no_init_per_sp <- sub_initiatves_partners %>% group_by(common_name, RowSpecInfo) %>% distinct(Agreement_Name) %>%    #count how many names are distinct 
+summarise(n())
+
+## number of initiatives per species 
+no_init_per_sp$count <- no_init_per_sp$`n()` 
+no_init_per_sp_2 <- no_init_per_sp %>% group_by(common_name) %>%
+summarize(sum = sum(count))
+
+ggplot(no_init_per_sp_2) + geom_bar(mapping = aes(x = reorder(common_name, -sum), y = sum), stat = "identity")+ theme(axis.text.x = element_text(angle = 90)) + ggtitle("Number of initiatives per species") + scale_x_discrete(name ="Species") + scale_y_continuous(name ="Count")
+
+
+##### - # iniatives per species (mean, median, quartiles)
+
+summary(no_init_per_sp_2)
+  
+
+##### - Count of efforts, agreements, groups per species
+
+no_init_per_sp <- sub_initiatves_partners %>% group_by(common_name, RowSpecInfo) %>% distinct(Agreement_Name) %>%    #count how many names are distinct 
+summarise(n())
+
+## need to figure out how to add "Landowner" and "document" to other categories to count types of efforts 
+no_init_per_sp[which(no_init_per_sp$RowSpecInfo == "Land Owner"),2] <- "Effort"
+no_init_per_sp[which(no_init_per_sp$RowSpecInfo == "Document"),2] <- "Agreement"
+
+no_init_per_sp$count <- no_init_per_sp$`n()` 
+
+no_init_per_sp_3 <- no_init_per_sp %>% group_by(common_name, RowSpecInfo) %>%
+summarize(sum = sum(count))
+
+## removal all NAs for "RowSpecificInfo"
+no_init_per_sp_3 <- no_init_per_sp_3[-which(is.na(no_init_per_sp_3$RowSpecInfo)),]
+
+
+ggplot(no_init_per_sp_3, aes(common_name, sum)) +   
+  geom_bar(aes(fill = RowSpecInfo), position = "stack", stat="identity") + theme(axis.text.x = element_text(angle = 90)) + ggtitle("Number of initiatives per species") + scale_x_discrete(name ="Species") + scale_y_continuous(name ="Count") + coord_flip()
+
+```
+
+## 2.	What are the actions specified in the federal register important for the species?
+
+#### 1 - Summary stats
+
+```{r}
+
+outcomes <- proactive2
+
+outcomes[,c(3:11)] <- sapply(outcomes[ ,c(3:11)], as.numeric)
+
+names(outcomes)
+outcomes <- outcomes %>% mutate("preempt" = sum(preempt-private, preempt-public, preempt-unclear))
+
+
+outcomes <- outcomes %>% mutate("preempt" = rowSums(outcomes[,c(3:5)]))
+outcomes <- outcomes %>% mutate("react" = rowSums(outcomes[,c(6:8)]))
+
+
+%>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+
+```
+
+
+Scrap work - missing [~10] species that need to get data on from Tyler 
+```{r eval=F}
+
+min_tdata <- tdata[,c(3,4,18)]
+
+missing <- full_join(min_tdata, outcomes)
+
+```
+
