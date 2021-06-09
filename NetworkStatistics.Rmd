@@ -44,6 +44,12 @@ library(igraph)
 library(corrplot) #for visualizing chi square results 
 library(NetIndices) #trying for network analyses
 library(CINNA)
+library(fmsb) #for pairwise fisher's test
+library("rstatix") ## for fisher's exact 
+library(gridExtra) ## write table to png
+library(knitr) #write table to html 
+library(kableExtra) # ^^
+library(magrittr) # ^^
 ```
 
 ##load in different datasets
@@ -444,7 +450,6 @@ edge_betweenness(salfTnet, directed=F, weights=NA)
 centr_betw(salfTnet, directed=F, normalized=T) ## this gives out put but changes when change directed (I don't think our network is directed)
 ```
 
-
 Following new tutorial - https://www.datacamp.com/community/tutorials/centrality-network-analysis-R
 ```{r}
 
@@ -461,8 +466,55 @@ degree.cent$res
 ## see if can ID proper centrality function 
 proper_centralities(salfTnet)
 
-visualize_graph(salfTnet , centrality.type="Average Distance")
+##visualize_graph(salfTnet , centrality.type="Average Distance")
 ```
+
+Degree v Cumulative Freq
+Source of code - https://assemblingnetwork.wordpress.com/2013/06/10/network-basics-with-r-and-igraph-part-ii-of-iii/
+```{r}
+salfTnet <- graph_from_data_frame(d=subset(salfTmatlist, value>0), directed=F) 
+test.graph <- salfTnet
+
+# The degree of a node refers to the number of links associated with a node.
+# Degree can be measured as the links going in ("in degree"), out ("out degree"), or both.
+# The degree() function takes a graph input and gives the degree of specified nodes.
+# With the argument "v=V(graph)" you tell the function to give the degree of all nodes in the graph,
+# while the "mode" argument specifies in, out, or both.
+ 
+in.deg.testgraph<-degree(test.graph,v=V(test.graph),mode="in")
+out.deg.testgraph<-degree(test.graph,v=V(test.graph),mode="out")
+all.deg.testgraph<-degree(test.graph,v=V(test.graph),mode="all")
+
+# Degree distribution is the cumulative frequency of nodes with a given degree
+# this, like degree() can be specified as "in", "out", or "all"
+deg.distr<-degree.distribution(test.graph,cumulative=T,mode="all")
+ 
+# Using the power.law.fit() function I can fit a power law to the degree distribution
+power<-power.law.fit(all.deg.testgraph)
+ 
+# The output of the power.law.fit() function tells me what the exponent of the power law is ($alpha)
+# and the log-likelihood of the parameters used to fit the power law distribution ($logLik)
+# Also, it performs a Kolmogov-Smirnov test to test whether the given degree distribution could have
+# been drawn from the fitted power law distribution.
+# The function thus gives me the test statistic ($KS.stat) and p-vaule ($KS.p) for that test
+ 
+# Then I can plot the degree distribution
+plot(deg.distr,log="xy",
+ylim=c(.01,10),
+bg="black",pch=21,
+xlab="Degree",
+ylab="Cumulative Frequency")
+ 
+# And the expected power law distribution
+lines(1:20,10*(1:20)^((-power$alpha)+1))
+ 
+# Graphs typically have a Poisson distribution (if they are random),
+# power law (preferential attachment), or truncated power law (many real networks) degree distribution
+```
+
+
+
+
 
 <br>
 
@@ -507,6 +559,80 @@ plot(EDnet, vertex.color="white", edge.color= "black", vertex.label.color="black
 Same fix from previous matrix (with correct names added) seems to work here!
 not sure if there are any lines at all here... 
 
+
+Start here b
+try and get entrie graph on one page... 
+```{r}
+
+EDmat <- tED %*% ED
+diag(EDmat) <- NA
+
+rownames(EDmat) <- 1:292
+colnames(EDmat)<- 1:292
+
+
+
+EDmatlist <- EDmat %>% melt() 
+
+EDnet <- graph_from_data_frame(d=subset(EDmatlist, value>0), directed=F) 
+
+E(EDnet)$arrow.size <- .02
+
+EDmat <- tED %*% ED
+node.size <- diag(EDmat)
+
+
+plot(EDnet, vertex.size= 0.01,edge.arrow.size=0.01,vertex.label.cex = 0.15,vertex.label.color = "black", margin = -.25, layout = layout_with_fr)
+
+#layout_with_fr
+
+# source - https://kateto.net/networks-r-igraph
+EDmatlist2 <- EDmatlist[which(EDmatlist$value > 0),]
+hist(EDmatlist2$value)
+mean(EDmatlist2$value)
+sd(EDmatlist2$value)
+cut.off <- mean(EDmatlist2$value)
+net.sp <- delete_edges(EDnet, E(EDnet)[value<cut.off])
+plot(net.sp, vertex.size= 0.001,edge.arrow.size=0.01,vertex.label.cex = 0.15,vertex.label.color = "black", margin = -.25, layout = layout_with_fr) 
+
+
+
+
+wtc <- walktrap.community(EDnet)
+wtc
+
+res_g <- simplify(contract(EDnet, membership(wtc))) 
+
+plot(res_g, margin = -.15)
+
+## try to remove partners that cluster out... not sure if works with other.. ?? 
+
+
+other <- which(components(EDnet)$membership != 1)
+other <- as.data.frame(other)
+
+#EDmat <- tED %*% ED
+
+#EDmat <- EDmat[-c(other), -c(other)]
+
+#diag(EDmat) <- NA
+
+#EDmatlist <- EDmat %>% melt() 
+
+#EDnet <- graph_from_data_frame(d=subset(EDmatlist, value>1), directed=F) 
+#
+#E(EDnet)$arrow.size <- .02
+#
+#EDmat <- tED %*% ED
+#node.size <- diag(EDmat)
+##
+#plot(EDnet, vertex.size= 0.01,edge.arrow.size=0.001,vertex.label.cex = 0.05,vertex.label.color = "black", margin = -.25)
+
+```
+
+
+
+
 filter > 1 to make sure working correctly
 ```{r Eval = FALSE}
 #EDmatlist <- EDmat %>% melt() 
@@ -515,7 +641,7 @@ filter > 1 to make sure working correctly
 EDnet <- graph_from_data_frame(d=EDmatlist, directed=T) 
 E(EDnet)$arrow.size <- .02 #determine size of arrows (this makes the heads real small so they are more like lines)
 E(EDnet)$width <- E(EDnet)$value 
-plot(EDnet, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size)
+#plot(EDnet, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, layout=layout_in_circle, vertex.size=node.size)
 ```
 
 
@@ -663,9 +789,96 @@ degree.cent$res
 proper_centralities(EDnet)
 
 
-visualize_graph( EDnet , centrality.type="Average Distance")
+#visualize_graph( EDnet , centrality.type="Average Distance")
 
 ```
+
+
+Degree v Cumulative Freq
+Source of code - https://assemblingnetwork.wordpress.com/2013/06/10/network-basics-with-r-and-igraph-part-ii-of-iii/
+```{r}
+EDnet <- graph_from_data_frame(d=subset(EDmatlist, value>0), directed=F) 
+test.graph <- EDnet
+
+# The degree of a node refers to the number of links associated with a node.
+# Degree can be measured as the links going in ("in degree"), out ("out degree"), or both.
+# The degree() function takes a graph input and gives the degree of specified nodes.
+# With the argument "v=V(graph)" you tell the function to give the degree of all nodes in the graph,
+# while the "mode" argument specifies in, out, or both.
+ 
+in.deg.testgraph<-degree(test.graph,v=V(test.graph),mode="in")
+out.deg.testgraph<-degree(test.graph,v=V(test.graph),mode="out")
+all.deg.testgraph<-degree(test.graph,v=V(test.graph),mode="all")
+
+# Degree distribution is the cumulative frequency of nodes with a given degree
+# this, like degree() can be specified as "in", "out", or "all"
+deg.distr<-degree.distribution(test.graph,cumulative=T,mode="all")
+ 
+# Using the power.law.fit() function I can fit a power law to the degree distribution
+power<-power.law.fit(all.deg.testgraph)
+ 
+# The output of the power.law.fit() function tells me what the exponent of the power law is ($alpha)
+# and the log-likelihood of the parameters used to fit the power law distribution ($logLik)
+# Also, it performs a Kolmogov-Smirnov test to test whether the given degree distribution could have
+# been drawn from the fitted power law distribution.
+# The function thus gives me the test statistic ($KS.stat) and p-vaule ($KS.p) for that test
+ 
+# Then I can plot the degree distribution
+plot(deg.distr,log="xy",
+ylim=c(.01,10),
+bg="black",pch=21,
+xlab="Degree",
+ylab="Cumulative Frequency")
+ 
+# And the expected power law distribution
+lines(1:20,10*(1:20)^((-power$alpha)+1))
+ 
+# Graphs typically have a Poisson distribution (if they are random),
+# power law (preferential attachment), or truncated power law (many real networks) degree distribution
+```
+
+
+--> one off graph for entire dataset 
+degree counts vs # species a partner works on 
+- code after * was taken from thesis results 
+- *** need to make sure using updated dataset 
+START HERE
+```{r, eval=FALSE}
+#### set up degree counts
+
+all.deg.testgraph<-as.data.frame(degree(test.graph,v=V(test.graph),mode="all"))
+all.deg.testgraph <- all.deg.testgraph %>% rownames_to_column()
+colnames(all.deg.testgraph) <- c("name", "degree")
+
+
+#### get number of species/partner
+
+#************** Need to figure out what the most updated version of partnerData is*******
+
+specesperpartner <- colSums(PartnerData[,-c(1:3)])
+speperpart <- t(specesperpartner)
+sppart <- t(speperpart) #trying to get partner names as row names
+number_of_species_per_partner <- sppart[-c(199),] #gets werid when I delete the bottom row
+number_of_species_per_partner <- t(number_of_species_per_partner)
+number_of_species_per_partner <- t(number_of_species_per_partner) #this works
+#making rownames a column so can join later 
+number_of_species_per_partner <- as.data.frame(number_of_species_per_partner)
+number_of_species_per_partner <- number_of_species_per_partner %>% rownames_to_column(var = "X1")
+number_of_species_per_partner <- number_of_species_per_partner %>% rename("species_per_partner" = V1) 
+
+#explore <- explore %>% rename("partnerships_per_partner" = rssum)
+
+## the joins aren't working - just getting partner names then replicated row columns
+#and <- explore %>% left_join(number_of_species_per_partner, by = NULL)
+#need to fix NRCS
+and  <- and[-which(is.na(and$species_per_partner)),]
+
+#probably worth getting rid of this one
+#ggplot(data = and, mapping = aes(x=partnerships_per_partner, y= species_per_partner)) + geom_point() +geom_text(mapping = aes(x=partnerships_per_partner, y=species_per_partner, label = X1, geom.text.size = 1)) +coord_flip()
+
+#ggplot(data = and, mapping = aes(x=partnerships_per_partner, y= species_per_partner)) + geom_count() +coord_flip()
+```
+
 
 
 
@@ -795,7 +1008,7 @@ test.graph.properties$LD
 Average weighted degree
 ```{r}
 ### fix this later ...  
-added <- rowSums(tadjmat, na.rm = TRUE) #this gives the correct number of edges across each node
+#added <- rowSums(tadjmat, na.rm = TRUE) #this gives the correct number of edges across each node
 
 #now find the average
 sum(added)/11 #12 is number of nodes in network but nodes can't be connected to themselves so makes sense to use 11??
@@ -927,12 +1140,81 @@ degree.cent$res
 proper_centralities(tnet)
 
 
-visualize_graph( tnet , centrality.type="Average Distance")
+#visualize_graph( tnet , centrality.type="Average Distance")
 
 ```
 Q - why are the calculations treating all nodes the same? --> I think I've fixed this problem by changing how the igraph object is made (re stackoverflow q)
 Note -- "highest centrality values through the whole network. This means that these nodes have equally important roles in the flow of the network."
 recommends using some form of PCA to find out which measure of centrality to use (apparently there are more than listed in other tutorial)
+
+
+
+
+
+Degree v Cumulative Freq
+Source of code - https://assemblingnetwork.wordpress.com/2013/06/10/network-basics-with-r-and-igraph-part-ii-of-iii/
+```{r}
+tnet <- graph_from_data_frame(d=subset(tolist, value>0), directed=F)
+test.graph <- tnet
+
+# The degree of a node refers to the number of links associated with a node.
+# Degree can be measured as the links going in ("in degree"), out ("out degree"), or both.
+# The degree() function takes a graph input and gives the degree of specified nodes.
+# With the argument "v=V(graph)" you tell the function to give the degree of all nodes in the graph,
+# while the "mode" argument specifies in, out, or both.
+ 
+in.deg.testgraph<-degree(test.graph,v=V(test.graph),mode="in")
+out.deg.testgraph<-degree(test.graph,v=V(test.graph),mode="out")
+all.deg.testgraph<-degree(test.graph,v=V(test.graph),mode="all")
+
+# Degree distribution is the cumulative frequency of nodes with a given degree
+# this, like degree() can be specified as "in", "out", or "all"
+deg.distr<-degree.distribution(test.graph,cumulative=T,mode="all")
+ 
+# Using the power.law.fit() function I can fit a power law to the degree distribution
+power<-power.law.fit(all.deg.testgraph)
+ 
+# The output of the power.law.fit() function tells me what the exponent of the power law is ($alpha)
+# and the log-likelihood of the parameters used to fit the power law distribution ($logLik)
+# Also, it performs a Kolmogov-Smirnov test to test whether the given degree distribution could have
+# been drawn from the fitted power law distribution.
+# The function thus gives me the test statistic ($KS.stat) and p-vaule ($KS.p) for that test
+ 
+# Then I can plot the degree distribution
+plot(deg.distr,log="xy",
+ylim=c(.01,10),
+bg="black",pch=21,
+xlab="Degree",
+ylab="Cumulative Frequency")
+ 
+# And the expected power law distribution
+lines(1:20,10*(1:20)^((-power$alpha)+1))
+ 
+# Graphs typically have a Poisson distribution (if they are random),
+# power law (preferential attachment), or truncated power law (many real networks) degree distribution
+```
+
+
+```{r}
+tnet <- graph_from_data_frame(d=subset(tolist, value>0), directed=F)
+test.graph <- tnet
+
+in.deg.testgraph<-degree(test.graph,v=V(test.graph),mode="in")
+out.deg.testgraph<-degree(test.graph,v=V(test.graph),mode="out")
+all.deg.testgraph<-degree(test.graph,v=V(test.graph),mode="all")
+
+#### set up degree counts
+
+all.deg.testgraph<-as.data.frame(degree(test.graph,v=V(test.graph),mode="all"))
+all.deg.testgraph <- all.deg.testgraph %>% rownames_to_column()
+colnames(all.deg.testgraph) <- c("name", "degree")
+```
+
+
+
+
+
+
 
 <br>
 
@@ -1000,6 +1282,812 @@ library("psych")
 note - had some problems installing package - ended up responding no to "Do you want to install from sources the package which needs compilation? (Yes/no/cancel)"
 
 
+Calculate chi square metric for each cell in matrix
+
+```{r}
+mydf <- orgtype_adjmat
+mydf$X <- NULL
+
+abc <- chisq.test(mydf)
+abc$statistic
+
+# so this is a good approximation, but it doesn't remove the diagonal (if diag is removed, can't use chisq.test)
+chi_metric <- (abc$observed-abc$expected)^2/abc$expected #source: https://stackoverflow.com/questions/60880924/is-there-an-r-function-to-calculate-the-chi-square-value-for-each-cell-in-a-tabl
+
+## another stackoverflow option [source: https://stackoverflow.com/questions/32732582/chi-square-p-value-matrix-in-r]
+### I think this produces a matrix of p-values? but if thats the case, not many are less than .05 
+chisqmatrix <- function(x) {
+  names = colnames(x);  num = length(names)
+  m = matrix(nrow=num,ncol=num,dimnames=list(names,names))
+  for (i in 1:(num-1)) {
+    for (j in (i+1):num) {
+      m[i,j] = chisq.test(x[,i],x[,j],)$p.value
+    }
+  }
+  return (m)
+}
+
+diag(mydf) <- NA
+mydf2 <- mydf
+mat2 = chisqmatrix(mydf2)
+
+
+## check if correct
+
+mydf$X <- NULL
+
+#drop anything done with self
+diag(mydf) <- NA
+
+mydf$row <- rowSums(mydf, na.rm = T)
+col <-  colSums(mydf, na.rm = T)
+
+mydf <- rbind(mydf, col)
+
+epected <- (43*45)/452 
+observed <- mydf[2,1]
+
+chi <- ((observed - epected)^2)/epected #nothing to sum with??
+
+
+
+#####trying something else from the internet
+
+mydf <- orgtype_adjmat
+diag(mydf) <- NA
+#lets see if number change if we remove half 
+#mydf[lower.tri(mydf)] <- NA #--> doesn't work 
+### Error in stats::chisq.test(x, y, ...) : 'x' and 'y' must have at least 2 levels
+
+combos <- combn(ncol(mydf),2)
+
+df <- adply(combos, 2, function(x) {
+  test <- chisq.test(mydf[, x[1]], mydf[, x[2]])
+
+  out <- data.frame("Row" = colnames(mydf)[x[1]]
+                    , "Column" = colnames(mydf[x[2]])
+                    , "Chi.Square" = round(test$statistic,3)
+                    ,  "df"= test$parameter
+                    ,  "p.value" = round(test$p.value, 3)
+                    )
+  return(out)
+
+})  
+
+
+#I think this is what we want? 
+
+df <- df[,-c(1)]
+
+## I think the difference is that I'm doing a chi-square test for all combinations of variables
+
+
+
+```
+
+
+
+Fisher's exact on entire org type matrix 
+```{r}
+orgtype_adjmat
+
+BLM <- orgtype_adjmat[1,]
+BLM[1,1] <- NA #remove all species that BLM partners with by itself as NA
+
+BLM_FO <- BLM[1,2]
+BLM_FO_other <- sum(BLM[,c(3:12)])
+BLM_FO_all <- cbind(BLM_FO,BLM_FO_other)
+
+BLM_USFS <- BLM[1,3]
+BLM_USFS_other <- sum(BLM[,c(2,4:12)])
+BLM_USFS_all <- cbind(BLM_USFS, BLM_USFS_other)
+
+
+data <- orgtype_adjmat
+diag(data) <- NA
+
+data$sumall <- rowSums(data, na.rm = T)
+
+
+## So have rowsum and can calculate the sum without that cell but subtracting from rowsum (but also doing to all cells in each column at once)
+
+data <- data %>% mutate(BLM1 = sumall - data[,1])
+data <- data %>% mutate(FO1 = sumall - data[,2])
+data <- data %>% mutate(USFS1 = sumall - data[,3])
+data <- data %>% mutate(USFWS1 = sumall - data[,4])
+data <- data %>% mutate(P1 = sumall - data[,5])
+data <- data %>% mutate(SL1 = sumall - data[,6])
+data <- data %>% mutate(SG1 = sumall - data[,7])
+data <- data %>% mutate(R1 = sumall - data[,8])
+data <- data %>% mutate(M1 = sumall - data[,9])
+data <- data %>% mutate(C1 = sumall - data[,10])
+data <- data %>% mutate(SW1 = sumall - data[,11])
+data <- data %>% mutate(N1 = sumall - data[,12])
+
+# The set up each row subset so have original cell and sum - that cell in same row 
+## For each row, will have an NA where the parter type would have been working with itself so remove that 
+BLM <- data.frame((data[c(1:12),1]), (data[c(1:12),14]))
+BLM <- BLM[-which(is.na(BLM$X.data.c.1.12...1..)),]
+FO <- data.frame((data[c(1:12),2]), (data[c(1:12),15]))
+FO <- FO[-which(is.na(FO$X.data.c.1.12...2..)),]
+USFS <- data.frame((data[c(1:12),3]), (data[c(1:12),16]))
+USFS <- USFS[-which(is.na(USFS$X.data.c.1.12...3..)),]
+USFWS <- data.frame((data[c(1:12),4]), (data[c(1:12),17]))
+USFWS <- USFWS[-which(is.na(USFWS$X.data.c.1.12...4..)),]
+P <- data.frame((data[c(1:12),5]), (data[c(1:12),18]))
+P <- P[-which(is.na(P$X.data.c.1.12...5..)),]
+SL <- data.frame((data[c(1:12),6]), (data[c(1:12),19]))
+SL <- SL[-which(is.na(SL$X.data.c.1.12...6..)),]
+SG <- data.frame((data[c(1:12),7]), (data[c(1:12),20]))
+SG <- SG[-which(is.na(SG$X.data.c.1.12...7..)),]
+R <- data.frame((data[c(1:12),8]), (data[c(1:12),21]))
+R <- R[-which(is.na(R$X.data.c.1.12...8..)),]
+M <- data.frame((data[c(1:12),9]), (data[c(1:12),22]))
+M <- M[-which(is.na(M$X.data.c.1.12...9..)),]
+C <- data.frame((data[c(1:12),10]), (data[c(1:12),23]))
+C <- C[-which(is.na(C$X.data.c.1.12...10..)),]
+SW <- data.frame((data[c(1:12),11]), (data[c(1:12),24]))
+SW <- SW[-which(is.na(SW$X.data.c.1.12...24..)),]
+N <- data.frame((data[c(1:12),12]), (data[c(1:12),25]))
+N <- N[-which(is.na(N$X.data.c.1.12...12..)),]
+
+
+# And to the fisher exact test on each 
+
+fishBLM <- fisher.test(BLM, workspace = 2e8) ###simulate.p.value=TRUE,B=1e7)
+fishFO <- fisher.test(FO, workspace = 2e8)
+fishUSFS <- fisher.test(USFS, workspace = 2e8)
+fishUSFWS <- fisher.test(USFWS, workspace = 2e8) ## same error
+fishP <- fisher.test(P, workspace = 2e8) ## same error
+fishSL <- fisher.test(SL, workspace = 2e8)
+fishSG <- fisher.test(SG, workspace = 2e8)
+fishR <- fisher.test(R, workspace = 2e8)
+fishM <- fisher.test(M, workspace = 2e8)
+fishC <- fisher.test(C, workspace = 2e8)
+fishSW <- fisher.test(SW, workspace = 2e8) ## same error
+fishN <- fisher.test(N, workspace = 2e8)
+
+Pvalueforindividualfishers <- data.frame(fishBLM$p.value, fishFO$p.value, fishUSFS$p.value, fishUSFWS$p.value, fishP$p.value, fishSL$p.value, fishSG$p.value, fishR$p.value, fishM$p.value, fishC$p.value, fishSW$p.value, fishN$p.value)
+
+Pvalueforindividualfishers <- t(Pvalueforindividualfishers)
+
+
+## save as html 
+
+kable(Pvalueforindividualfishers, "html") %>%
+  cat(., file = "output/tables/Pvalue_orgtypes_individual_fishers.html")
+
+
+
+### #### Using a different type of fisher's test (from gwen)
+fishBLM <- row_wise_fisher_test(BLM, workspace = 2e8, p.adjust.method = "bonferroni") ###simulate.p.value=TRUE,B=1e7)
+fishFO <- row_wise_fisher_test(FO, p.adjust.method = "bonferroni")
+fishUSFS <- row_wise_fisher_test(USFS, p.adjust.method = "bonferroni")
+fishUSFWS <- row_wise_fisher_test(USFWS, workspace = 2e8, p.adjust.method = "bonferroni") ## same error
+fishP <- row_wise_fisher_test(P, workspace = 2e8, p.adjust.method = "bonferroni") ## same error
+fishSL <- row_wise_fisher_test(SL, p.adjust.method = "bonferroni")
+fishSG <- row_wise_fisher_test(SG, p.adjust.method = "bonferroni")
+fishR <- row_wise_fisher_test(R, p.adjust.method = "bonferroni")
+fishM <- row_wise_fisher_test(M, p.adjust.method = "bonferroni")
+fishC <- row_wise_fisher_test(C, p.adjust.method = "bonferroni")
+fishSW <- row_wise_fisher_test(SW, workspace = 2e8, p.adjust.method = "bonferroni") ## same error
+fishN <- row_wise_fisher_test(N, p.adjust.method = "bonferroni")
+
+
+
+### Need to figure out how to put adjusted values together correctly (cells won't be in same location because have taken one org type out of each test)
+Pvalueforindividualfishers <- data.frame(fishBLM$p.adj, fishFO$p.adj, fishUSFS$p.adj, fishUSFWS$p.adj, fishP$p.adj, fishSL$p.adj, fishSG$p.adj, fishR$p.adj, fishM$p.adj, fishC$p.adj, fishSW$p.adj, fishN$p.adj)
+
+
+
+fishyBLM <- as.data.frame(fishBLM)
+colnames(fishyBLM) <- c("group"   ,     "n"      ,      "p_BLM"       ,     "p.adj_BLM"    ,    "p.adj.signif_BLM")
+fishyFO <- as.data.frame(fishFO)
+colnames(fishyFO) <- c("group"   ,     "n"      ,      "p_FO"       ,     "p.adj_FO"    ,    "p.adj.signif_FO")
+fishyUSFS <- as.data.frame(fishUSFS)
+colnames(fishyUSFS) <- c("group"   ,     "n"      ,      "p_USFS"       ,     "p.adj_USFS"    ,    "p.adj.signif_USFS")
+fishyUSFWS <- as.data.frame(fishUSFWS)
+colnames(fishyUSFWS) <- c("group"   ,     "n"      ,      "p_USFWS"       ,     "p.adj_USFWS"    ,    "p.adj.signif_USFWS")
+fishyP <- as.data.frame(fishP)
+colnames(fishyP) <- c("group"   ,     "n"      ,      "p_P"       ,     "p.adj_P"    ,    "p.adj.signif_P")
+fishySL <- as.data.frame(fishSL)
+colnames(fishySL) <- c("group"   ,     "n"      ,      "p_SL"       ,     "p.adj_SL"    ,    "p.adj.signif_SL")
+fishySG <- as.data.frame(fishSG)
+colnames(fishySG) <- c("group"   ,     "n"      ,      "p_SG"       ,     "p.adj_SG"    ,    "p.adj.signif_SG")
+fishyR <- as.data.frame(fishR)
+colnames(fishyR) <- c("group"   ,     "n"      ,      "p_R"       ,     "p.adj_R"    ,    "p.adj.signif_R")
+fishyM <- as.data.frame(fishM)
+colnames(fishyM) <- c("group"   ,     "n"      ,      "p_M"       ,     "p.adj_M"    ,    "p.adj.signif_M")
+fishyC <- as.data.frame(fishC)
+colnames(fishyC) <- c("group"   ,     "n"      ,      "p_C"       ,     "p.adj_C"    ,    "p.adj.signif_C")
+fishySW <- as.data.frame(fishSW)
+colnames(fishySW) <- c("group"   ,     "n"      ,      "p_SW"       ,     "p.adj_SW"    ,    "p.adj.signif_SW")
+fishyN <- as.data.frame(fishN)
+colnames(fishyN) <- c("group"   ,     "n"      ,      "p_N"       ,     "p.adj_N"    ,    "p.adj.signif_N")
+
+
+### ### join all together now!
+
+totally_fishy <- fishyBLM %>% full_join(fishyFO, by = "group") %>% full_join(fishyUSFS, by = "group") %>% full_join(fishyUSFWS, by = "group") %>% full_join(fishyP, by = "group") %>% full_join(fishySL, by = "group") %>% full_join(fishySG, by = "group") %>% full_join(fishyR, by = "group") %>% full_join(fishyM, by = "group") %>% full_join(fishyC, by = "group") %>% full_join(fishySW, by = "group") %>% full_join(fishyN, by = "group") 
+
+## change row order 
+totally_fishy <- totally_fishy[c(12, 1:11),]
+
+## remove n. category (I don't know what that is)
+totally_fishy <- totally_fishy %>% select(-contains("n."))
+
+#
+rownames(totally_fishy) <- totally_fishy$group #set partnernames as rownames
+
+## put together tables based on  "p_N"   "p.adj_N"   "p.adj.signif_N"
+
+totally_fishy_p_ <- totally_fishy %>% select(contains("p_")) %>% round(., 4) %>% rownames_to_column() 
+totally_fishy_p_[1,] <- names(totally_fishy_p_)
+
+totally_fishy_p.adj_ <- totally_fishy %>% select(contains("p.adj_")) %>% round(., 4) %>% rownames_to_column()
+totally_fishy_p.adj_[1,] <- names(totally_fishy_p.adj_)
+
+totally_fishy_p.adj.signif_ <- totally_fishy %>% select(contains("p.adj.signif_")) %>% rownames_to_column()
+totally_fishy_p.adj.signif_[1,] <- names(totally_fishy_p.adj.signif_)
+
+
+blank_space1 <- c("pavlue")
+blank_space2 <- c("adjusted pavlue")
+blank_space3 <- c("adjusted pavlue signif")
+
+
+kable(c(blank_space2, totally_fishy_p_,blank_space2, totally_fishy_p.adj_, blank_space3, totally_fishy_p.adj.signif_), "html") %>%
+  cat(., file = "output/tables/Pvalue_orgtypes_pairwise_fishers.html")
+
+
+
+
+
+### ### ### ### ### ### ### ### repeating analysis but removing USFWS per Becky's suggestion 
+
+
+
+data <- orgtype_adjmat
+diag(data) <- NA
+
+### remove USFWS from equation 
+
+data$USFWS <- NULL #remove FWS column 
+data <- data[-c(4),] #remove FWS row
+
+data$sumall <- rowSums(data, na.rm = T)
+
+
+## So have rowsum and can calculate the sum without that cell but subtracting from rowsum (but also doing to all cells in each column at once)
+
+### re adjusted individual cell labels because USFWS got removed everything shifts up
+data <- data %>% mutate(BLM1 = sumall - data[,1])
+data <- data %>% mutate(FO1 = sumall - data[,2])
+data <- data %>% mutate(USFS1 = sumall - data[,3])
+#data <- data %>% mutate(USFWS1 = sumall - data[,4])
+data <- data %>% mutate(P1 = sumall - data[,4])
+data <- data %>% mutate(SL1 = sumall - data[,5])
+data <- data %>% mutate(SG1 = sumall - data[,6])
+data <- data %>% mutate(R1 = sumall - data[,7])
+data <- data %>% mutate(M1 = sumall - data[,8])
+data <- data %>% mutate(C1 = sumall - data[,9])
+data <- data %>% mutate(SW1 = sumall - data[,10])
+data <- data %>% mutate(N1 = sumall - data[,11])
+
+# The set up each row subset so have original cell and sum - that cell in same row 
+## For each row, will have an NA where the parter type would have been working with itself so remove that 
+
+### also a slight adjustment in #s here bc no FWS 
+
+BLM <- data.frame((data[c(1:12),1]), (data[c(1:12),13]))
+BLM <- BLM[-which(is.na(BLM$X.data.c.1.12...1..)),]
+FO <- data.frame((data[c(1:12),2]), (data[c(1:12),14]))
+FO <- FO[-which(is.na(FO$X.data.c.1.12...2..)),]
+USFS <- data.frame((data[c(1:12),3]), (data[c(1:12),15]))
+USFS <- USFS[-which(is.na(USFS$X.data.c.1.12...3..)),]
+#USFWS <- data.frame((data[c(1:12),4]), (data[c(1:12),17]))
+#USFWS <- USFWS[-which(is.na(USFWS$X.data.c.1.12...4..)),]
+P <- data.frame((data[c(1:12),4]), (data[c(1:12),16]))
+P <- P[-which(is.na(P$X.data.c.1.12...4..)),]
+SL <- data.frame((data[c(1:12),5]), (data[c(1:12),17]))
+SL <- SL[-which(is.na(SL$X.data.c.1.12...5..)),]
+SG <- data.frame((data[c(1:12),6]), (data[c(1:12),18]))
+SG <- SG[-which(is.na(SG$X.data.c.1.12...6..)),]
+R <- data.frame((data[c(1:12),7]), (data[c(1:12),19]))
+R <- R[-which(is.na(R$X.data.c.1.12...7..)),]
+M <- data.frame((data[c(1:12),8]), (data[c(1:12),20]))
+M <- M[-which(is.na(M$X.data.c.1.12...8..)),]
+C <- data.frame((data[c(1:12),9]), (data[c(1:12),21]))
+C <- C[-which(is.na(C$X.data.c.1.12...9..)),]
+SW <- data.frame((data[c(1:12),10]), (data[c(1:12),22]))
+SW <- SW[-which(is.na(SW$X.data.c.1.12...10..)),]
+N <- data.frame((data[c(1:12),11]), (data[c(1:12),23]))
+N <- N[-which(is.na(N$X.data.c.1.12...11..)),]
+
+
+# And to the fisher exact test on each 
+
+fish2BLM <- fisher.test(BLM, workspace = 2e8) ###simulate.p.value=TRUE,B=1e7)
+fish2FO <- fisher.test(FO)
+fish2USFS <- fisher.test(USFS)
+#fish2USFWS <- fisher.test(USFWS, workspace = 2e8) ## same error
+fish2P <- fisher.test(P, workspace = 2e8) ## same error
+fish2SL <- fisher.test(SL)
+fish2SG <- fisher.test(SG)
+fish2R <- fisher.test(R)
+fish2M <- fisher.test(M)
+fish2C <- fisher.test(C)
+fish2SW <- fisher.test(SW, workspace = 2e8) ## same error
+fish2N <- fisher.test(N)
+
+Pvalueforindividualfishers2 <- data.frame(fish2BLM$p.value, fish2FO$p.value, fish2USFS$p.value, fish2P$p.value, fish2SL$p.value, fish2SG$p.value, fish2R$p.value, fish2M$p.value, fish2C$p.value, fish2SW$p.value, fish2N$p.value)
+
+Pvalueforindividualfishers2 <- t(Pvalueforindividualfishers2)
+
+
+## save as html  
+
+kable(Pvalueforindividualfishers2, "html") %>%
+  cat(., file = "output/tables/Pvalue_orgtypes_individual_fishers_NO_FWS.html")
+
+
+
+### #### Using a different type of fisher's test (from gwen)
+fish3BLM <- row_wise_fisher_test(BLM, workspace = 2e8, p.adjust.method = "bonferroni") ###simulate.p.value=TRUE,B=1e7)
+fish3FO <- row_wise_fisher_test(FO, p.adjust.method = "bonferroni")
+fish3USFS <- row_wise_fisher_test(USFS, p.adjust.method = "bonferroni")
+#fishUSFWS <- row_wise_fisher_test(USFWS, workspace = 2e8, p.adjust.method = "bonferroni") ## same error
+fish3P <- row_wise_fisher_test(P, workspace = 2e8, p.adjust.method = "bonferroni") ## same error
+fish3SL <- row_wise_fisher_test(SL, p.adjust.method = "bonferroni")
+fish3SG <- row_wise_fisher_test(SG, p.adjust.method = "bonferroni")
+fish3R <- row_wise_fisher_test(R, p.adjust.method = "bonferroni")
+fish3M <- row_wise_fisher_test(M, p.adjust.method = "bonferroni")
+fish3C <- row_wise_fisher_test(C, p.adjust.method = "bonferroni")
+fish3SW <- row_wise_fisher_test(SW, workspace = 2e8, p.adjust.method = "bonferroni") ## same error
+fish3N <- row_wise_fisher_test(N, p.adjust.method = "bonferroni")
+
+
+
+fishy3BLM <- as.data.frame(fish3BLM)
+colnames(fishy3BLM) <- c("group"   ,     "n"      ,      "p_BLM"       ,     "p.adj_BLM"    ,    "p.adj.signif_BLM")
+fishy3FO <- as.data.frame(fish3FO)
+colnames(fishy3FO) <- c("group"   ,     "n"      ,      "p_FO"       ,     "p.adj_FO"    ,    "p.adj.signif_FO")
+fishy3USFS <- as.data.frame(fish3USFS)
+colnames(fishy3USFS) <- c("group"   ,     "n"      ,      "p_USFS"       ,     "p.adj_USFS"    ,    "p.adj.signif_USFS")
+#fishyUSFWS <- as.data.frame(fishUSFWS)
+#colnames(fishyUSFWS) <- c("group"   ,     "n"      ,      "p_USFWS"       ,     "p.adj_USFWS"    ,    "p.adj.signif_USFWS")
+fishy3P <- as.data.frame(fish3P)
+colnames(fishy3P) <- c("group"   ,     "n"      ,      "p_P"       ,     "p.adj_P"    ,    "p.adj.signif_P")
+fishy3SL <- as.data.frame(fish3SL)
+colnames(fishy3SL) <- c("group"   ,     "n"      ,      "p_SL"       ,     "p.adj_SL"    ,    "p.adj.signif_SL")
+fishy3SG <- as.data.frame(fish3SG)
+colnames(fishy3SG) <- c("group"   ,     "n"      ,      "p_SG"       ,     "p.adj_SG"    ,    "p.adj.signif_SG")
+fishy3R <- as.data.frame(fish3R)
+colnames(fishy3R) <- c("group"   ,     "n"      ,      "p_R"       ,     "p.adj_R"    ,    "p.adj.signif_R")
+fishy3M <- as.data.frame(fish3M)
+colnames(fishy3M) <- c("group"   ,     "n"      ,      "p_M"       ,     "p.adj_M"    ,    "p.adj.signif_M")
+fishy3C <- as.data.frame(fish3C)
+colnames(fishy3C) <- c("group"   ,     "n"      ,      "p_C"       ,     "p.adj_C"    ,    "p.adj.signif_C")
+fishy3SW <- as.data.frame(fish3SW)
+colnames(fishy3SW) <- c("group"   ,     "n"      ,      "p_SW"       ,     "p.adj_SW"    ,    "p.adj.signif_SW")
+fishy3N <- as.data.frame(fish3N)
+colnames(fishy3N) <- c("group"   ,     "n"      ,      "p_N"       ,     "p.adj_N"    ,    "p.adj.signif_N")
+
+
+### ### join all together now!
+
+totally_fishy_v2 <- fishy3BLM %>% full_join(fishy3FO, by = "group") %>% full_join(fishy3USFS, by = "group") %>% 
+  full_join(fishy3P, by = "group") %>% full_join(fishy3SL, by = "group") %>% full_join(fishy3SG, by = "group") %>% full_join(fishy3R, by = "group") %>% full_join(fishy3M, by = "group") %>% full_join(fishy3C, by = "group") %>% full_join(fishy3SW, by = "group") %>% full_join(fishy3N, by = "group") 
+
+## change row order 
+totally_fishy_v2 <- totally_fishy_v2[c(11, 1:10),]
+
+## remove n. category (I don't know what that is)
+totally_fishy <- totally_fishy %>% select(-contains("n."))
+
+#
+rownames(totally_fishy) <- totally_fishy$group #set partnernames as rownames
+
+## put together tables based on  "p_N"   "p.adj_N"   "p.adj.signif_N"
+### save all tables into one html file 
+
+totally_fishy_p_ <- totally_fishy %>% select(contains("p_")) %>% round(., 4) %>% rownames_to_column() 
+totally_fishy_p_[1,] <- names(totally_fishy_p_)
+
+totally_fishy_p.adj_ <- totally_fishy %>% select(contains("p.adj_")) %>% round(., 4) %>% rownames_to_column()
+totally_fishy_p.adj_[1,] <- names(totally_fishy_p.adj_)
+
+totally_fishy_p.adj.signif_ <- totally_fishy %>% select(contains("p.adj.signif_")) %>% rownames_to_column()
+totally_fishy_p.adj.signif_[1,] <- names(totally_fishy_p.adj.signif_)
+
+
+blank_space1 <- c("pavlue")
+blank_space2 <- c("adjusted pavlue")
+blank_space3 <- c("adjusted pavlue signif")
+
+
+kable(c(blank_space2, totally_fishy_p_,blank_space2, totally_fishy_p.adj_, blank_space3, totally_fishy_p.adj.signif_), "html") %>%
+  cat(., file = "output/tables/Pvalue_orgtypes_NO_FWS_pairwise_fishers.html")
+
+
+
+
+
+
+
+
+#Pvalueforindividualfishers <- t(Pvalueforindividualfishers)
+
+
+###While the results of a one-way fisher's exact will tell you if there is what is known as a main effect of the explanatory variable, the initial results will not tell you which groups are different from one another. In order to determine which groups are different from one another, a post-hoc test is needed. eg pairwise comparison 
+
+### ### ### ### ### ### scrap work below.. got the pairwise part of fisher's exact to work above ^^^^ 
+
+
+#library(fmsb)
+?pairwise.fisher.test
+
+#note - Bonferroni correction which is applied to pairwise comparisons while is not applied to individual tests accounts for differences?
+
+
+### setting up BLM example for email 
+
+colnames(BLM) <- c("BLM_and_sp_Org_type", "All_other_Org_types")
+fishBLM <- fisher.test(BLM, workspace = 2e8)
+pairfishBLM <- pairwise.fisher.test(BLM, p.adjust.method = "bonferroni")
+pairfishBLM <- pairwise.fisher.test(BLM$BLM_and_sp_Org_type, BLM$All_other_Org_types, p.adjust.method = "bonferroni")
+
+rownames(BLM)
+
+BLMpairfish <- as.data.frame(pairfishBLM$p.value)
+rownames(BLMpairfish) <- c( "USFS" ,  "USFWS" , "P"   ,  "SL"  ,  "SG"  ,  "R"   ,  "M"  ,   "C"  ,   "SW"  ,  "N"   )
+
+
+##### I think I'm doing this wrong? 
+## lets try setting up the two pairwise tests 
+eachorg <- data.frame(BLM$X1, FO$X2, USFS$X3, USFWS$X4, P$X5, SL$X6, SG$X7, R$X8, M$X9, C$X10, SW$X11, N$X12)
+trial <- fisher.test(eachorg, simulate.p.value=TRUE)
+## lets try setting up the two pairwise tests 
+otherorg <- data.frame(BLM$X1.1, FO$X2.1, USFS$X3.1, USFWS$X4.1, P$X5.1, SL$X6.1, SG$X7.1, R$X8.1, M$X9.1, C$X10.1, SW$X11.1, N$X12.1)
+trial <- fisher.test(otherorg, simulate.p.value=TRUE)
+
+
+## this works 
+trial <- pairwise.fisher.test(BLM$X1, BLM$X1.1, p.adjust.method = "bonferroni")
+## this doesn't 
+trial <- pairwise.fisher.test(BLM, FO, p.adjust.method = "bonferroni")
+
+trial <- pairwise.fisher.test(unlist(BLM$X1.1), unlist(BLM$X1), p.adjust.method = "bonferroni")
+trial <- pairwise.fisher.test(unlist(FO$X2), unlist(BLM$X1), p.adjust.method = "bonferroni")
+trial <- pairwise.fisher.test(c(6 , 1 , 10 , 4 , 6 , 0 , 2 , 3 , 2 , 6  , 3), c(6 , 3, 12 , 4 , 5 , 2 , 0 , 2  ,2 , 7  ,2), p.adjust.method = "bonferroni")
+
+fishN.table <- fisher.test(N)
+
+####### start here ... need to figure out how to set up pairwise comparison 
+
+# take another look at - https://stackoverflow.com/questions/28446625/run-pairwise-fishers-test-on-all-column-combinations-between-two-data-frames
+
+
+########## Scrap work ###
+
+#now want to record each cell and that cell - rowsum in each row 
+
+#   iterations = 10
+# variables = 2
+
+#for(i in 1:nrow(data)) {
+  
+#    row <- data[i,]
+#     output <- matrix(ncol=variables, nrow=iterations)
+  #  vec <-  #preallocate a numeric vector
+#     for (j in 1:13) { #fill the vector
+#    output[1,j]
+ # mylist[[i]] <- vec #put all vectors in the list
+#}
+
+#for (row in 1:nrow(data)) { 
+ #   data$sumall[row] <- colSums(row, na.rm = T) 
+#}
+
+```
+
+for each row in dataframe
+create new dataframe where record value of each cell in row and then sum of all other cells 
+and assign that dataframes name as the rowname 
+
+
+
+Repeating/ adjusting code above to calculate org/action matrix 
+
+So I think we want to use pairwise_fisher_test because there are more than 2 rows/cols? 
+... "we care about differences between the columns here not the rows"
+
+```{r}
+
+### set up data frame
+partnertypeactions <- finaldf
+partnertypeactions <- partnertypeactions[,c(4:14,16)] #only selecting partner types and actions
+partnertypeactions <- partnertypeactions %>% group_by(type_of_org) %>% summarise_each(funs(sum)) 
+
+
+orgaction <- partnertypeactions
+
+rownames(orgaction) <- orgaction$type_of_org
+
+## set up so have orgs as units (columns)
+orgaction <- t(orgaction)
+
+## then arrange in same order as orgtype matrix
+orgaction <- orgaction[,c(1,3,11,12,6,9,8,7,4,2,10,5)]
+
+orgaction <- orgaction[-c(1),]#remove the first row
+
+
+
+## make numeric 
+orgaction <- as.data.frame(orgaction)
+#orgaction$BLM <- as.numeric(as.character(orgaction$BLM)) This works for one column at a time but code below does all at once
+indx <- sapply(orgaction, is.factor)
+orgaction[indx] <- lapply(orgaction[indx], function(x) as.numeric(as.character(x)))
+
+
+
+orgaction$sumall <- rowSums(orgaction)
+
+
+## So have rowsum and can calculate the sum without that cell but subtracting from rowsum (but also doing to all cells in each column at once)
+
+orgaction <- orgaction %>% mutate(BLM1 = sumall - orgaction[,1])
+orgaction <- orgaction %>% mutate(FO1 = sumall - orgaction[,2])
+orgaction <- orgaction %>% mutate(USFS1 = sumall - orgaction[,3])
+orgaction <- orgaction %>% mutate(USFWS1 = sumall - orgaction[,4])
+orgaction <- orgaction %>% mutate(P1 = sumall - orgaction[,5])
+orgaction <- orgaction %>% mutate(SL1 = sumall - orgaction[,6])
+orgaction <- orgaction %>% mutate(SG1 = sumall - orgaction[,7])
+orgaction <- orgaction %>% mutate(R1 = sumall - orgaction[,8])
+orgaction <- orgaction %>% mutate(M1 = sumall - orgaction[,9])
+orgaction <- orgaction %>% mutate(C1 = sumall - orgaction[,10])
+orgaction <- orgaction %>% mutate(SW1 = sumall - orgaction[,11])
+orgaction <- orgaction %>% mutate(N1 = sumall - orgaction[,12])
+
+
+
+
+
+# The set up each row subset so have original cell and sum - that cell in same row 
+## For each row, will have an NA where the parter type would have been working with itself so remove that 
+BLM <- data.frame((orgaction[c(1:11),1]), (orgaction[c(1:11),14]))
+FO <- data.frame((orgaction[c(1:11),2]), (orgaction[c(1:11), 15])) ##### this is correct
+USFS <- data.frame((orgaction[c(1:11), 3]), (orgaction[c(1:11), 16]))
+USFWS <- data.frame((orgaction[c(1:11),4]), (orgaction[c(1:11),17]))
+P <- data.frame((orgaction[c(1:11), 5]), (orgaction[c(1:11),18]))
+SL <- data.frame((orgaction[c(1:11),6]), (orgaction[c(1:11), 19]))
+SG <- data.frame((orgaction[c(1:11),7]), (orgaction[c(1:11), 20]))
+R <- data.frame((orgaction[c(1:11), 8]), (orgaction[c(1:11), 21]))
+M <- data.frame((orgaction[c(1:11), 9]), (orgaction[c(1:11), 22]))
+C <- data.frame((orgaction[c(1:11), 10]), (orgaction[c(1:11), 23]))
+SW <- data.frame((orgaction[c(1:11),11]), (orgaction[c(1:11), 24]))
+N <- data.frame((orgaction[c(1:11),12]), (orgaction[c(1:11),25]))
+
+
+# And to the fisher exact test on each 
+
+fishBLM <- fisher.test(BLM, workspace = 2e8) ###simulate.p.value=TRUE,B=1e7)
+fishFO <- fisher.test(FO, workspace = 2e8)
+fishUSFS <- fisher.test(USFS, workspace = 2e8)
+fishUSFWS <- fisher.test(USFWS, workspace = 2e8, simulate.p.value=TRUE) ## had to simulate p value here because otherwise crashed computer 
+fishP <- fisher.test(P, workspace = 2e8) ## same error
+fishSL <- fisher.test(SL, workspace = 2e8)
+fishSG <- fisher.test(SG , workspace = 2e8)
+fishR <- fisher.test(R, workspace = 2e8)
+fishM <- fisher.test(M, workspace = 2e8)
+fishC <- fisher.test(C, workspace = 2e8)
+fishSW <- fisher.test(SW, workspace = 2e8) ## same error
+fishN <- fisher.test(N, workspace = 2e8)
+
+Pvalueforindividualfishers <- data.frame(fishBLM$p.value, fishFO$p.value, fishUSFS$p.value, fishUSFWS$p.value, fishP$p.value, fishSL$p.value, fishSG$p.value, fishR$p.value, fishM$p.value, fishC$p.value, fishSW$p.value, fishN$p.value)
+
+Pvalueforindividualfishers <- t(Pvalueforindividualfishers)
+
+## save as html  
+
+kable(Pvalueforindividualfishers, "html") %>%
+  cat(., file = "output/tables/Pvalue_orgtypes_and_actions_individual_fishers.html")
+
+
+### ### ### row_wise_fisher_test
+
+### row_wise_fisher_test: performs row-wise Fisher's exact test of count data, a post-hoc tests following a significant chi-square test of homogeneity for rx2 contingency table. The test is conducted for each category (row).
+
+
+### #### Using a different type of fisher's test (from gwen)
+fishBLM <- row_wise_fisher_test(BLM, workspace = 2e8, p.adjust.method = "bonferroni") ###simulate.p.value=TRUE,B=1e7)
+fishFO <- row_wise_fisher_test(FO, p.adjust.method = "bonferroni")
+fishUSFS <- row_wise_fisher_test(USFS, p.adjust.method = "bonferroni")
+fishUSFWS <- row_wise_fisher_test(USFWS, workspace = 2e8, p.adjust.method = "bonferroni") ## same error
+fishP <- row_wise_fisher_test(P, workspace = 2e8, p.adjust.method = "bonferroni") ## same error
+fishSL <- row_wise_fisher_test(SL, p.adjust.method = "bonferroni")
+fishSG <- row_wise_fisher_test(SG, p.adjust.method = "bonferroni")
+fishR <- row_wise_fisher_test(R, p.adjust.method = "bonferroni")
+fishM <- row_wise_fisher_test(M, p.adjust.method = "bonferroni")
+fishC <- row_wise_fisher_test(C, p.adjust.method = "bonferroni")
+fishSW <- row_wise_fisher_test(SW, workspace = 2e8, p.adjust.method = "bonferroni") ## same error
+fishN <- row_wise_fisher_test(N, p.adjust.method = "bonferroni")
+
+
+
+
+
+
+fishyBLM <- as.data.frame(fishBLM)
+colnames(fishyBLM) <- c("group"   ,     "n"      ,      "p_BLM"       ,     "p.adj_BLM"    ,    "p.adj.signif_BLM")
+fishyFO <- as.data.frame(fishFO)
+colnames(fishyFO) <- c("group"   ,     "n"      ,      "p_FO"       ,     "p.adj_FO"    ,    "p.adj.signif_FO")
+fishyUSFS <- as.data.frame(fishUSFS)
+colnames(fishyUSFS) <- c("group"   ,     "n"      ,      "p_USFS"       ,     "p.adj_USFS"    ,    "p.adj.signif_USFS")
+fishyUSFWS <- as.data.frame(fishUSFWS)
+colnames(fishyUSFWS) <- c("group"   ,     "n"      ,      "p_USFWS"       ,     "p.adj_USFWS"    ,    "p.adj.signif_USFWS")
+fishyP <- as.data.frame(fishP)
+colnames(fishyP) <- c("group"   ,     "n"      ,      "p_P"       ,     "p.adj_P"    ,    "p.adj.signif_P")
+fishySL <- as.data.frame(fishSL)
+colnames(fishySL) <- c("group"   ,     "n"      ,      "p_SL"       ,     "p.adj_SL"    ,    "p.adj.signif_SL")
+fishySG <- as.data.frame(fishSG)
+colnames(fishySG) <- c("group"   ,     "n"      ,      "p_SG"       ,     "p.adj_SG"    ,    "p.adj.signif_SG")
+fishyR <- as.data.frame(fishR)
+colnames(fishyR) <- c("group"   ,     "n"      ,      "p_R"       ,     "p.adj_R"    ,    "p.adj.signif_R")
+fishyM <- as.data.frame(fishM)
+colnames(fishyM) <- c("group"   ,     "n"      ,      "p_M"       ,     "p.adj_M"    ,    "p.adj.signif_M")
+fishyC <- as.data.frame(fishC)
+colnames(fishyC) <- c("group"   ,     "n"      ,      "p_C"       ,     "p.adj_C"    ,    "p.adj.signif_C")
+fishySW <- as.data.frame(fishSW)
+colnames(fishySW) <- c("group"   ,     "n"      ,      "p_SW"       ,     "p.adj_SW"    ,    "p.adj.signif_SW")
+fishyN <- as.data.frame(fishN)
+colnames(fishyN) <- c("group"   ,     "n"      ,      "p_N"       ,     "p.adj_N"    ,    "p.adj.signif_N")
+
+
+
+### ### join all together now!
+
+totally_fishy <- fishyBLM %>% full_join(fishyFO, by = "group") %>% full_join(fishyUSFS, by = "group") %>% full_join(fishyUSFWS, by = "group") %>% full_join(fishyP, by = "group") %>% full_join(fishySL, by = "group") %>% full_join(fishySG, by = "group") %>% full_join(fishyR, by = "group") %>% full_join(fishyM, by = "group") %>% full_join(fishyC, by = "group") %>% full_join(fishySW, by = "group") %>% full_join(fishyN, by = "group") 
+
+#where each group number is an action (should be based on 1(land and water management to 11 funding))
+
+## remove n. category (I don't know what that is)
+totally_fishy <- totally_fishy %>% select(-contains("n."))
+
+## put together tables based on  "p_N"   "p.adj_N"   "p.adj.signif_N"
+
+totally_fishy_p_ <- totally_fishy %>% select(contains("p_"))
+totally_fishy_p.adj_ <- totally_fishy %>% select(contains("p.adj_"))
+totally_fishy_p.adj.signif_ <- totally_fishy %>% select(contains("p.adj.signif_"))
+
+
+
+## put together tables based on  "p_N"   "p.adj_N"   "p.adj.signif_N"
+### save all tables into one html file 
+
+totally_fishy_p_ <- totally_fishy %>% select(contains("p_")) %>% round(., 4) %>% rownames_to_column() 
+totally_fishy_p_[1,] <- names(totally_fishy_p_)
+
+totally_fishy_p.adj_ <- totally_fishy %>% select(contains("p.adj_")) %>% round(., 4) %>% rownames_to_column()
+totally_fishy_p.adj_[1,] <- names(totally_fishy_p.adj_)
+
+totally_fishy_p.adj.signif_ <- totally_fishy %>% select(contains("p.adj.signif_")) %>% rownames_to_column()
+totally_fishy_p.adj.signif_[1,] <- names(totally_fishy_p.adj.signif_)
+
+
+blank_space1 <- c("pavlue")
+blank_space2 <- c("adjusted pavlue")
+blank_space3 <- c("adjusted pavlue signif")
+
+
+kable(c(blank_space2, totally_fishy_p_,blank_space2, totally_fishy_p.adj_, blank_space3, totally_fishy_p.adj.signif_), "html") %>%
+  cat(., file = "output/tables/Pvalue_orgtypes_and_actions_pairwise_fishers.html")
+
+
+
+
+
+
+### ### ### pairwise_fisher_test
+
+### pairwise_fisher_test: pairwise comparisons between proportions, a post-hoc tests following a significant Fisher's exact test of homogeneity for 2xc design.
+
+
+### #### Using a different type of fisher's test (from gwen)
+fishBLM <- pairwise_fisher_test(BLM, workspace = 2e8, p.adjust.method = "bonferroni") ###simulate.p.value=TRUE,B=1e7)
+fishFO <- pairwise_fisher_test(FO, p.adjust.method = "bonferroni")
+fishUSFS <- pairwise_fisher_test(USFS, p.adjust.method = "bonferroni")
+fishUSFWS <- pairwise_fisher_test(USFWS, workspace = 2e8, p.adjust.method = "bonferroni") ## same error
+fishP <- pairwise_fisher_test(P, workspace = 2e8, p.adjust.method = "bonferroni") ## same error
+fishSL <- pairwise_fisher_test(SL, p.adjust.method = "bonferroni")
+fishSG <- pairwise_fisher_test(SG, p.adjust.method = "bonferroni")
+fishR <- pairwise_fisher_test(R, p.adjust.method = "bonferroni")
+fishM <- pairwise_fisher_test(M, p.adjust.method = "bonferroni")
+fishC <- pairwise_fisher_test(C, p.adjust.method = "bonferroni")
+fishSW <- pairwise_fisher_test(SW, workspace = 2e8, p.adjust.method = "bonferroni") ## same error
+fishN <- pairwise_fisher_test(N, p.adjust.method = "bonferroni")
+
+
+
+
+
+
+fishyBLM <- as.data.frame(fishBLM)
+colnames(fishyBLM) <- c("group"   ,     "n"      ,      "p_BLM"       ,     "p.adj_BLM"    ,    "p.adj.signif_BLM")
+fishyFO <- as.data.frame(fishFO)
+colnames(fishyFO) <- c("group"   ,     "n"      ,      "p_FO"       ,     "p.adj_FO"    ,    "p.adj.signif_FO")
+fishyUSFS <- as.data.frame(fishUSFS)
+colnames(fishyUSFS) <- c("group"   ,     "n"      ,      "p_USFS"       ,     "p.adj_USFS"    ,    "p.adj.signif_USFS")
+fishyUSFWS <- as.data.frame(fishUSFWS)
+colnames(fishyUSFWS) <- c("group"   ,     "n"      ,      "p_USFWS"       ,     "p.adj_USFWS"    ,    "p.adj.signif_USFWS")
+fishyP <- as.data.frame(fishP)
+colnames(fishyP) <- c("group"   ,     "n"      ,      "p_P"       ,     "p.adj_P"    ,    "p.adj.signif_P")
+fishySL <- as.data.frame(fishSL)
+colnames(fishySL) <- c("group"   ,     "n"      ,      "p_SL"       ,     "p.adj_SL"    ,    "p.adj.signif_SL")
+fishySG <- as.data.frame(fishSG)
+colnames(fishySG) <- c("group"   ,     "n"      ,      "p_SG"       ,     "p.adj_SG"    ,    "p.adj.signif_SG")
+fishyR <- as.data.frame(fishR)
+colnames(fishyR) <- c("group"   ,     "n"      ,      "p_R"       ,     "p.adj_R"    ,    "p.adj.signif_R")
+fishyM <- as.data.frame(fishM)
+colnames(fishyM) <- c("group"   ,     "n"      ,      "p_M"       ,     "p.adj_M"    ,    "p.adj.signif_M")
+fishyC <- as.data.frame(fishC)
+colnames(fishyC) <- c("group"   ,     "n"      ,      "p_C"       ,     "p.adj_C"    ,    "p.adj.signif_C")
+fishySW <- as.data.frame(fishSW)
+colnames(fishySW) <- c("group"   ,     "n"      ,      "p_SW"       ,     "p.adj_SW"    ,    "p.adj.signif_SW")
+fishyN <- as.data.frame(fishN)
+colnames(fishyN) <- c("group"   ,     "n"      ,      "p_N"       ,     "p.adj_N"    ,    "p.adj.signif_N")
+
+
+
+### ### join all together now!
+
+totally_fishy <- fishyBLM %>% full_join(fishyFO, by = "group") %>% full_join(fishyUSFS, by = "group") %>% full_join(fishyUSFWS, by = "group") %>% full_join(fishyP, by = "group") %>% full_join(fishySL, by = "group") %>% full_join(fishySG, by = "group") %>% full_join(fishyR, by = "group") %>% full_join(fishyM, by = "group") %>% full_join(fishyC, by = "group") %>% full_join(fishySW, by = "group") %>% full_join(fishyN, by = "group") 
+
+#where each group number is an action (should be based on 1(land and water management to 11 funding))
+
+## remove n. category (I don't know what that is)
+totally_fishy <- totally_fishy %>% select(-contains("n."))
+
+## put together tables based on  "p_N"   "p.adj_N"   "p.adj.signif_N"
+
+totally_fishy_p_ <- totally_fishy %>% select(contains("p_"))
+totally_fishy_p.adj_ <- totally_fishy %>% select(contains("p.adj_"))
+totally_fishy_p.adj.signif_ <- totally_fishy %>% select(contains("p.adj.signif_"))
+
+
+
+## put together tables based on  "p_N"   "p.adj_N"   "p.adj.signif_N"
+### save all tables into one html file 
+
+totally_fishy_p_ <- totally_fishy %>% select(contains("p_")) %>% round(., 4) %>% rownames_to_column() 
+totally_fishy_p_[1,] <- names(totally_fishy_p_)
+
+totally_fishy_p.adj_ <- totally_fishy %>% select(contains("p.adj_")) %>% round(., 4) %>% rownames_to_column()
+totally_fishy_p.adj_[1,] <- names(totally_fishy_p.adj_)
+
+totally_fishy_p.adj.signif_ <- totally_fishy %>% select(contains("p.adj.signif_")) %>% rownames_to_column()
+totally_fishy_p.adj.signif_[1,] <- names(totally_fishy_p.adj.signif_)
+
+
+blank_space1 <- c("pavlue")
+blank_space2 <- c("adjusted pavlue")
+blank_space3 <- c("adjusted pavlue signif")
+
+
+#kable(c(blank_space2, totally_fishy_p_,blank_space2, totally_fishy_p.adj_, blank_space3, totally_fishy_p.adj.signif_), "html") %>%
+#  cat(., file = "output/tables/Pvalue_orgtypes_and_actions_pairwise_fishers.html")
+
+
+
+
+```
+
+
+
+
+
+
 Try to do fishers exact on regular data
 ```{r}
 #fish <- fisher.test(df)
@@ -1032,7 +2120,7 @@ options to combine:
 - federal other + military
 - R+C+N
 
-###Version 1: Create smallest version of chi square 
+###Version 1: Combine R,N,C into private other, M and FO into federal other and all state agencies 
 ```{r}
 simpledata <- g
 
@@ -1073,6 +2161,7 @@ corrplot(chisq$residuals, is.cor = FALSE)
 
 ```{r}
 simpledata <- g
+g$X <- NULL
 
 #combine
 data <- simpledata %>% mutate("privateother" = rowSums(simpledata[,c(8,10,12)]))
@@ -1103,62 +2192,68 @@ round(chisq$residuals, 3)
 corrplot(chisq$residuals, is.cor = FALSE)
 ```
 
+###Version 3: smallest version of datset to mirror other table with actions:
+  Combine R,N,C into private other AND private landowners, M and FO into federal other and all state agencies 
+
+```{r}
+simpledata <- g
+g$X <- NULL
+
+#combine
+data <- simpledata %>% mutate("privateother" = rowSums(simpledata[,c(5, 8,10,12)]))
+data <- data %>% mutate("federal other" = rowSums(data[,c(2,9)]))
+data <- data %>% mutate("state_all" = rowSums(data[,c(6,7,11)]))
+
+#removed cols
+data <- data[,-c(5, 8,10,12,2,9,6,7,11)]
+
+#change to 1s and 0s
+data <- data %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+
+tg <- (t(data))
+
+orgtype_4 <- as.matrix(tg) %*% as.matrix(data)
+
+###### chi square 
+
+chisq <- chisq.test(orgtype_4)
+chisq
+
+chisq$observed
+
+round(chisq$expected,2) #12 / 64  = 18% of expected counts are less than 5 so assumption not violated
+
+round(chisq$residuals, 3)
+
+corrplot(chisq$residuals, is.cor = FALSE)
+
+###### ignore - this doesn't work... 
+##### trying to make and then do chi square on adj mat (need to create igraph object first... )
+
+#orgtype_5 <- orgtype_4
+#diag(orgtype_5) <- NA
+#orglist <- orgtype_5 %>% melt
+#
+#plot(orgnet)
+#orgnet <- graph_from_data_frame(d=subset(orglist, value>0), directed=F)
+#mean(degree(tnet, v = V(tnet), mode = "in", loops = F))
+#
+#graph.density(tnet, loop=FALSE)
+#edge_density(tnet, loops = FALSE)
+#
+#
+#test.graph.adj <- get.adjacency(orgnet, sparse=F)
+#
+#
+```
 
 
 
 ### Partner type actions
 I think this lends itself to chi square much more easily 
 
-set up so partner types on rows and actions in cols
-```{r}
-partnertypeactions <- finaldf
-partnertypeactions <- partnertypeactions[,c(4:14,16)] #only selecting partner types and actions
 
-
-partnertypeactions <- partnertypeactions %>% group_by(type_of_org) %>% summarise_each(funs(sum)) 
-
-partnertypeactions <- as.data.frame(partnertypeactions)
-
-
-rownames(partnertypeactions) <- partnertypeactions$type_of_org
-partnertypeactions$type_of_org <- NULL
-
-#combine
-
-privateother <- partnertypeactions[c(2,5,7),-c(1)]
-privateother <- privateother %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total")))
-federal_other <- partnertypeactions[c(3,4),]
-federal_other <- federal_other %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total")))
-state_other <- partnertypeactions[c(8:10),]
-state_other <- state_other %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total")))
-
-
-
-colnames(partnertypeactions) <- c("type_of_org", "Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding")
-
-
-chisq <- chisq.test(partnertypeactions[,-c(1)])
-chisq
-
-chisq$observed
-
-round(chisq$expected,2)
-
-round(chisq$residuals, 3)
-
-
-corrplot(chisq$residuals, is.cor = FALSE)
-
-contrib <- 100*chisq$residuals^2/chisq$statistic
-round(contrib, 3)
-corrplot(contrib, is.cor = FALSE)
-```
-Note - violate chi square assumption here.. re make data table with new combinations?? 
-
-
-Make new combinations of org types here as well... 
-
-V1 - smallest combination possible 
+Original set up - violates assumptions
 ```{r}
 partnertypeactions <- finaldf
 partnertypeactions <- partnertypeactions[,c(4:14,16)] #only selecting partner types and actions
@@ -1187,9 +2282,821 @@ corrplot(chisq$residuals, is.cor = FALSE)
 contrib <- 100*chisq$residuals^2/chisq$statistic
 round(contrib, 3)
 corrplot(contrib, is.cor = FALSE)
+
+
+
+## try with fisher's
+cortest.normal(df, R2 = NULL, n1 = NULL, n2 = NULL, fisher = TRUE)
+
+##fish <- fisher.test(partnertypeactions[,-c(1)]) ## still get error here
+
+## yates won't work because some expected values are over 10
+
+
+### ### ### ### try modifying partner types and then using fishers
+
+partnertypeactions <- finaldf
+partnertypeactions <- partnertypeactions[,c(4:14,16)] #only selecting partner types and actions
+partnertypeactions <- partnertypeactions %>% group_by(type_of_org) %>% summarise_each(funs(sum)) 
+partnertypeactions <- as.data.frame(partnertypeactions)
+
+rownames(partnertypeactions) <- partnertypeactions$type_of_org
+partnertypeactions$type_of_org <- NULL
+
+#combine
+
+privateother <- partnertypeactions[c(2,5,7, 6),] #subset from large dataframe ## added private landowner 
+privateother <- privateother %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total"))) # sum all those rows 
+rownames(privateother) <- c("C", "N", "R", "P" , "privateother") # set rownames 
+privateother <- privateother[c(5),]
+
+federal_other <- partnertypeactions[c(3,4),] #subset from large dataframe
+federal_other <- federal_other %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total")))
+rownames(federal_other) <- c("FO", "M", "federal_other") # set rownames 
+federal_other <- federal_other[c(3),]
+
+state_other <- partnertypeactions[c(8:10),]
+state_other <- state_other %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total")))
+rownames(state_other) <- c("SG", "SL", "SW", "state_other") # set rownames 
+state_other <- state_other[c(4),] # select row with total 
+
+#remove columns that just got deleted
+partnertypeactions <- partnertypeactions[-c(2:5,7:10, 6),] ## added private landowner 
+
+#combine all into new dataset 
+partnertypeactionsv4 <- rbind(partnertypeactions, state_other, federal_other, privateother)
+
+#fish <- fisher.test(partnertypeactionsv4) ##workspace needs to be reduced...
+
+```
+
+V2 - for 1/7/2021
+set up so partner types on rows and actions in cols - smallest version of table that doesn't violate chi square assumptions
+```{r}
+partnertypeactions <- finaldf
+
+partnertypeactions <- partnertypeactions[,c(4:14,16)] #only selecting partner types and actions
+
+colnames(partnertypeactions) <- c("Land Water Management","Species Management", "Awareness", "Law","Econ","Conservation Planning", "Policy", "Research", "Education","Instiutional Development", "Funding", "type_of_org") #rename columns
+
+
+
+partnertypeactions <- partnertypeactions %>% group_by(type_of_org) %>% summarise_each(funs(sum)) 
+
+partnertypeactions <- as.data.frame(partnertypeactions)
+
+
+rownames(partnertypeactions) <- partnertypeactions$type_of_org
+partnertypeactions$type_of_org <- NULL
+
+#combine
+
+privateother <- partnertypeactions[c(2,5,7, 6),] #subset from large dataframe ## added private landowner 
+privateother <- privateother %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total"))) # sum all those rows 
+rownames(privateother) <- c("C", "N", "R", "P" , "privateother") # set rownames 
+privateother <- privateother[c(5),]
+
+federal_other <- partnertypeactions[c(3,4),] #subset from large dataframe
+federal_other <- federal_other %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total")))
+rownames(federal_other) <- c("FO", "M", "federal_other") # set rownames 
+federal_other <- federal_other[c(3),]
+
+state_other <- partnertypeactions[c(8:10),]
+state_other <- state_other %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total")))
+rownames(state_other) <- c("SG", "SL", "SW", "state_other") # set rownames 
+state_other <- state_other[c(4),] # select row with total 
+
+#remove columns that just got deleted
+partnertypeactions <- partnertypeactions[-c(2:5,7:10, 6),] ## added private landowner 
+
+#combine all into new dataset 
+partnertypeactionsv1 <- rbind(partnertypeactions, state_other, federal_other, privateother)
+
+##### with all actions - have 33% of expected values less than 5
+
+## with Private landowners still in dataset... ##### trying to remove action 5 (livlihood and moral incetives)  --> now 22/70 so still 31% [if removing actions might also want to remove awarness and law enforcement]  ## 16/63 - 25%
+partnertypeactionsv2 <- partnertypeactionsv1
+partnertypeactionsv2 <- partnertypeactionsv2[,-c(5, 3)]
+
+### with private landowners combined with private other... original df19/66 = 28%. Remove col 5 14/60 = 23%... remove col 3 &5 = 9/54 = 16 ***** this is the only set up that works 
+
+chisq <- chisq.test(partnertypeactionsv2)
+chisq
+
+chisq$observed
+
+round(chisq$expected,2)
+
+round(chisq$residuals, 3)
+
+
+corrplot(chisq$residuals, is.cor = FALSE)
+
+contrib <- 100*chisq$residuals^2/chisq$statistic
+round(contrib, 3)
+corrplot(contrib, is.cor = FALSE)
 ```
 
 
+V3 - for 1/14/2021
+Split privat other/combine so have NGO + r , C + PL, Then combine actions so have law, awarness and econ together
+```{r}
+
+### modifying partner types 
+
+partnertypeactions <- finaldf
+partnertypeactions <- partnertypeactions[,c(4:14,16)] #only selecting partner types and actions
+partnertypeactions <- partnertypeactions %>% group_by(type_of_org) %>% summarise_each(funs(sum)) 
+partnertypeactions <- as.data.frame(partnertypeactions)
+
+rownames(partnertypeactions) <- partnertypeactions$type_of_org
+partnertypeactions$type_of_org <- NULL
+
+#combine
+
+privateother <- partnertypeactions[c(5,7),] #subset from large dataframe ## added private landowner 
+privateother <- privateother %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total"))) # sum all those rows 
+rownames(privateother) <- c("N", "R", "NGOR") # set rownames 
+privateothera <- privateother[c(3),]
+
+privateother <- partnertypeactions[c(2, 6),] #subset from large dataframe ## added private landowner 
+privateother <- privateother %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total"))) # sum all those rows 
+rownames(privateother) <- c("C", "P" , "CorpPrivate") # set rownames 
+privateotherb <- privateother[c(3),]
+
+
+federal_other <- partnertypeactions[c(3,4),] #subset from large dataframe
+federal_other <- federal_other %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total")))
+rownames(federal_other) <- c("FO", "M", "federal_other") # set rownames 
+federal_other <- federal_other[c(3),]
+
+state_other <- partnertypeactions[c(8:10),]
+state_other <- state_other %>%  bind_rows(summarise(., across(where(is.numeric), sum), across(where(is.character), ~ "Total")))
+rownames(state_other) <- c("SG", "SL", "SW", "state_other") # set rownames 
+state_other <- state_other[c(4),] # select row with total 
+
+#remove columns that just got deleted
+partnertypeactions <- partnertypeactions[-c(2:5,7:10, 6),] ## added private landowner 
+
+#combine all into new dataset 
+partnertypeactionsv4 <- rbind(partnertypeactions, state_other, federal_other, privateothera, privateotherb)
+
+
+### combine action columns
+partnertypeactionsv5 <- partnertypeactionsv4 %>% mutate("Behavioral_change" = rowSums(partnertypeactionsv4[,c(3:5)]))
+
+############## ** note loose row names when use mutate? 
+
+
+#remove old rows
+
+partnertypeactionsv5 <- partnertypeactionsv5[,-c(3:5)]
+
+
+chisq <- chisq.test(partnertypeactionsv5)
+chisq
+
+chisq$observed
+
+round(chisq$expected,2)
+
+## 13 below 5 here so 13/63 = 0.2063492 super close :/ 
+
+round(chisq$residuals, 3)
+
+
+corrplot(chisq$residuals, is.cor = FALSE)
+
+contrib <- 100*chisq$residuals^2/chisq$statistic
+round(contrib, 3)
+corrplot(contrib, is.cor = FALSE)
+
+
+```
+
+
+### Box plots 
+#### For Average degree
+```{r}
+
+
+tadjmat <- orgtype_adjmat
+rownames(tadjmat) <- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
+colnames(tadjmat)<- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
+diag(tadjmat) <- NA
+tadjmat[lower.tri(tadjmat)] <- NA
+tadjmat <- tadjmat %>% rownames_to_column()
+rname <- tadjmat[,c(1)]
+simp_tadjmat <- tadjmat %>% replace((. > 0),1)
+simp_tadjmat <- simp_tadjmat[,-c(1)]
+simp_tadjmat <- cbind(rname, simp_tadjmat) #was looking rowname wih replace function so simple hack to keep it here 
+tolist <- melt(simp_tadjmat, id = "rname")
+tnet <- graph_from_data_frame(d=subset(tolist, value>0), directed=F)
+
+ortypedeg <- (degree(tnet, v = V(tnet), mode = "total", loops = F))
+
+
+salfTmat <- tdf %*% df
+diag(salfTmat) <- NA 
+salfTmat[lower.tri(salfTmat)] <- NA
+#change to 1s and 0s so can get degree
+simplified_mat <- salfTmat %>% replace((. > 0),1)
+salfTmatlist <- simplified_mat %>% melt() 
+salfTnet <- graph_from_data_frame(d=subset(salfTmatlist, value>0), directed=F) 
+salfdeg <- (degree(salfTnet, mode = "total", loops = FALSE)) #normalize?
+
+
+
+EDmat <- tED %*% ED
+diag(EDmat) <- NA
+EDmat[lower.tri(EDmat)] <- NA
+#change to 1s and 0s so can get degree
+simp_EDmat <- EDmat %>% replace((. > 0),1)
+EDmatlist <- simp_EDmat %>% melt() 
+EDnet <- graph_from_data_frame(d=subset(EDmatlist, value>0), directed=F) 
+EDdeg <- (degree(EDnet, mode = "total", loops = FALSE) )
+
+boxplot(ortypedeg, salfdeg, EDdeg)
+
+
+jpeg(file = "output/FiguresForPaper_8_31/boxplot_Avg_Deg.jpg")
+boxplot(ortypedeg, salfdeg, EDdeg)
+#Save the file 
+dev.off()
+
+```
+
+****** start - so getting different calculations for these two BUT the average is different than expected 
+- Okay so if you remove the duplicate edges (half of the matrix) then the igraph degree calculations are the same as the NetIndices link density (which is what we want)
+
+
+#### For Average weighted degree
+```{r}
+
+
+tadjmat <- orgtype_adjmat
+rownames(tadjmat) <- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
+colnames(tadjmat)<- c("BLM", "Federal Other", "USFS", "USFWS", "Private Landowner", "State Land", "State Government", "Reserach","Military","Corporation", "State Wildlife", "NGO")
+diag(tadjmat) <- NA
+tadjmat[lower.tri(tadjmat)] <- NA
+tadjmat <- tadjmat %>% rownames_to_column()
+tolist <- melt(tadjmat, id = "rowname")
+tnet <- graph_from_data_frame(d=subset(tolist, value>0), directed=F) 
+E(tnet)$weight <- E(tnet)$value
+ortypedeg <- (strength(tnet, v = V(tnet), mode = "total", loops = F))
+
+
+salfTmat <- tdf %*% df
+diag(salfTmat) <- NA 
+salfTmat[lower.tri(salfTmat)] <- NA
+#change to 1s and 0s so can get degree
+salfTmatlist <- salfTmat %>% melt() 
+salfTnet <- graph_from_data_frame(d=subset(salfTmatlist, value>0), directed=F) 
+E(salfTnet)$weight <- E(salfTnet)$value
+salfdeg <- (strength(salfTnet, mode = "out", loops = FALSE)) #normalize?
+
+
+
+EDmat <- tED %*% ED
+diag(EDmat) <- NA
+EDmat[lower.tri(EDmat)] <- NA
+#change to 1s and 0s so can get degree
+EDmatlist <- EDmat %>% melt() 
+EDnet <- graph_from_data_frame(d=subset(EDmatlist, value>0), directed=F) 
+E(EDnet)$weight <- E(EDnet)$value
+EDdeg <- (strength(EDnet, mode = "total", loops = FALSE, weights = E(EDnet)$weight) )
+
+boxplot(ortypedeg, salfdeg, EDdeg)
+
+
+## writing to pdf
+
+jpeg(file = "output/FiguresForPaper_8_31/boxplot_AvgWeightedDeg.jpg")
+boxplot(ortypedeg, salfdeg, EDdeg)
+#Save the file 
+dev.off()
+#while (!is.null(dev.list()))  dev.off()
+
+```
+
+
+
+#### putting together groups, partners and species
+ --> for salafsky dataset (chose because data frame lends itself nicely)
+```{r}
+
+# put together dataframe where have partner | all species working on 
+
+allnet <- orgtyp_done
+#remove replicated rows (was only done for where needed to double list org types )
+allnet <- allnet[,-c(16)]
+allnet <- distinct(allnet)
+allnet <- allnet[,c(1,3,15)]
+### get rid of repeating partner names for same species so that don't get list in result 
+allnet2 <- allnet %>% group_by(Scientific.name, Common.name) %>% distinct(partner.in.agreement)
+## Didn't need dumb loop!!!
+change2 <-  allnet2 %>% pivot_wider(names_from = partner.in.agreement, values_from = Scientific.name)
+
+
+change3 <- t(change2)
+
+## need to figure out how
+change4 <- change3 %>%  melt()
+change4[which(change4$Var1 == "Common.name"),3] <- NA
+change4 <- change4[-which(is.na(change4$value)),]
+
+change4$Var2 <- NULL
+
+
+
+change4 <- change4 %>% 
+     group_by(Var1) %>% 
+     mutate(bars_by_foo = paste0(value, collapse = ", "))
+
+change4$value <- NULL
+
+#distinct(change4, Var1, .keep_all = TRUE)
+
+distinct_data <- distinct(change4)
+
+
+salfTnet <- graph_from_data_frame(d=subset(salfTmatlist, value>0), directed=F) 
+
+#################### For edge betweeness
+
+## not for entire graph but for edges that are most likely “between” communities
+ebc <- edge.betweenness.community(salfTnet)
+#ceb <- cluster_edge_betweenness(salfTnet) ## I think this is the same function? Getting the same results
+
+com <-membership(ebc)
+com <- as.data.frame(cbind(V(salfTnet),ebc$membership))
+com <- com %>% rownames_to_column()
+
+com$V1 <- NULL
+colnames(com) <- c("Var1", "V2") #changing col names so can join 
+
+#put together
+salf_ebc <- com %>% full_join(distinct_data, by = "Var1")
+salf_ebc <- salf_ebc %>% arrange(V2)
+
+
+write.csv(salf_ebc, file ="output/tables/Salafsky_edge-betweeness-community.csv") 
+
+
+
+################### For Walktrap 
+
+wtc <- walktrap.community(salfTnet)
+
+com <-membership(wtc)
+com <- as.data.frame(cbind(V(salfTnet),wtc$membership))
+com <- com %>% rownames_to_column()
+
+com$V1 <- NULL
+colnames(com) <- c("Var1", "V2") #changing col names so can join 
+
+#put together
+salf_member_walk <- com %>% full_join(distinct_data, by = "Var1")
+
+salf_member_walk <- salf_member_walk %>% arrange(V2)
+
+write.csv(salf_member_walk, file ="output/tables/Salafsky_walktrap-community.csv") 
+
+
+```
+great, so it looks like mainly getting grouped by spcies, just repeat this for other groupings/datasets as appropriate 
+
+For entire dataset 
+```{r}
+###### Need to set up first.. 
+## Trying to get list of partners and species they work on.. 
+
+
+## Starting with loop and trying to tweck
+
+# number count 
+pcount <- newpdata[-c(91,92),]
+pcount <- pcount[-which(is.na(pcount$partner_names)),]
+
+FedAg_w_collab <- pcount[,c(1,2,5)]
+
+EditedData <- FedAg_w_collab
+
+for (i in 1:nrow(EditedData)) {
+  dvec <- trimws(strsplit(EditedData$FedAg_w_collab[i],split=",")[[1]])
+  for (dname in dvec) {
+    if (dname%in%colnames(EditedData)) {
+      EditedData[i, dname] <- 1             
+    } else {
+      EditedData[dname] <- NA
+      EditedData[i, dname] <- 1                                    
+    }
+  }
+}
+
+yikes <- EditedData
+
+yikes <- t(yikes)
+colnames(yikes) <- yikes[1,]
+
+## try removing top rows to see if makes a difference
+yikes <- yikes[-c(1:3),] #didn't work... 
+
+
+## Issue is that it's not numeric now... 
+yikes[,c(1:52)] <- sapply(yikes[ ,c(1:52)], as.numeric)
+
+
+#yikes %>%
+ # row_to_names(row_number = 1)
+
+#ones with column names (not sure how this works... source of code: https://stackoverflow.com/questions/23574028/how-to-replace-row-values-with-column-name-in-r)
+ones <- which(yikes==1, arr.ind=T)
+yikes[ones]<-colnames(yikes)[ones[,2]]
+
+yikesa <- yikes
+
+
+######## so now this line isn't working.. :/ 
+
+#yikesa$combi <- apply(yikesa, 1, function(x) paste(x[is.na(x)], collapse = ", ")) #for each row, combines all columns into one cell --> this didn't work 
+
+yikesa <- as.data.frame(yikesa)
+
+paste_noNA <- function(x,sep=", ") {
+gsub(", " ,sep, toString(x[!is.na(x) & x!="" & x!="NA"] ) ) } ## this did! 
+
+sep = ", "
+yikesa$x <- apply( yikesa[ , c(1:52) ] , 1 , paste_noNA , sep=sep)
+
+
+yikesa <- rownames_to_column(yikesa)
+
+## remove extra columns and rows
+yikesa <- yikesa[,c(1,54)]
+
+colnames(yikesa) <- c("Var1", "Species")
+
+
+############ Now get community detection functions 
+
+EDnet <- graph_from_data_frame(d=subset(EDmatlist, value>0), directed=F) 
+
+
+
+#################### For edge betweeness
+
+## not for entire graph but for edges that are most likely “between” communities
+ebc <- edge.betweenness.community(EDnet)
+#ceb <- cluster_edge_betweenness(salfTnet) ## I think this is the same function? Getting the same results
+
+com <-membership(ebc)
+com <- as.data.frame(cbind(V(EDnet),ebc$membership))
+com <- com %>% rownames_to_column()
+
+com$V1 <- NULL
+colnames(com) <- c("Var1", "V2") #changing col names so can join 
+
+#put together
+Entire_ebc <- com %>% full_join(yikesa, by = "Var1")
+Entire_ebc <- Entire_ebc %>% arrange(V2)
+
+
+#write.csv2(as.numeric(com), file ="community.csv") ** delete this file.. it didn't work
+
+write.csv(Entire_ebc, file ="output/tables/entire-dataset-edge-betweeness-community.csv") 
+
+
+################### For Walktrap 
+
+wtc <- walktrap.community(EDnet)
+
+com <-membership(wtc)
+com <- as.data.frame(cbind(V(EDnet),wtc$membership))
+com <- com %>% rownames_to_column()
+
+com$V1 <- NULL
+colnames(com) <- c("Var1", "V2") #changing col names so can join 
+
+#put together
+entire_walk <- com %>% full_join(yikesa, by = "Var1")
+
+entire_walk <- entire_walk %>% arrange(V2)
+
+
+write.csv(entire_walk, file ="output/tables/entiredataset_walktrap-community.csv")
+
+
+```
+
+
+Print out centrality values for entire matrix 
+
+```{r}
+cent <- betweenness(EDnet, directed=F, weights= E(EDnet)$weight)
+cent <- as.data.frame(cent)
+cent <- cent %>% arrange(cent)
+cent <- cent %>% rownames_to_column()
+
+
+write.csv(cent, file ="output/tables/centrality-calc-w-betweeness.csv")
+
+eb <- edge_betweenness(EDnet, directed=F, weights=E(EDnet)$weight) ## this doesn't give the partner names.. 
+
+#centr_betw(EDnet, directed=T, normalized=T) ## this gives out put but changes when change directed (I don't think our network is directed)
+
+
+cent_eign <- eigen_centrality(EDnet, directed=F, weights=E(EDnet)$weight)
+cent_eign <- as.data.frame(cent_eign)
+df <- cent_eign %>% arrange(-vector)
+df <- df %>% rownames_to_column()
+df <- df[,1:2]
+
+#centr_eigen(EDnet, directed=F, normalized=T)
+
+write.csv(df, file ="output/tables/centrality-calc-w-eigen.csv")
+
+```
+
+
+New question - if we treat the grouped/multipartner strings as a type of partner or remove them from the count all together do we get different results?
+
+in short.. no 
+in fishers, USFS is now less than .05 but get the same value each time? Might be a mistake somewhere
+
+```{r}
+
+## starting with "orgtyp_done" which was made in Partnerships_draft_code.Rmd .. this isn't going to be exact because didn't deal with duplicated partnertypes or check for bugs in code but should be aproximation 
+
+
+#first need to remove multipartner string split and rejoin with older dataset 
+
+orgtyp_done2 <- orgtyp_done
+orgtyp_done2 <- orgtyp_done2 %>% group_by(Common.name, agreement.number, partner.in.agreement)
+
+orgtyp_base <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "") #issue was that "" is coming up instead of NA
+## file name got changed
+
+orgtyp_base <- orgtyp_base[,c(1:4, 6,13:23)]
+
+orgtyp_base <- orgtyp_base %>%
+  filter_all(any_vars(grepl(',', .))) ## so this has all multi-species rows 
+
+
+### ### take subset of multi species rows, split them into individual rows and then remove these rows from orgtyp_done dataset, then add multispecies rows in
+
+## take these rows and split on comma 
+df2 <- separate_rows(orgtyp_base, partner.in.agreement, sep = ",")
+# returns string w/o leading or trailing whitespace
+trim <- function (x) gsub("^\\s+|\\s+$", "", x)
+df2$partner.in.agreement <- trim(df2$partner.in.agreement)
+
+## now remove these rows from where they are found in 
+
+df2 <- df2 %>% group_by(Common.name, agreement.number, partner.in.agreement)
+
+
+# return all rows where there were no partners from split strings
+removed <- anti_join(orgtyp_done2, df2)
+
+#join this with the multi partner strings 
+
+new_orgtyp2 <- full_join(orgtyp_base, removed)
+
+new_orgtyp2[which(is.na(new_orgtyp2$type_of_org)),17] <- "group"
+
+
+### ### ### now have df set up can set up org type matrix and re calculate tests 
+## note have two datasets
+# removed has no multi 
+# new_orgtyp2 has multi as it's own group 
+
+new_orgtyp3 <- new_orgtyp2[,c(2,3,17)] 
+
+tidy_orgtyp <- new_orgtyp3 %>% group_by(Scientific.name) %>% pivot_wider(names_from = type_of_org, values_from = Scientific.name)
+
+orgtyp <- as.data.frame(tidy_orgtyp)
+
+e <- tidy_orgtyp %>% mutate_all(na_if, "NULL")
+#setting column names so that they stop moving everytime 
+e <- e[,c("Common.name", "group", "BLM","FO","USFS","USFWS","P","SL","SG","R","M","C","SW","N")]
+f <- as.data.frame(e)
+f[!is.na(f)] <- 1
+f[is.na(f)] <- 0
+
+#remove first column 
+f <- f[,-c(1)]
+
+### make adjacency matrix 
+f <- as.matrix(f) 
+#indexing is werid and matrix mult won't work so will try and write to csv 
+
+write.csv(f, "/usr/local/bin/store/partner_rff/output/orgtype_adjmat_noM_trial.csv")
+
+g <- read.csv(paste0("/usr/local/bin/store/partner_rff/output/orgtype_adjmat_noM_trial.csv"), stringsAsFactors = FALSE)
+#remove first column 
+g <- g[,-c(1)]
+
+tg <- (t(g))
+
+write.csv(tg, "/usr/local/bin/store/partner_rff/output/orgtype_adjmat_part2_noM_trial.csv")
+
+h <- read.csv(paste0("/usr/local/bin/store/partner_rff/output/orgtype_adjmat_part2_noM_trial.csv"), stringsAsFactors = FALSE)
+#remove first column 
+
+rownames(h) <- h$X #set partnernames as rownames
+h[,1] <- NULL #then remove column 
+
+orgtype_adjmat <- as.matrix(h) %*% as.matrix(g)
+
+
+### ### ### ### okay so now can do other measurements 
+
+### ### org-org grouping 
+
+data <- orgtype_adjmat
+data <- as.data.frame(data)
+
+diag(data) <- NA
+
+data$sumall <- rowSums(data, na.rm = T)
+
+## So have rowsum and can calculate the sum without that cell but subtracting from rowsum (but also doing to all cells in each column at once)
+data <- data %>% mutate(group1 = sumall - data[,1])
+data <- data %>% mutate(BLM1 = sumall - data[,2])
+data <- data %>% mutate(FO1 = sumall - data[,3])
+data <- data %>% mutate(USFS1 = sumall - data[,4])
+data <- data %>% mutate(USFWS1 = sumall - data[,5])
+data <- data %>% mutate(P1 = sumall - data[,6])
+data <- data %>% mutate(SL1 = sumall - data[,7])
+data <- data %>% mutate(SG1 = sumall - data[,8])
+data <- data %>% mutate(R1 = sumall - data[,9])
+data <- data %>% mutate(M1 = sumall - data[,10])
+data <- data %>% mutate(C1 = sumall - data[,11])
+data <- data %>% mutate(SW1 = sumall - data[,12])
+data <- data %>% mutate(N1 = sumall - data[,13])
+
+# The set up each row subset so have original cell and sum - that cell in same row 
+## For each row, will have an NA where the parter type would have been working with itself so remove that 
+
+group <- data.frame((data[c(1:13),1]), (data[c(1:13),15]))
+group <- group[-which(is.na(group$X.data.c.1.13...1..)),]
+
+BLM <- data.frame((data[c(1:13),2]), (data[c(1:13),16]))
+BLM <- BLM[-which(is.na(BLM$X.data.c.1.13...2..)),]
+FO <- data.frame((data[c(1:13),3]), (data[c(1:13),17]))
+FO <- FO[-which(is.na(FO$X.data.c.1.13...3..)),]
+USFS <- data.frame((data[c(1:13),4]), (data[c(1:13),18]))
+USFS <- USFS[-which(is.na(USFS$X.data.c.1.13...4..)),]
+USFWS <- data.frame((data[c(1:13),5]), (data[c(1:13),19]))
+USFWS <- USFWS[-which(is.na(USFWS$X.data.c.1.13...5..)),]
+P <- data.frame((data[c(1:13),6]), (data[c(1:13),20]))
+P <- P[-which(is.na(P$X.data.c.1.13...6..)),]
+SL <- data.frame((data[c(1:13),7]), (data[c(1:13),21]))
+SL <- SL[-which(is.na(SL$X.data.c.1.13...7..)),]
+SG <- data.frame((data[c(1:13),8]), (data[c(1:13),22]))
+SG <- SG[-which(is.na(SG$X.data.c.1.13...8..)),]
+R <- data.frame((data[c(1:13),9]), (data[c(1:13),23]))
+R <- R[-which(is.na(R$X.data.c.1.13...9..)),]
+M <- data.frame((data[c(1:13),10]), (data[c(1:13),24]))
+M <- M[-which(is.na(M$X.data.c.1.13...10..)),]
+C <- data.frame((data[c(1:13),11]), (data[c(1:13),25]))
+C <- C[-which(is.na(C$X.data.c.1.13...11..)),]
+SW <- data.frame((data[c(1:13),12]), (data[c(1:13),26]))
+SW <- SW[-which(is.na(SW$X.data.c.1.13...12..)),]
+N <- data.frame((data[c(1:13),13]), (data[c(1:13),27]))
+N <- N[-which(is.na(N$X.data.c.1.13...13..)),]
+
+
+# And to the fisher exact test on each 
+fishgroup <- fisher.test(group, workspace = 2e8) ###simulate.p.value=TRUE,B=1e7)
+fishBLM <- fisher.test(BLM, workspace = 2e8) ###simulate.p.value=TRUE,B=1e7)
+fishFO <- fisher.test(FO, workspace = 2e8)
+fishUSFS <- fisher.test(USFS, workspace = 2e8)
+fishUSFWS <- fisher.test(USFWS, workspace = 2e8) ## same error
+fishP <- fisher.test(P, workspace = 2e8) ## same error
+fishSL <- fisher.test(SL, workspace = 2e8)
+fishSG <- fisher.test(SG, workspace = 2e8)
+fishR <- fisher.test(R, workspace = 2e8)
+fishM <- fisher.test(M, workspace = 2e8)
+fishC <- fisher.test(C, workspace = 2e8)
+fishSW <- fisher.test(SW, workspace = 2e8) ## same error
+fishN <- fisher.test(N, workspace = 2e8)
+
+Pvalueforindividualfishers <- data.frame(fishBLM$p.value, fishFO$p.value, fishUSFS$p.value, fishUSFWS$p.value, fishP$p.value, fishSL$p.value, fishSG$p.value, fishR$p.value, fishM$p.value, fishC$p.value, fishSW$p.value, fishN$p.value)
+
+Pvalueforindividualfishers <- t(Pvalueforindividualfishers)
+
+
+
+
+
+
+
+######## remove group thing 
+
+data <- orgtype_adjmat
+data <- as.data.frame(data)
+
+data <- data[-c(1), -c(1)]
+
+diag(data) <- NA
+
+data$sumall <- rowSums(data[c(1:12),c(1:12)], na.rm = T)
+
+## So have rowsum and can calculate the sum without that cell but subtracting from rowsum (but also doing to all cells in each column at once)
+
+data <- data %>% mutate(BLM1 = sumall - data[,1])
+data <- data %>% mutate(FO1 = sumall - data[,2])
+data <- data %>% mutate(USFS1 = sumall - data[,3])
+data <- data %>% mutate(USFWS1 = sumall - data[,4])
+data <- data %>% mutate(P1 = sumall - data[,5])
+data <- data %>% mutate(SL1 = sumall - data[,6])
+data <- data %>% mutate(SG1 = sumall - data[,7])
+data <- data %>% mutate(R1 = sumall - data[,8])
+data <- data %>% mutate(M1 = sumall - data[,9])
+data <- data %>% mutate(C1 = sumall - data[,10])
+data <- data %>% mutate(SW1 = sumall - data[,11])
+data <- data %>% mutate(N1 = sumall - data[,12])
+
+# The set up each row subset so have original cell and sum - that cell in same row 
+## For each row, will have an NA where the parter type would have been working with itself so remove that 
+BLM <- data.frame((data[c(1:12),1]), (data[c(1:12),14]))
+BLM <- BLM[-which(is.na(BLM$X.data.c.1.12...1..)),]
+FO <- data.frame((data[c(1:12),2]), (data[c(1:12),15]))
+FO <- FO[-which(is.na(FO$X.data.c.1.12...2..)),]
+USFS <- data.frame((data[c(1:12),3]), (data[c(1:12),16]))
+USFS <- USFS[-which(is.na(USFS$X.data.c.1.12...3..)),]
+USFWS <- data.frame((data[c(1:12),4]), (data[c(1:12),17]))
+USFWS <- USFWS[-which(is.na(USFWS$X.data.c.1.12...4..)),]
+P <- data.frame((data[c(1:12),5]), (data[c(1:12),18]))
+P <- P[-which(is.na(P$X.data.c.1.12...5..)),]
+SL <- data.frame((data[c(1:12),6]), (data[c(1:12),19]))
+SL <- SL[-which(is.na(SL$X.data.c.1.12...6..)),]
+SG <- data.frame((data[c(1:12),7]), (data[c(1:12),20]))
+SG <- SG[-which(is.na(SG$X.data.c.1.12...7..)),]
+R <- data.frame((data[c(1:12),8]), (data[c(1:12),21]))
+R <- R[-which(is.na(R$X.data.c.1.12...8..)),]
+M <- data.frame((data[c(1:12),9]), (data[c(1:12),22]))
+M <- M[-which(is.na(M$X.data.c.1.12...9..)),]
+C <- data.frame((data[c(1:12),10]), (data[c(1:12),23]))
+C <- C[-which(is.na(C$X.data.c.1.12...10..)),]
+SW <- data.frame((data[c(1:12),11]), (data[c(1:12),24]))
+SW <- SW[-which(is.na(SW$X.data.c.1.12...24..)),]
+N <- data.frame((data[c(1:12),12]), (data[c(1:12),25]))
+N <- N[-which(is.na(N$X.data.c.1.12...12..)),]
+
+
+# And to the fisher exact test on each 
+
+fishBLM <- fisher.test(BLM, workspace = 2e8) ###simulate.p.value=TRUE,B=1e7)
+fishFO <- fisher.test(FO, workspace = 2e8)
+fishUSFS <- fisher.test(USFS, workspace = 2e8)
+fishUSFWS <- fisher.test(USFWS, workspace = 2e8) ## same error
+fishP <- fisher.test(P, workspace = 2e8) ## same error
+fishSL <- fisher.test(SL, workspace = 2e8)
+fishSG <- fisher.test(SG, workspace = 2e8)
+fishR <- fisher.test(R, workspace = 2e8)
+fishM <- fisher.test(M, workspace = 2e8)
+fishC <- fisher.test(C, workspace = 2e8)
+fishSW <- fisher.test(SW, workspace = 2e8) ## same error
+fishN <- fisher.test(N, workspace = 2e8)
+
+Pvalueforindividualfishers <- data.frame(fishBLM$p.value, fishFO$p.value, fishUSFS$p.value, fishUSFWS$p.value, fishP$p.value, fishSL$p.value, fishSG$p.value, fishR$p.value, fishM$p.value, fishC$p.value, fishSW$p.value, fishN$p.value)
+
+Pvalueforindividualfishers <- t(Pvalueforindividualfishers)
+
+
+
+
+
+### ### org-action fishers
+
+partnertypeactions <- new_orgtyp2[,c(6:17)] #only selecting partner types and actions
+partnertypeactions <- partnertypeactions %>% group_by(type_of_org) %>% summarise_each(funs(sum)) 
+
+orgaction <- partnertypeactions
+rownames(orgaction) <- orgaction$type_of_org
+## set up so have orgs as units (columns)
+orgaction <- t(orgaction)
+
+orgaction <- orgaction[-c(1),]#remove the first row
+
+## make numeric 
+orgaction <- as.data.frame(orgaction)
+#orgaction$BLM <- as.numeric(as.character(orgaction$BLM)) This works for one column at a time but code below does all at once
+indx <- sapply(orgaction, is.factor)
+orgaction[indx] <- lapply(orgaction[indx], function(x) as.numeric(as.character(x)))
+
+chisq <- chisq.test(orgaction)
+yeet <- round(chisq$expected,2)
+
+fisher.test(orgaction, simulate.p.value = T)
+## try removing all multi partner groups
+orgaction <- orgaction[,-c(4)]
+fisher.test(orgaction, simulate.p.value = T)
+
+```
 
 
 
