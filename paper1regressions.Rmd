@@ -242,19 +242,22 @@ var(allnumbers, na.rm = TRUE) ## this works!
 vif(lm(Partners ~ shannon_h + Area + percentpublic + Employment + plants +vert +actsum +actpartsum + Threats,data = allnumbers))
 
 ```
+Some people use 2 as threshold for VIFS
+need to do VIFs for final model (for each model)
 
+bivarite plots of variables with highest vifs 
 
 Regressions to try 
 - Original model in thesis
 - change nsum with shannon_h and switch taxa 
 - add actions 
 
-Others?? 
+Others?? --> I think I had set up other regressions with different variations of partners count_wo_FedAg_w_collab and count_w_FedAg_wo_collab [see original newpdata] and the result was all that threats had one *
 
 
 Original thesis model 
 ```{r}
-lm1 <- lm(log(Partners) ~ vert + percentpublic + Area + shannon_h + Threats, data=allnumbers)
+lm1 <- lm(log(Partners) ~ plants + percentpublic + Area + Employment + Threats, data=allnumbers)
 
 summary(lm1)
 
@@ -273,7 +276,7 @@ AIC(lm1)
 
 Switching two predictors 
 ```{r}
-lm2 <- lm(log(Partners) ~ plants + percentpublic + Area + Employment + Threats, data=allnumbers)
+lm2 <- lm(log(Partners) ~ vert + percentpublic + Area + shannon_h + Threats, data=allnumbers)
 
 summary(lm2)
 
