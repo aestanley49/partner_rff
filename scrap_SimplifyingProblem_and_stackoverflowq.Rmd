@@ -1,0 +1,295 @@
+---
+title: "stackoverflowQ"
+author: "Annabelle"
+date: "December 18, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Lets try a smaller version of the problem 
+
+
+#set up dataset 
+```{r}
+## change2 was made on line 219 in NetworkStatistics.Rmd
+
+df <- change2
+
+#select fewer columns 
+df <- df[,c(1,2,4,7,25)]
+
+df <- cbind(df[!sapply(df, is.list)], 
+      (t(apply(df[sapply(df, is.list)], 1, unlist))))
+#now go from character to numeric
+
+for(i in 1:5){
+  df[,i] <- as.numeric(df[,i])  # silly hack because it wouldn't let me change columns to numeric in one go??
+}
+
+tdf <- t(df)
+df <- t(tdf) #another hack to make numeric
+
+#matrix!
+
+
+## *** start stackoverflow q here ****
+salfTmat <- tdf %*% df
+
+kable(salfTmat)
+
+
+salfTmat[lower.tri(salfTmat)] <- NA #remove one side of adjacency matrix
+diag(salfTmat) <- NA #remove diagonal 
+
+salfTmatlist1 <- salfTmat %>% melt() #change into list
+salfTmatlist1 <- salfTmatlist1[-which(is.na(salfTmatlist1$value)),] #remove na values
+
+salfTnet1 <- graph_from_data_frame(d=salfTmatlist1, directed=T) #creat igraph object
+
+E(salfTnet)$arrow.size <- .02 #set arrow size
+
+E(salfTnet)$width <- E(salfTnet)$value #set node size
+
+salfTmat <- tdf %*% df #prep setting node names
+node.size <- diag(salfTmat)
+cname <- colnames(salfTmat)
+
+node.size<-setNames(node.size, cname) #setting node names here
+
+plot(salfTnet, vertex.color="white", edge.color= "black", vertex.label.color="black", rescale=F, vertex.size=node.size, layout=layout_in_circle) 
+```
+
+Trying to figure out calc differences 
+```{r}
+
+#reset matrix
+
+salfTmat <- tdf %*% df
+#salfTmat[lower.tri(salfTmat)] <- NA #remove one side of adjacency matrix
+diag(salfTmat) <- NA #remove diagonal 
+salfTmatlist <- salfTmat %>% melt() #change into list
+salfTmatlist <- salfTmatlist[-which(is.na(salfTmatlist$value)),] #remove na values
+
+
+### 3 ways to creat igraph object
+Partner_Network <- graph_from_adjacency_matrix(salfTmat) ##note - using different inputs here... 
+salfTnet <- graph_from_data_frame(d=salfTmatlist, directed=F) 
+net2 <- graph_from_incidence_matrix(salfTmat) ## wrong number of nodes (somehow doubled)
+
+
+### so 3 degree calculations
+mean(degree(salfTnet), mode = "total") 
+mean(degree(net2), mode = "in") 
+mean(degree(Partner_Network), mode = "total") ## seems to be calculating average weighted degree but still not sure why this is double my calculation... probably because includes diagonal and other half of adj matrix... 
+
+
+## my calculation of average degree.. 
+added <- rowSums(salfTmat, na.rm = TRUE) #this gives the correct number of edges across each node
+mean(added) #comment above is why values are differenet 
+
+# this is 1/2 of mean(degree(Partner_Network), mode = "out") when we reset the matrix to 1s and 0s to create a new igraph object to run calc on 
+# In other words 
+  ## mean(degree(Partner_Network), mode = "out") creates average weighted degree
+  ## when transform matrix into 1s and 0s : 
+      simplified_mat <- salfTmat %>% replace((. > 0),1)
+  ## and create new igraph object 
+      Partner_Network <- graph_from_adjacency_matrix(simplified_mat)
+  ## result wil be average degree 
+      mean(degree(Partner_Network), mode = "out")
+
+
+###### Look at the specific elements within igraph object
+
+##V(igraph) # nodes
+
+V(Partner_Network) 
+V(salfTnet)
+
+## E(igraph) # edges
+
+E(Partner_Network) #Number of edges in Partner_Networkis 84 bc thats the sum of the entire network 
+E(salfTnet) # this changes based on matrix modifications
+
+### ******** pick up here to figure out if should be modifying matrix (and see how visualization changes...)
+
+
+### First step tm.. work through the basics of this tutorial  - http://pablobarbera.com/big-data-upf/html/02a-networks-intro-visualization.html
+# and make sure that information is all set correctly 
+
+# also want to see why getting different results based on what use to set igraph object.. 
+
+
+#this didn't work 
+
+salfTmat <- tdf %*% df
+diag(salfTmat) <- NA
+
+simplified_mat <- salfTmat %>% replace((. > 0),1) #change to 1s and 0s so can get degree
+added <- rowSums(simplified_mat, na.rm = TRUE) #this gives the correct number of edges across each node
+mean(added) #comment above is why values are differenet 
+
+```
+
+<br>
+
+<br>
+
+Average degree: Every node has # of edges conected so accross all nodes in network, on average what is the # of edges connected to each node 
+```{r}
+
+```
+
+
+Average weighted degree ** skip this in stack overflow ** 
+```{r}
+added <- rowSums(salfTmat, na.rm = TRUE) #this gives the correct number of edges across each node
+
+#now find the average
+##sum(added)/130 #131-1 is number of nodes where the same node isn't connected to itself
+
+mean(added) #comment above is why values are differenet 
+```
+
+Modularity
+```{r}
+salfTnet <- graph_from_data_frame(d=salfTmatlist, directed=F) 
+cl <- clusters(salfTnet)$membership
+modularity(salfTnet, cl)
+
+##membership(salfTnet)
+
+modularity(Partner_Network, V(Partner_Network))
+
+modularity(salfTnet, V(salfTnet))
+```
+note: make membership vectors that are type categories - run newman girvan function first 
+run on entire dataset 
+future ref - https://rpubs.com/shestakoff/sna_lab5
+
+"The modularity function expects that the node grouping variable is numbered
+starting at 1 (and in fact the current version of the function will crash if community
+membership has zeros.)"
+
+
+centrality - source: 
+
+centrality: Eigenvector
+```{r}
+eigen_centrality(salfTnet, directed=F, weights=NA)
+
+#centr_eigen(net, directed=T, normalized=T)
+```
+
+centrality: Betweenness
+```{r}
+betweenness(salfTnet, directed=F, weights=NA)
+
+edge_betweenness(salfTnet, directed=F, weights=NA)
+
+centr_betw(salfTnet, directed=F, normalized=T) ## this gives out put but changes when change directed (I don't think our network is directed)
+```
+
+
+
+New centrality calc trials
+```{r}
+#try setting igraph object from different object type 
+Partner_Network <- graph.data.frame(salfTmat,directed=FALSE)
+
+
+centr_degree(Partner_Network, mode = "all")
+```
+
+<br>
+<br>
+
+<br>
+
+
+Layout of question asked on stackoverflow 
+
+
+
+dataframe
+```{r}
+mat <- salfTmat
+```
+
+calculate average weighted degree 
+(no 1s and 0s)
+```{r}
+## "by hand" 
+
+added <- rowSums(mat, na.rm = TRUE) #this gives the correct number of edges across each node
+mean(added)
+
+
+#salfTmat[lower.tri(salfTmat)] <- NA #remove one side of adjacency matrix
+diag(mat) <- NA #remove diagonal 
+
+salfTmatlist <- mat %>% melt() #change into list
+#salfTmatlist <- salfTmatlist[-which(is.na(salfTmatlist$value)),] #remove na values
+
+#creat igraph objects
+salfTnet <- graph_from_data_frame(d=salfTmatlist, directed=T) 
+Partner_Network <- graph_from_adjacency_matrix(mat)
+
+mean(degree(salfTnet), mode = "total") 
+mean(degree(Partner_Network), mode = "total")
+```
+
+
+
+
+I'm trying to calculate different network statistics with the following (demo) data
+
+|                      | BLM| NPS| USFWS| USFS| Bureau of Reclamation|
+|:---------------------|---:|---:|-----:|----:|---------------------:|
+|BLM                   |  10|   1|     8|    2|                     1|
+|NPS                   |   1|   3|     2|    0|                     0|
+|USFWS                 |   8|   2|    22|    5|                     2|
+|USFS                  |   2|   0|     5|    5|                     0|
+|Bureau of Reclamation |   1|   0|     2|    0|                     2|
+
+
+When it came to running network statistics I've run into a couple problems. 
+
+- The first part of my question is why the following igraph objects have different values for calculating average weighted degree (the average # of edges connected to each node / total number of nodes) 
+
+```    
+diag(mat) <- NA #remove diagonal (this was done because to creating an adjacency matrix from edge & node list "igraph[]" leaves the diagonal blank. Source - http://pablobarbera.com/big-data-upf/html/02a-networks-intro-visualization.html
+
+salfTmatlist <- mat %>% melt() #change into list
+
+#create igraph objects
+salfTnet <- graph_from_data_frame(d=salfTmatlist, directed=T) 
+Partner_Network <- graph_from_adjacency_matrix(mat)
+
+#calculate average weighted degree
+mean(degree(salfTnet), mode = "total") 
+mean(degree(Partner_Network), mode = "total")  
+
+#checking calculations by hand
+added <- rowSums(mat, na.rm = TRUE) #this gives the correct number of edges across each node
+mean(added)
+```
+
+The check calculation seems to be the same as the calculation done with the igraph object set from the adjacency matrix but I don't know why setting the igraph object from the same data with different functions makes a difference in the calculation. 
+
+- I also can't check my work with the modularity function (and I get different answer here again)
+```
+modularity(Partner_Network, V(Partner_Network))
+
+modularity(salfTnet, V(salfTnet))
+```
+
+Any thoughts on the following:
+- why there are different values from different functions applied to the same data?
+- Which calculations are correct? (based on the check it seems like I should stick to the igraph object generated from "graph_from_adjacency_matrix" but I'm not sure)
+
+
+
