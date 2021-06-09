@@ -19,6 +19,8 @@ functions.dir <- "./functions" # directory for functions
 
 source(file.path(functions.dir,'FormatData.R')) # any functions that are called up by this markdown document need to be sourced here
 source(file.path(functions.dir,'cleaning_salafsky.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'FormatwCollabs.R')) # any functions that are called up by this markdown document need to be sourced here
+source(file.path(functions.dir,'multipartnerstrings.R')) # any functions that are called up by this markdown document need to be sourced here
 
 ## general functions that need to be read in. I like to put them at the top so they are easier to deal with when they change version (inevitable)
 library(plyr) #for function "join_all" also note, there can be issue loading this after dplyr (which is why it's at the top)
@@ -47,6 +49,15 @@ tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_cas
                   clean_names()
 ##
 
+tableofPandA <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "", #issue was that "" is coming up instead of NA
+               strip.white=TRUE)
+docspef <- multipartnerstrings(tableofPandA)
+
+PartnersDataModified <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/PartnersDataModified.csv"), 
+                                stringsAsFactors = FALSE, na = c("", " ", "NA"))
+newpdata <- FormatwCollabs(PartnersDataModified)
+
+
 ##orgtyp_base <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "") #issue was that "" is coming up instead of NA
 ## file name got changed
 
@@ -55,7 +66,7 @@ orgtype <- orgtyp_base ## taken from Data_exploration script
 ```
 
 join org type information to split multipartner strings produced in function (not that isn't set up correctly yet)
-```{r}
+```{r eval=FALSE}
 data <- nondocspef
 data$partner.in.agreement
 
@@ -104,7 +115,7 @@ threats <- left_join(allspindf, tthreats, join_by = Sciname)
 
 
 
-```{r}
+```{r eval=FALSE, include = FALSE}
 ############### make graph for each threat
 
 #habitat
@@ -163,7 +174,7 @@ plot2 <- qplot(1)
 
 Stacked barplot for threat types (full values)
 
-```{r}
+```{r eval=FALSE, include = FALSE}
 
 hab_m <- hab_m %>% group_by(variable) %>% summarise_each(funs(sum)) 
 over_m <- over_m %>% group_by(variable) %>% summarise_each(funs(sum)) 
@@ -187,7 +198,7 @@ geom_bar(position = "stack", stat="identity") + theme(axis.text.x = element_text
 Change into proportional amount 
 ## This is where the knit issue is coming - doesn't like where joined$variable is being overwritten 
 
-```{r eval=FALSE}
+```{r eval=FALSE, include = FALSE}
 total <- colSums(join_melted[,c(2:7)])
 joined <- bind_rows(join_melted, total)
 joined$variable <- c("LW_Mng","Sp_Mng","Awareness ","law","econ","Cons_Planning","Policy","Research","Education " ,"Inst_Dev ","funding" , "sum")
@@ -214,7 +225,7 @@ ggplot(meltlinked, aes(x = threat, y = value, fill = action)) +
 ```
 
 
-```{r}
+```{r eval=FALSE, include = FALSE}
 total <- colSums(redup[,c(3:13)])
 joined <- bind_rows(redup, total)
 #joined[135,14] <- "sum" #set row name for variable
@@ -241,5 +252,20 @@ ggplot(meltlinked, aes(x = variable, y = value, fill = names)) +
     # or:
     # geom_bar(position = position_fill(), stat = "identity") 
     scale_y_continuous(labels = scales::percent_format()) + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of each action done by org type") + scale_x_discrete(name ="Action")
+```
+
+<br>
+
+<br>
+
+
+### Not sure what was happening above (was trying to get working for a meeting up wasn't successful.. leaving for now because prioritizing other things
+
+# information for draft document (checking yellow text)
+
+```{r}
+newpdata
+
+docspef
 ```
 
