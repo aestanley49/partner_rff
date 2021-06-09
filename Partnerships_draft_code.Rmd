@@ -72,6 +72,8 @@ newpdata <- FormatwCollabs(PartnersDataModified)
 
 orgtyp_base <- read.csv(paste0("/usr/local/bin/store/partner_rff/data/tableofPandAmodified.csv"), stringsAsFactors = FALSE, na = "") #issue was that "" is coming up instead of NA
 ## file name got changed
+ 
+species <- orgtyp_base %>% group_by()
 
 #orgtype <- orgtyp_base ## taken from Data_exploration script 
 
