@@ -11,6 +11,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 
+******* Do do - color code by org type added to NMDS %^&*(*&^%$%^&*()(*&^%$#$%^&*()))
+
+
 ##Set up file structure 
 ```{r, include = FALSE}
 ## setup the file structure so that this markdown document is in the main project folder along with the other folders noted below
@@ -322,6 +325,23 @@ text(out1$points-0.1, labels=docspef$X1..Land.Water.Management)
 
 
 
+
+########### text that works in base R
+plot(Testnmds) # actions are crosses and partners are circles
+ordiplot(Testnmds,type="n")
+orditorp(Testnmds,display="species",col="red",air=0.01)
+orditorp(Testnmds,display="sites",cex=0.3,air=0.01)
+## The above two rows don't work in markdown but will in regular R... ?? 
+ordicluster(Testnmds,hclust(as.dist(1-jaccsim), method = "single")) 
+
+ordicluster(Testnmds,hclust(vegdist(TestPartners,"bray"))) ## produces cluster graph with NMDS (same output as from tutorial) 
+
+hclust(vegdist(TestPartners,"bray"))
+plot(hclust(vegdist(TestPartners,"bray"))) ### produces dendrogram on partners (not actions)
+
+
+
+
 ```
 
 
@@ -357,6 +377,9 @@ nmds.min <- function(x, dims=2)
     x.min
 }
 ```
+
+
+
 
 
 
@@ -525,24 +548,16 @@ ggplot(colsum) + geom_bar(mapping = aes(x = rowname, y = count), stat = "identit
 ```
 so want to have column freq in same order as clusters (will need to reorder depending on what method decide to use.. )
 
-Also add network?? 
-************** need to fix this.... *********************
+Also add network
 ```{r}
 
-condense <- sdata[,c(1,2,6,10:20)] #select relevant columns
+condense <- docspef[,-c(2)] #select relevant columns
 
-condense <- condense[-which(condense$type.of.partners == "M"),] #remove ones with multiple partners in string 
+#condense <- condense[-which(condense$type.of.partners == "M"),] #remove ones with multiple partners in string 
 #this is avoiding the data issue instead of addressing it
 
 condense <- condense %>% select(Scientific.name, partner.in.agreement, X1..Land.Water.Management:funding) %>% group_by(Scientific.name)
-#losing scientific_name so will add with join 
-#con <- condense2 %>% left_join(condense, by = c("X1..Land.Water.Management" ,                    "X2..Species.Management"            ,             "X3..Awareness.raising"   ,                      "X4..law.enforcement.and.prosecution"      ,      "X5..livelihood..economic.and.moral.incentrives","X6..Conservation.Design.and.Planning"    ,       "X7..Legal.and.Policy.frameworks"     ,          "X8..Research.and.monitoring"           ,         "X9..Education.and.Training"  ,                  "X10..Institutional.Development"        ,         "funding"))
 
-
-#actions network 
-#does not include multipartner strings 
-
-## note, need to go back and check when vectors were created 
 
 rawdf <- condense # take datafram of 0s and 1s without multi species strings 
 #remove extra columns 
@@ -555,10 +570,7 @@ trial1 <- trn %*%  rawdf
 #double check numbers 
 colSums(rawdf) #checks out!! 
 
-
 ########### put into network analysis code 
-
-
 tactadjmat <- trial1
 
 tactadjmat[lower.tri(tactadjmat)] <- NA
@@ -567,51 +579,26 @@ diag(tactadjmat) <- NA
 actlist <- tactadjmat %>% melt() 
 actlist <- actlist[-which(is.na(actlist$value)),]
 
-#nsize <- tolist %>% filter((Var1 == Var2)) #set new vector with diag values
-#tolist <- tolist %>% filter((Var1 != Var2)) 
-
-#allthreat <- tolist %>% right_join(nsize, by = c("Var1"))
-#allthreat <- allthreat[,-c(4)]
 
 actnet <- graph_from_data_frame(d=actlist, directed=T) 
 
-
-#plot(net, edge.arrow.size=.2, edge.curved=0,
-
-  #   vertex.color="orange", vertex.frame.color="#555555",
-
-   #  vertex.label=V(net)$Var1, vertex.label.color="black",
-
-   #  vertex.label.cex=.7, vertex.size = net$value.y)
 
 E(actnet)$arrow.size <- .2 #determine size of arrows (this makes the heads real small so they are more like lines)
 #V(net)$names <- c("a","b","c","d","e","f","g","h") #naming the nodes -- try this later so don't over write what actal names are 
 #V(df)$names <- c("hab_x_x", "over_x_x", "poll_x_x", "spsp_x_x", "env_x_x", "demo_x_x")
 node.size<-setNames(c(66,35,10,2,4,48,34,54,19,62,33), c("X1..Land.Water.Management" ,"X2..Species.Management", "X3..Awareness.raising", "X4..law.enforcement.and.prosecution" , "X5..livelihood..economic.and.moral.incentrives", "X6..Conservation.Design.and.Planning","X7..Legal.and.Policy.frameworks","X8..Research.and.monitoring" ,"X9..Education.and.Training","X10..Institutional.Development","funding"))
- 
-
-#so not setting in the same order 
 
 
 E(actnet)$width <- E(actnet)$value*.35 
 
 plot(actnet, vertex.size=node.size*.5)
 
-
-#plot(net, edge.arrow.size=0.01,vertex.label.color = "black", vertex.size=node.size)
-
-
 node.size<-setNames(c(66,35,10,2,4,48,34,54,19,62,33), c("LandWaterMan" ,"SpeciesMan", "AwarRaise", "law.enforce" , "livelihood_economic_moral", "Conservation.D&P","Legal.and.Policy","Research.and.monitoring" ,"Edu_Training","Institutional.Dev","funding")) #tried resetting names but nothing happened 
  
 
 #changed label names and layout
-l <- layout_with_fr(actnet)
+l <- layout_in_circle
 plot(actnet, vertex.label = c("LandWaterMan" ,"SpeciesMan", "AwarRaise", "law.enforce" , "livelihood_economic_moral", "Conservation.D&P","Legal.and.Policy","Research.and.monitoring" ,"Edu_Training","Institutional.Dev","funding"), layout = l, vertex.size=node.size*.5)
-
-
-#trying to show edge lengths without distraction of labels
-l <- layout_on_grid(actnet)
-plot(actnet, vertex.label=NA, layout = l, vertex.size=node.size*.75)
 ```
 
 
