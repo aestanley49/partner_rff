@@ -1442,7 +1442,6 @@ ggplot(prop, aes(x = rowname, y = V1)) +
     geom_bar(stat = "identity")  + theme(axis.text.x = element_text(angle = 30)) + ggtitle("Proportion of species-partner types doing each action (Coroporation)") + scale_x_discrete(name ="Action") + scale_y_continuous(name ="Proportion")
 ```
 
-
 M = Military 
 no. species = 4
 no. partners = 7
