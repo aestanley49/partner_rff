@@ -2,7 +2,9 @@
 title: "ESA_Recovery_overview_doc"
 author: "Annabelle"
 date: "6/7/2021"
-output: html_document
+output:
+  html_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -23,7 +25,7 @@ Notes
 
 
 ##Set up file structure 
-```{r, include = FALSE}
+```{r, include = FALSE, echo = FALSE}
 ## setup the file structure so that this markdown document is in the main project folder along with the other folders noted below
 
 DataSource <- "./data" # input raw dataset goes here
@@ -43,6 +45,10 @@ library(janitor) #used in cleaning
 library(stringr)
 library(knitr) #for making tables form kable 
 library(data.table) #function setnames() allows to set multiple column names in one line of code 
+library(corrplot) #for visualizing chi square results 
+library(reshape) # has melt function
+library(skimr) #super nice summary package 
+library(car) #contains vif function 
 ```
 
 ##load in different datasets
@@ -54,15 +60,18 @@ proactive <- read_excel(paste0("/usr/local/bin/store/partner_rff/data/AS12_Jun_7
                )
 
 
+### OLD Tyler datasets
 #dataset that tyler sent, contains a number of predictors 
-tdata <- read.csv(paste0(DataSource,"/Updated_variables.csv"), stringsAsFactors = FALSE) #shared by tyler
+tdataOLD <- read.csv(paste0(DataSource,"/Updated_variables.csv"), stringsAsFactors = FALSE) #shared by tyler
+tdataOLD <- tdataOLD %>%  as_tibble() #now can use stringr packages 
+tdataOLD <- tdataOLD %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
+                  clean_names()
+plustwo <- read.csv(paste0(DataSource, "/two_additional_species.csv"), stringsAsFactors = FALSE) #additional two species not in tdata
+
+### NEW Tyler datasets
+tdata <- read.csv(paste0(DataSource,"/all_tyler_data_6_12_21.csv"), stringsAsFactors = FALSE) #shared by tyler
 tdata <- tdata %>%  as_tibble() #now can use stringr packages 
 tdata <- tdata %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
-                  clean_names()
-#additional two species not in tdata
-plustwo <- read.csv(paste0(DataSource, "/two_additional_species.csv"), stringsAsFactors = FALSE) #also shared by tyler for the additional two species that had data missing before 
-plustwo <- plustwo %>%  as_tibble() #now can use stringr packages 
-plustwo <- plustwo %>%  ##cleaning/reformating colunm names --> default is lower_case_snake
                   clean_names()
 
 ```
@@ -83,6 +92,8 @@ sub_initiatves_partners <- sub_initiatves_partners[-which(is.na(sub_initiatves_p
 ##### get the same species set that we use in dataset above by.. 
 ## getting names of species in initiatives subset 
 sub_initiatves_partners <- initiatves_partners[which(initiatves_partners$post_5_25 == "x" | initiatves_partners$post_5_25 == "X"),]
+
+sub_initiatves_partners <- sub_initiatves_partners[-which(is.na(sub_initiatves_partners$RowSpecInfo)),]
 
 names <- sub_initiatves_partners[,c(3,4)]
 names <- names %>% distinct(scientific_name)
@@ -108,6 +119,57 @@ proactive2 <- cbind(names, proactive)
 
 ```
 
+
+##Modify datasets Tyler 
+Variables needed: 
+  # range size --> area c32 
+  # area weighted footprint --> c33 ?have options
+  # total threat count --> c 26
+  # type of threat --> c27
+  # employment (all relevant industries) -> 55:59 [avg_employment ???]
+  # percent public and percent federal c66, c68 
+  # diversity of landowners - shannons H (land use complextity)
+  # taxa (plants v animals // vert v invert) taxa c16
+  
+I think *missing* private lands?? (can get with TdataOLD because had variable information there..) 
+
+missing species (presumming Tyler dropped them..)
+  # Euphilotes pallescens arenamontana
+  # Nysius wekiuicola
+
+Species Name changes/differences accross datasets 
+Chorizanthe parryi var fernandina -> Chorizanthe parryi var. fernandina
+Moxostoma sp 2 -> Moxostoma sp.
+  
+```{r}
+
+tdata_mod <- tdata %>% select(scientific_name, common_name, vert_vs_invert, species_group, number_of_counties, range_area, habitat_modification, overutilization, pollution, species_species_interactions, env_stochasticity, demographic_stochasticity, total_threats, public_mang_shannons_diversity, avg_employment)
+
+#put together with current list of species [doing Proactive dataset - may need to merge again]
+
+t_pro_df <- left_join(proactive2, tdata_mod, by = c("scientific_name"))
+t_pro_df <- t_pro_df %>% select(-common_name.y)
+t_pro_df$common_name <- t_pro_df$common_name.x
+t_pro_df <- t_pro_df %>% select(-common_name.x)
+
+## Need to add values for % public/ private (located in tdata) bc not in new dataset 
+## AND get info for species that have been recently removed from tyler's current dataset 
+
+percent_data <- tdataOLD %>% select(scientific_name, common_name, percentpublic:percentfederal)
+
+df <- left_join(t_pro_df, percent_data, by = c("common_name"))
+df <- df %>% select(-scientific_name.y)
+df$scientific_name <- df$scientific_name.x
+df <- df %>% select(-scientific_name.x) #changing col name back
+
+## Need to rearrange column order
+
+df <- df[,c(27,23,1:22,24:26)]
+
+```
+
+
+
 ## 1.	What are the conservation initiatives for a species 
 
 #### 1 - Summary stats
@@ -118,7 +180,7 @@ proactive2 <- cbind(names, proactive)
 
 
 ```{r}
-#### - Number of iniatitves per species
+#### - Number of initiatives per species
 
 #number of partners in each of the agreements
 no_init_per_sp <- sub_initiatves_partners %>% group_by(common_name, RowSpecInfo) %>% distinct(Agreement_Name) %>%    #count how many names are distinct 
@@ -151,14 +213,129 @@ no_init_per_sp$count <- no_init_per_sp$`n()`
 no_init_per_sp_3 <- no_init_per_sp %>% group_by(common_name, RowSpecInfo) %>%
 summarize(sum = sum(count))
 
-## removal all NAs for "RowSpecificInfo"
-no_init_per_sp_3 <- no_init_per_sp_3[-which(is.na(no_init_per_sp_3$RowSpecInfo)),]
-
 
 ggplot(no_init_per_sp_3, aes(common_name, sum)) +   
   geom_bar(aes(fill = RowSpecInfo), position = "stack", stat="identity") + theme(axis.text.x = element_text(angle = 90)) + ggtitle("Number of initiatives per species") + scale_x_discrete(name ="Species") + scale_y_continuous(name ="Count") + coord_flip()
 
 ```
+
+#### 1 - Regression Predictor Modification
+-	Working group mentioned – logistic regression
+-	Numbers of efforts or agreements – linear regression or negative binomial or poisson regression (since count data)
+
+```{r}
+NoIniv <- no_init_per_sp_2 
+names(NoIniv) <- c("common_name", "no_iniv")
+
+L_df <- full_join(df, NoIniv)
+
+
+## taxa (coding for plants)
+plant <- c(0)
+L_df <- add_column(L_df, plant)
+L_df[which(L_df$vert_vs_invert == "P"),29] <- 1
+
+reg_prdctr <- L_df %>% select(scientific_name, common_name, no_iniv, range_area, percentpublic, plant, public_mang_shannons_diversity, total_threats)
+
+skim(reg_prdctr)
+
+
+
+```
+
+
+
+
+```{r Correlation Matrix}
+# Correlation Matrix of Predictors vs Responses ##
+## modified some code from http://handlesman.blogspot.com/2011/03/matrix-plot-with-confidence-intervals.html
+#Not working because of NAs in data - getting error that x is not numeric 
+
+
+#set up
+PredictorsOnlyPixel <- reg_prdctr[,c(3)]
+PredictAndResponsePixel <- reg_prdctr[,-c(1:2)]
+PredictAndResponseGrid <- reg_prdctr[,-c(1:2)]
+  
+# put histograms on the diagonal panel	
+panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
+{
+  usr <- par("usr"); on.exit(par(usr))			# not sure what usr is for?
+  par(usr = c(usr[1:2],0,1.5))
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)			# make the hist 
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col="grey", ...)  # defines what the histogram is going to look like
+}
+
+# put correlations on the upper panels,
+panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- cor(x, y,use="complete.obs")				
+  txt <- format(c(r, 0.123456789), digits=digits)[1]
+  prefix <- "r = "
+  rc <- cor.test(x,y,method = c("pearson"))				## calculate pearsons rho for upper grid
+  txt <- paste(prefix,txt,sep="")
+  text(0.5, 0.5, txt, cex = 1)
+}
+
+## plot a correlation matrix plot that uses the functions specified above to say what to plot where
+      ## this was taken directly from website and still not plotting r values for all 
+#pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+
+##Pixel level
+
+pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+
+
+
+### Predictors only  -->  only have one response so not going to run this one
+##pairs(PredictorsOnlyPixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+
+
+#test correlations to look for covariation between predictors
+cor(reg_prdctr[,-c(1:2)], use = "complete.obs") # matrix seems fine
+#no na.rm in this one instead it's "use"
+
+```
+
+
+
+
+VIFS
+```{r}
+vif(lm(no_iniv ~ range_area +percentpublic + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr))
+```
+
+Q - keep log??? 
+
+```{r lm1}
+lm2 <- lm(log(no_iniv) ~ range_area +percentpublic + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr)
+
+#withou log 
+#lm2 <- lm((no_iniv) ~ range_area +percentpublic + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr)
+
+summary(lm2)
+
+#kable(table(lm2$coefficients))
+
+par(mfrow = c(1, 1))
+plot(lm2)
+
+qqPlot(residuals(lm2))
+par(mfrow = c(1, 1))
+
+#plot(predicted(lm2), residuals(lm2))
+#hist(residuals(lm2))
+# how add CI equivalent around q-q plot? 
+AIC(lm2)
+#check_overdispersion(lm2)
+```
+
+
+
 
 ## 2.	What are the actions specified in the federal register important for the species?
 
@@ -166,29 +343,495 @@ ggplot(no_init_per_sp_3, aes(common_name, sum)) +
 
 ```{r}
 
-outcomes <- proactive2
+outcomes <- df
 
 outcomes[,c(3:11)] <- sapply(outcomes[ ,c(3:11)], as.numeric)
 
-names(outcomes)
-outcomes <- outcomes %>% mutate("preempt" = sum(preempt-private, preempt-public, preempt-unclear))
+### ### ### ### ### setting up data mannipulations (unsure if need) by making new columns  
 
+### ### ### ### Actions
+outcomes <- outcomes %>% rowwise() %>% mutate("preempt" = sum(preempt_private, preempt_public, preempt_unclear)) %>% #rowSums with mutate (need rowwise) 
+ mutate_at(vars(preempt), ~1 * (. > 0)) #changed all values back to ones and zeros ## this doesn't work because changes whole df 
 
-outcomes <- outcomes %>% mutate("preempt" = rowSums(outcomes[,c(3:5)]))
-outcomes <- outcomes %>% mutate("react" = rowSums(outcomes[,c(6:8)]))
+outcomes <- outcomes %>% rowwise() %>% mutate("react" = sum(respon_private, respon_public, respon_unclear)) %>%  #rowSums with mutate (need rowwise)
+  mutate_at(vars(react), ~1 * (. > 0)) #changed all values back to ones and zeros 
 
+outcomes <- outcomes %>% rowwise() %>% mutate("both_react_preempt" = sum(react, preempt)) %>%  #rowSums with mutate (need rowwise)
+  mutate_at(vars(both_react_preempt), ~1 * (. >= 2)) # change all specified mutate functions back to ones and zeros 
 
-%>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+outcomes <- outcomes %>% rowwise() %>% mutate("react_only" = react - both_react_preempt) #%>%  #rowSums with mutate (need rowwise)
+#  mutate_at(vars(react_only), ~"react_only" * (. > 0)) #changed all values back to ones and zeros 
+
+outcomes <- outcomes %>% rowwise() %>% mutate("preempt_only" = preempt - both_react_preempt)
+
+#outcomes %>% mutate(vars(both_react_preempt:preempt_only), funs(ifelse(. == 1, deparse(substitute(.)), .)))
+
+## trying to get a single column with preempt, protect, or both as cell values for ggplot ease
+outcomes$actionresults <- apply(outcomes[,30:32], 1, function(x) max(names(which(x >0))))
+
+## Bar chart Preempt: proactive, protective, both
+ggplot(outcomes, aes(f0)) + 
+  geom_histogram(mapping = aes(x = actionresults), stat = "count", fill = "red", alpha = 0.6, position = "dodge")
+  
 
 ```
 
 
-Scrap work - missing [~10] species that need to get data on from Tyler 
-```{r eval=F}
+```{r}
+
+### ### Land
+outcomes <- outcomes %>% rowwise() %>% mutate("public" = sum(preempt_public, public_unclear, respon_public)) %>% #rowSums with mutate (need rowwise) 
+ mutate_at(vars(public), ~1 * (. > 0)) #changed all values back to ones and zeros ## this doesn't work because changes whole df 
+
+outcomes <- outcomes %>% rowwise() %>% mutate("private" = sum(respon_private, private_unclear, preempt_private)) %>%  #rowSums with mutate (need rowwise)
+  mutate_at(vars(private), ~1 * (. > 0)) #changed all values back to ones and zeros 
+
+outcomes <- outcomes %>% rowwise() %>% mutate("both_public_private" = sum(public, private)) %>%  #rowSums with mutate (need rowwise)
+  mutate_at(vars(both_public_private), ~1 * (. >= 2)) # change all specified mutate functions back to ones and zeros 
+
+outcomes <- outcomes %>% rowwise() %>% mutate("public_only" = public - both_public_private) #%>%  #rowSums with mutate (need rowwise)
+#  mutate_at(vars(react_only), ~"react_only" * (. > 0)) #changed all values back to ones and zeros 
+
+outcomes <- outcomes %>% rowwise() %>% mutate("private_only" = private - both_public_private)
+
+#outcomes %>% mutate(vars(both_react_preempt:preempt_only), funs(ifelse(. == 1, deparse(substitute(.)), .)))
+
+## trying to get a single column with preempt, protect, or both as cell values for ggplot ease
+outcomes$landresults <- apply(outcomes[,36:38], 1, function(x) max(names(which(x >0))))
+
+## Barchart: 	Land: public, private, both
+ggplot(outcomes, aes(f0)) + 
+  geom_histogram(mapping = aes(x = landresults), stat = "count", fill = "red", alpha = 0.6, position = "dodge")
+
+
+```
+
+
+```{r}
+### ### ### ### ### ### Taxa 
+
+taxa <- outcomes
+taxa <- taxa %>% select(scientific_name, common_name, preempt_private:species_group, preempt:landresults)
+
+## Filling in missing data 
+taxa[which(is.na(taxa$vert_vs_invert)),12] <- c("I")
+taxa[which(is.na(taxa$species_group)),13] <- "Insects"   
+
+### ### ### Taxa -- Actions
+  ### 	all species, plant species, animal species (outcome: preempt)
+
+taxa_small <- taxa %>% select(scientific_name, actionresults, vert_vs_invert )
+
+## trying to get the following data frame 
+#|       | both| preempt | protect|
+#|:------|-----|---------|-------:|
+#|all sp |     |         |        |
+#|plant  |     |         |        |
+#|animal |     |         |        |
+
+# Doing so by subsetting by animal type and then will recombine 
+
+plants <- taxa_small %>% filter(vert_vs_invert == "P") %>% ## Select which species type to subset 
+pivot_wider(names_from = actionresults, values_from = vert_vs_invert) %>%  ## may action types col names
+  as.data.frame() %>%  # turn to dataframe
+  replace(!is.na(.), 1)  # convert all values to 1s so can col sum below 
+plants[,c(1:5)] <- sapply(plants[ ,c(1:5)], as.numeric)
+plants <- colSums(plants[,c(2:5)], na.rm = T)
+plants <- as.data.frame(plants) %>% rownames_to_column()
+
+invert <- taxa_small %>% filter(vert_vs_invert == "I") %>% ## Select which species type to subset 
+pivot_wider(names_from = actionresults, values_from = vert_vs_invert) %>%  ## may action types col names
+  as.data.frame() %>%  # turn to dataframe
+  replace(!is.na(.), 1)  # convert all values to 1s so can col sum below 
+invert[,c(1:4)] <- sapply(invert[ ,c(1:4)], as.numeric)
+invert <- colSums(invert[,c(2:4)], na.rm = T) 
+invert <- as.data.frame(invert) %>% rownames_to_column()
+  #rownames_to_column() 
+
+vert <- taxa_small %>% filter(vert_vs_invert == "V") %>% ## Select which species type to subset 
+pivot_wider(names_from = actionresults, values_from = vert_vs_invert) %>%  ## may action types col names
+  as.data.frame() %>%  # turn to dataframe
+  replace(!is.na(.), 1)  # convert all values to 1s so can col sum below 
+vert[,c(1:3)] <- sapply(vert[ ,c(1:3)], as.numeric)
+vert <- colSums(vert[,c(2:3)], na.rm = T) 
+vert <- as.data.frame(vert) %>% rownames_to_column()
+
+species <- full_join(plants, vert, by = "rowname")
+species <- full_join(species, invert, by = "rowname")
+species <- species %>% rowwise() %>%  mutate("all_sp" = sum(plants,vert, invert, na.rm = T))
+  
+### make bar graph 
+
+s <- species
+rownames(s) <- c("NA", "react_only", "both_react_preempt", "preempt_only" )
+s <- as.data.frame(s)
+#s <- s[,-c(1)]
+smelt <- s %>% melt()
+
+ggplot(smelt) + aes(x=variable, y=value, fill=rowname) +
+  geom_bar(stat="identity") + 
+  scale_x_discrete(name ="species") + 
+  ggtitle("Actions for types of species") + 
+  scale_y_continuous(name = "count")
+
+ 
+```
+
+
+```{r}
+### ### ### Taxa -- Land 
+  ### 	all species, plant species, animal species (outcome: land)
+
+taxa_land <- taxa %>% select(scientific_name, landresults, vert_vs_invert )
+
+plants <- taxa_land %>% filter(vert_vs_invert == "P") %>% ## Select which species type to subset 
+pivot_wider(names_from = landresults, values_from = vert_vs_invert) %>%  ## may action types col names
+  as.data.frame() %>%  # turn to dataframe
+  replace(!is.na(.), 1)  # convert all values to 1s so can col sum below 
+plants[,c(1:5)] <- sapply(plants[ ,c(1:5)], as.numeric)
+plants <- colSums(plants[,c(2:5)], na.rm = T)
+plants <- as.data.frame(plants) %>% rownames_to_column()
+
+invert <- taxa_land %>% filter(vert_vs_invert == "I") %>% ## Select which species type to subset 
+pivot_wider(names_from = landresults, values_from = vert_vs_invert) %>%  ## may action types col names
+  as.data.frame() %>%  # turn to dataframe
+  replace(!is.na(.), 1)  # convert all values to 1s so can col sum below 
+invert[,c(1:4)] <- sapply(invert[ ,c(1:4)], as.numeric)
+invert <- colSums(invert[,c(2:4)], na.rm = T) 
+invert <- as.data.frame(invert) %>% rownames_to_column()
+  #rownames_to_column() 
+
+vert <- taxa_land %>% filter(vert_vs_invert == "V") %>% ## Select which species type to subset 
+pivot_wider(names_from = landresults, values_from = vert_vs_invert) %>%  ## may action types col names
+  as.data.frame() %>%  # turn to dataframe
+  replace(!is.na(.), 1)  # convert all values to 1s so can col sum below 
+vert[,c(1:5)] <- sapply(vert[ ,c(1:5)], as.numeric)
+vert <- colSums(vert[,c(2:5)], na.rm = T) 
+vert <- as.data.frame(vert) %>% rownames_to_column()
+
+species_actions <- full_join(plants, vert, by = "rowname")
+species_actions <- full_join(species_actions, invert, by = "rowname")
+species_actions <- species_actions %>% rowwise() %>%  mutate("all_sp" = sum(plants,vert, invert, na.rm = T))
+  
+### make bar graph 
+
+sactions <- species_actions
+rownames(sactions) <- c("public_only", "NA", "both_public_private", "private_only"  )
+sactions <- as.data.frame(sactions)
+#s <- s[,-c(1)]
+sactions_melt <- sactions %>% melt()
+
+ggplot(sactions_melt) + aes(x=variable, y=value, fill=rowname) +
+  geom_bar(stat="identity") + 
+  scale_x_discrete(name ="species") + 
+  ggtitle("Land Type for types of species") + 
+  scale_y_continuous(name = "count")
+
+
+```
+
+
+```{r}
+
+### ### ### ### ### ### ### ### ### ### ### ### ### Land
+
+### ### ### ### ###  Land -- Preempt 
+  ### public land actions for a species, private land actions for a species (outcome: preempt)
+
+land_preempt <- outcomes
+land_preempt <- land_preempt %>% select(scientific_name, actionresults, landresults)
+
+land_preempt$number <- rownames(land_preempt)
+
+
+land_preempt_trial <- land_preempt %>% pivot_wider(values_from = number, names_from = landresults)
+
+land_preempt_trial[,c(3:6)] <- sapply(land_preempt_trial[ ,c(3:6)], as.numeric)
+
+land_preempt_trial <- land_preempt_trial %>% mutate_if(is.numeric, ~1 * (. > 0)) #changed all values back to ones and zeros
+
+land_preempt_trial <- as.data.table(land_preempt_trial)
+names(land_preempt_trial) <- c( "scientific_name"   ,  "actionresults"   ,    "public_only"    ,     "NotApp"     ,       "private_only"   ,     "both_public_private" )
+
+land_preempt_trial[which(is.na(land_preempt_trial$actionresults)),2] <- "NApp" 
+
+#Want to use equivalent of group by and then colsum (tidyr version didn't work but the datatable method does)
+count <- land_preempt_trial[,list(public_only=sum(public_only, na.rm = T), NotApp=sum(NotApp, na.rm = T), private_only = sum(private_only, na.rm = T), both_public_private = sum(both_public_private, na.rm = T)), by='actionresults']
+
+## Couldn't get this to work
+#land_preempt_trial <- land_preempt_trial %>% select(-scientific_name) %>% group_by(actionresults) %>% 
+#summarize_at(var(react_only, NApp, preempt_only, both_react_preempt), fun = colSums)
+#  summarise_if(is.integer, sum, na.rm = T)
+
+act_land <- count %>% melt()
+
+ggplot(act_land) + aes(x=variable, y=value, fill=actionresults) +
+  geom_bar(stat="identity") + 
+  scale_x_discrete(name ="Land Owner Type") + 
+  ggtitle("land actions for a species (outcome: preempt") + 
+  scale_y_continuous(name = "count")
+
+
+```
+
+
+```{r}
+
+### ### ### ### ### Range size -- Preempt  
+  ### restricted versus wide-ranging species? (outcome: preempt)
+## Note - this seems to really depend on what you set the area cutoff to
+
+hist(outcomes$range_area, breaks = 40)
+## let's do 2 categories of small v large range (split point = 2.0e + 10)
+
+range <- outcomes
+range <- range %>% select(scientific_name, range_area, actionresults)
+range <- range %>% mutate(size = range_area < (.5*10^10))
+#Want to use equivalent of group by and then colsum (tidyr version didn't work but the datatable method does)
+
+range$number <- 1
+range <- range %>% pivot_wider(values_from = number, names_from = size)
+names(range) <- c("scientific_name" ,"range_area"    ,  "actionresults"  , "Big", "Small"        ,    "NotAp" )
+range <- as.data.table(range)
+count_range <- range[,list(Big=sum(Big, na.rm = T), Small=sum(Small, na.rm = T), NotAp = sum(NotAp, na.rm = T)), by='actionresults']
+
+count_range <- count_range %>% melt()
+
+ggplot(count_range) + aes(x=variable, y=value, fill=actionresults) +
+  geom_bar(stat="identity") + 
+  scale_x_discrete(name ="Range Size") + 
+  ggtitle("Restrictied vs wide-ranging species (outcome: preempt)") + 
+  scale_y_continuous(name = "count")
+
+
+
+```
+
+
+```{r}
+### ### ### ### ### Range size -- Preempt 
+  ### 	presence of each threat type (outcome: preempt)
+
+threat_type <- outcomes
+threat_type <- threat_type %>% select(scientific_name, habitat_modification:total_threats, actionresults)
+
+# note - going to do this independently (so for each threat type not by species.. slightly different than other ones)
+
+habitat <- threat_type %>% filter(habitat_modification == 1) %>% ## Select which species type to subset 
+pivot_wider(names_from = actionresults, values_from = habitat_modification) %>%  ## may action types col names
+  as.data.frame() # turn to dataframe
+habitat[,c(8:11)] <- sapply(habitat[ ,c(8:11)], as.numeric)
+habitat <- colSums(habitat[,c(8:11)], na.rm = T) 
+habitat <- as.data.frame(habitat) %>% rownames_to_column()
+
+#only one instance for this one
+overut <- threat_type %>% filter(overutilization == 1) %>% ## Select which species type to subset 
+pivot_wider(names_from = actionresults, values_from = overutilization) %>%  ## may action types col names
+  as.data.frame() # turn to dataframe
+overut[,c(8)] <- sapply(overut[ ,c(8)], as.numeric)
+overut <- colSums(overut[,c(7:8)], na.rm = T) 
+overut <- as.data.frame(overut) %>% rownames_to_column()
+
+polu <- threat_type %>% filter(pollution == 1) %>% ## Select which species type to subset 
+pivot_wider(names_from = actionresults, values_from = pollution) %>%  ## may action types col names
+  as.data.frame() # turn to dataframe
+polu[,c(7:8)] <- sapply(polu[ ,c(7:8)], as.numeric)
+polu <- colSums(polu[,c(7:8)], na.rm = T) 
+polu <- as.data.frame(polu) %>% rownames_to_column()
+
+spsp <- threat_type %>% filter(species_species_interactions == 1) %>% ## Select which species type to subset 
+pivot_wider(names_from = actionresults, values_from = species_species_interactions) %>%  ## may action types col names
+  as.data.frame() # turn to dataframe
+spsp[,c(8:11)] <- sapply(spsp[ ,c(8:11)], as.numeric)
+spsp <- colSums(spsp[,c(8:11)], na.rm = T) 
+spsp <- as.data.frame(spsp) %>% rownames_to_column()
+
+env_st <- threat_type %>% filter(env_stochasticity == 1) %>% ## Select which species type to subset 
+pivot_wider(names_from = actionresults, values_from = env_stochasticity) %>%  ## may action types col names
+  as.data.frame() # turn to dataframe
+env_st[,c(8:10)] <- sapply(env_st[ ,c(8:10)], as.numeric)
+env_st <- colSums(env_st[,c(8:10)], na.rm = T) 
+env_st <- as.data.frame(env_st) %>% rownames_to_column()
+
+demo_st <- threat_type %>% filter(demographic_stochasticity == 1) %>% ## Select which species type to subset 
+pivot_wider(names_from = actionresults, values_from = demographic_stochasticity) %>%  ## may action types col names
+  as.data.frame() # turn to dataframe
+demo_st[,c(8:9)] <- sapply(demo_st[ ,c(8:9)], as.numeric)
+demo_st <- colSums(demo_st[,c(8:9)], na.rm = T) 
+demo_st <- as.data.frame(demo_st) %>% rownames_to_column()
+
+threats_actions <- full_join(habitat, overut) %>% full_join(spsp) %>% full_join(env_st) %>% full_join(demo_st)
+
+threats_actions <- threats_actions[-which(is.na(threats_actions$habitat)),]
+
+threats_actions <- threats_actions %>% melt()
+
+ggplot(threats_actions) + aes(x=variable, y=value, fill=rowname) +
+  geom_bar(stat="identity") + 
+  scale_x_discrete(name ="Type of Threat") + 
+  ggtitle("presence of each threat type (outcome: preempt)") + 
+  scale_y_continuous(name = "count")
+
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### 
+    
+  
+
+```
+
+Chi squares 
+```{r}
+# assumption: 5 or more in at least 80% of the cells, and no cell should have an expected of less than one (3).
+
+
+### ### ###	Differences in frequency of proactive and protective measures on public versus private lands (Chi-square)
+
+differences <- outcomes
+differences <- as.data.frame(differences)
+differences[,c(3:10)] <- sapply(differences[ ,c(3:10)], as.numeric)
+count_diff <- colSums(differences[,c(3:10)], na.rm = T)
+count_diff <- as.data.frame(count_diff)
+
+## manually entering into table 
+
+diff_tb <- data.frame('preempt' = c(13,18,19), 'respon' = c(1,12,13), 'unc' = c(7,13,0))
+rownames(diff_tb) <- c("private", "public", "unc")
+
+kable(diff_tb)
+
+chsq <- chisq.test(diff_tb)
+
+chsq$residuals
+
+corrplot(chsq$residuals, is.cor = FALSE)
+
+contrib <- 100*chsq$residuals^2/chsq$statistic
+round(contrib, 3)
+corrplot(contrib, is.cor = FALSE)
+
+
+### ### ###		Difference in protective versus proactive for plants versus animals
+
+act_taxa <- s
+act_taxa <- act_taxa %>% select(-rowname)
+
+#add vert and invert to see if can get values up for chi square
+act_taxa <- act_taxa %>% mutate(allvert = vert + invert)
+act_taxa <- act_taxa %>% select(-vert, -invert)
+
+## *** issue here - values are still too low 
+
+### ### ###		Difference in public versus private lands actions for plant versus animal
+
+land_taxa <- sactions
+land_taxa <- land_taxa %>% select(-rowname)
+rname <- rownames(land_taxa)
+
+#add vert and invert to see if can get values up for chi square
+land_taxa <- land_taxa %>% mutate(allvert = vert + invert)
+land_taxa <- land_taxa %>% select(-vert, -invert)
+rownames(land_taxa) <- rname
+
+## *** issue here - values are still too low 
+
+
+```
+
+
+
+
+## 3.	Who are the organizations/players involved in conserving the conservation of the species (eg in an agreement of effort)? 
+
+#### 3 - Data wrangling 
+
+```{r}
+
+partners <- sub_initiatves_partners
+
+# remove rows where there is an NA for partner
+##partners <- partners[-which(is.na(partners$RowSpecInfo)),] ## this might be redudent and cause issues later but for now needed (delete later if run into NA issues)
+
+#need to remove multi partner strings
+partners <- partners[-which(partners$Type_of_Org == "multi"),]
+
+#remove black "NA" partners
+partners <- partners[-which(is.na(partners$Partners)),]
+
+## count number of partners for each species
+## make two versions 
+  # one normal
+  # the other where remove text after - (eg BLM-Suprise Feild office would be BLM)
+
+normal_partner_count <- partners %>% group_by(scientific_name) %>% 
+  distinct(Partners) %>%  summarise(n()) 
+#nothing removed or changed 
+
+#remove offices
+sub_partners <- partners
+sub_partners$Partners <- gsub("(.*)-.*", "\\1", sub_partners$Partners) ## Altered text from https://stackoverflow.com/questions/25307899/r-remove-anything-after-comma-from-columnn 
+
+mod_partner_count <- sub_partners %>% group_by(scientific_name) %>% 
+  distinct(Partners) %>%  summarise(n()) 
+
+
+# note - getting a bug when use duplicate so next time try match_df from plyr 
+  
+
+# also want to do a check of spelling to see if sort partner names alphabetically, do any different verions show up (might not even be user error - some entities had name changes that were flagged in FR)
+# check complete - ran: 
+          #mod_partner_count <- sub_partners %>% group_by(scientific_name) %>%  distinct(Partners)
+# and looks good 
+
+### ### So need to add all remaining partners, re run and then decide on bins 
+
+
+```
+
+
+o	Summary stats… histograms/bar charts… (perhaps stacked bar charts where color code stacks for low, medium, high confidence in having collected most of partners)?
+
+o	To account for the uncertainty in number of partners, we put this information into bins and then “then use an ordered probit to look at how well variables predict the rough estimate of numbers of partners.” 
+
+o	We use logit regression models to predict participation by different “types” of partners
+
+
+test relationship between number of iniatives and number of partners 
+```{r}
+test <- full_join(normal_partner_count, names) 
+
+test2 <- test %>% full_join(no_init_per_sp_2, by = "common_name")
+names(test2) <- c("scientific_name", "part"        ,     "common_name"   ,  "initi")
+
+plot(test2$initi ~ test2$part)
+```
+
+
+
+
+```{r eval=F include = F}
+
+####### scrap work 
+
+taxa2 <- taxa %>% melt(id = c("actionresults", "vert_vs_invert"))
+
+taxa_pivot <- taxa %>% pivot_wider(values_from = actionresults, names_from = vert_vs_invert)
+
+taxa_pivot <- taxa_pivot[,c(24:26)]
+
+# cast the melted data
+# cast(data, formula, function)
+
+trial <- taxa_pivot %>% distinct() %>% summarise(n())
+
+subjmeans <- cast(taxa_pivot, P~I, sum)
+
+taxa_pivot_two <- taxa_pivot %>% pivot_longer()
+
+
+#Scrap work - missing [~10] species that need to get data on from Tyler 
+
 
 min_tdata <- tdata[,c(3,4,18)]
 
 missing <- full_join(min_tdata, outcomes)
 
 ```
-
