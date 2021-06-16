@@ -3,8 +3,8 @@ title: "ESA_Recovery_overview_doc"
 author: "Annabelle"
 date: "6/7/2021"
 output:
-  html_document: default
   word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -56,7 +56,7 @@ library(car) #contains vif function
 initiatves_partners <- read_excel(paste0("/usr/local/bin/store/partner_rff/data/AS12_Jun_7_21_codingdata.xlsx"), sheet = "initiatves_partners", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
                )
 
-proactive <- read_excel(paste0("/usr/local/bin/store/partner_rff/data/AS12_Jun_7_21_codingdata.xlsx"), sheet = "threats", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
+proactive <- read_excel(paste0("/usr/local/bin/store/partner_rff/data/AS12_Jun_15_21_codingdata.xlsx"), sheet = "threats", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
                )
 
 
@@ -100,6 +100,8 @@ names <- names %>% distinct(scientific_name)
 ## then joining with proactive dataset 
 
 proactive <- left_join(names, proactive)
+
+FR_pg_length_and_doc_type <- proactive %>% select(scientific_name, common_name, FR_pg_length, type_FR_doc)
 
 proactive <- proactive[,-c(3:10, 20:31)] ## removed excess columns 
 names <- proactive[,c(1,2)]
@@ -237,6 +239,42 @@ L_df[which(L_df$vert_vs_invert == "P"),29] <- 1
 
 reg_prdctr <- L_df %>% select(scientific_name, common_name, no_iniv, range_area, percentpublic, plant, public_mang_shannons_diversity, total_threats)
 
+## Add FR_pg_length variable and create dummy variables
+
+#type of FR doc - 12 monthns
+FR_info <- FR_pg_length_and_doc_type
+month_12 <- c(0)
+FR_info <- add_column(FR_info, month_12)
+FR_info[which(FR_info$type_FR_doc == "12-Month Findings" ),5] <- 1
+
+#type of FR doc - withdrawal of proposed rule 
+# method used above won't work because strings are all slightly different
+# grepl works to slect strings
+# case_when is similar to ifelse 
+
+FR_info <- FR_info %>% mutate(wd_proposed = case_when(grepl("withdrawal", type_FR_doc, ignore.case = TRUE) ~ 1)) %>% 
+  replace(is.na(.), 0) # then replace all 0s 
+
+#FR page count based on binary variable (1 = if greater than 1 page)
+FR_info <- FR_info  %>% mutate(Big_Pg_count = case_when(FR_pg_length > .5 ~ 1, FR_pg_length <= .5 ~ 0 )) 
+
+#select the predictors actually want 
+FR_info  <- FR_info %>% select(-FR_pg_length, -type_FR_doc)             
+
+
+reg_prdctr <- reg_prdctr %>% left_join(FR_pg_length)
+
+## Add number of partners 
+
+reg_prdctr <- reg_prdctr %>% left_join(mod_partner_count)
+#note - this variable was made in a chunk below so won't be able to knit script without bringing that information forward 
+
+names(reg_prdctr) <- c("scientific_name"     ,           "common_name"            ,       
+ "no_iniv"        ,                "range_area"         ,           
+  "percentpublic"     ,             "plant"           ,              
+ "public_mang_shannons_diversity", "total_threats"  ,               
+ "FR_pg_length"         ,          "patner_count"  )
+
 skim(reg_prdctr)
 
 
@@ -306,7 +344,10 @@ cor(reg_prdctr[,-c(1:2)], use = "complete.obs") # matrix seems fine
 
 VIFS
 ```{r}
-vif(lm(no_iniv ~ range_area +percentpublic + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr))
+#### Previous
+###vif(lm(no_iniv ~ range_area +percentpublic + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr))
+
+vif(lm(no_iniv ~ range_area +percentpublic + plant + public_mang_shannons_diversity + total_threats + FR_pg_length + patner_count,data = reg_prdctr))
 ```
 
 Q - keep log??? 
@@ -316,6 +357,10 @@ lm2 <- lm(log(no_iniv) ~ range_area +percentpublic + plant + public_mang_shannon
 
 #withou log 
 #lm2 <- lm((no_iniv) ~ range_area +percentpublic + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr)
+
+### ### ### ### ### ### ### ###
+
+lm2 <-  lm(log(no_iniv) ~ range_area +percentpublic + plant + public_mang_shannons_diversity + total_threats + FR_pg_length + patner_count,data = reg_prdctr)
 
 summary(lm2)
 
@@ -468,12 +513,13 @@ s <- as.data.frame(s)
 #s <- s[,-c(1)]
 smelt <- s %>% melt()
 
-ggplot(smelt) + aes(x=variable, y=value, fill=rowname) +
+ggplot(smelt) + aes(x=variable, y=value, fill = factor(rowname, levels=c("NA", "react_only", "both_react_preempt", "preempt_only"))) +
   geom_bar(stat="identity") + 
   scale_x_discrete(name ="species") + 
   ggtitle("Actions for types of species") + 
-  scale_y_continuous(name = "count")
-
+  scale_y_continuous(name = "count")+
+  labs(fill = "Outcome")+ 
+  scale_fill_manual(values=c("black", "firebrick1", "mediumpurple", "dodgerblue"))
  
 ```
 
@@ -521,11 +567,13 @@ sactions <- as.data.frame(sactions)
 #s <- s[,-c(1)]
 sactions_melt <- sactions %>% melt()
 
-ggplot(sactions_melt) + aes(x=variable, y=value, fill=rowname) +
+ggplot(sactions_melt) + aes(x=variable, y=value, fill = factor(rowname, levels=c("NA", "private_only", "both_public_private", "public_only"))) +
   geom_bar(stat="identity") + 
   scale_x_discrete(name ="species") + 
   ggtitle("Land Type for types of species") + 
-  scale_y_continuous(name = "count")
+  scale_y_continuous(name = "count")+ 
+  labs(fill = "Land")+ 
+  scale_fill_manual(values=c("grey", "firebrick1", "mediumpurple", "dodgerblue"))
 
 
 ```
@@ -565,11 +613,13 @@ count <- land_preempt_trial[,list(public_only=sum(public_only, na.rm = T), NotAp
 
 act_land <- count %>% melt()
 
-ggplot(act_land) + aes(x=variable, y=value, fill=actionresults) +
+ggplot(act_land) + aes(x=variable, y=value, fill = factor(actionresults, levels=c("NApp", "react_only", "both_react_preempt", "preempt_only"))) +
   geom_bar(stat="identity") + 
   scale_x_discrete(name ="Land Owner Type") + 
   ggtitle("land actions for a species (outcome: preempt") + 
-  scale_y_continuous(name = "count")
+  scale_y_continuous(name = "count")+
+    labs(fill = "Outcome")+ 
+    scale_fill_manual(values=c("grey", "firebrick1", "mediumpurple", "dodgerblue"))
 
 
 ```
@@ -597,13 +647,15 @@ count_range <- range[,list(Big=sum(Big, na.rm = T), Small=sum(Small, na.rm = T),
 
 count_range <- count_range %>% melt()
 
-ggplot(count_range) + aes(x=variable, y=value, fill=actionresults) +
+ggplot(count_range) + aes(x=variable, y=value, fill = actionresults) +
   geom_bar(stat="identity") + 
   scale_x_discrete(name ="Range Size") + 
   ggtitle("Restrictied vs wide-ranging species (outcome: preempt)") + 
-  scale_y_continuous(name = "count")
+  scale_y_continuous(name = "count") +
+  labs(fill = "Outcome")
 
 
+## Try again later 
 
 ```
 
@@ -666,11 +718,13 @@ threats_actions <- threats_actions[-which(is.na(threats_actions$habitat)),]
 
 threats_actions <- threats_actions %>% melt()
 
-ggplot(threats_actions) + aes(x=variable, y=value, fill=rowname) +
+ggplot(threats_actions) + aes(x=variable, y=value, fill = factor(rowname, levels=c("NA", "react_only", "both_react_preempt", "preempt_only"))) +
   geom_bar(stat="identity") + 
   scale_x_discrete(name ="Type of Threat") + 
   ggtitle("presence of each threat type (outcome: preempt)") + 
-  scale_y_continuous(name = "count")
+  scale_y_continuous(name = "count") +
+  labs(fill = "Outcome")+ 
+  scale_fill_manual(values=c("grey", "firebrick1", "mediumpurple", "dodgerblue"))
 
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### 
     
@@ -692,8 +746,8 @@ count_diff <- colSums(differences[,c(3:10)], na.rm = T)
 count_diff <- as.data.frame(count_diff)
 
 ## manually entering into table 
-
-diff_tb <- data.frame('preempt' = c(13,18,19), 'respon' = c(1,12,13), 'unc' = c(7,13,0))
+#### note numbers have changes
+diff_tb <- data.frame('preempt' = c(15,21,22), 'respon' = c(2,14,17), 'unc' = c(7,13,0))
 rownames(diff_tb) <- c("private", "public", "unc")
 
 kable(diff_tb)
@@ -707,6 +761,26 @@ corrplot(chsq$residuals, is.cor = FALSE)
 contrib <- 100*chsq$residuals^2/chsq$statistic
 round(contrib, 3)
 corrplot(contrib, is.cor = FALSE)
+
+
+### ### ###	Removing UNC from - Differences in frequency of proactive and protective measures on public versus private lands (Chi-square) 
+
+diff_tb <- data.frame('preempt' = c(15,21), 'respon' = c(2,14))
+rownames(diff_tb) <- c("private", "public")
+
+chsq <- chisq.test(diff_tb)
+chsq$residuals
+corrplot(chsq$residuals, is.cor = FALSE)
+contrib <- 100*chsq$residuals^2/chsq$statistic
+round(contrib, 3)
+corrplot(contrib, is.cor = FALSE)
+
+
+### I think I need to use fisher's exact here because 1 out of 4 values is less than 5... 
+
+fish <- fisher.test(diff_tb)
+fish
+
 
 
 ### ### ###		Difference in protective versus proactive for plants versus animals
@@ -784,6 +858,10 @@ mod_partner_count <- sub_partners %>% group_by(scientific_name) %>%
 ### ### So need to add all remaining partners, re run and then decide on bins 
 
 
+### addressing issue that Flattailed Horned lizard has so many partners - 
+## after combine Federal agency offices, remove all remaining partners with "district" (otherwise will remove federal district offices if do so before - one work around might be to only remove district for this partner) issue is that the partner has 23 partners that are a subsection of county and getting repeated multiple times 
+
+
 ```
 
 
@@ -794,7 +872,7 @@ o	To account for the uncertainty in number of partners, we put this information 
 o	We use logit regression models to predict participation by different “types” of partners
 
 
-test relationship between number of iniatives and number of partners 
+test relationship between number of initiatives and number of partners 
 ```{r}
 test <- full_join(normal_partner_count, names) 
 
@@ -807,7 +885,7 @@ plot(test2$initi ~ test2$part)
 
 
 
-```{r eval=F include = F}
+```{r eval=F, include = F}
 
 ####### scrap work 
 
