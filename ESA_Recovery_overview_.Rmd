@@ -239,6 +239,7 @@ L_df[which(L_df$vert_vs_invert == "P"),29] <- 1
 
 reg_prdctr <- L_df %>% select(scientific_name, common_name, no_iniv, range_area, percentpublic, plant, public_mang_shannons_diversity, total_threats)
 
+
 ## Add FR_pg_length variable and create dummy variables
 
 #type of FR doc - 12 monthns
@@ -262,27 +263,24 @@ FR_info <- FR_info  %>% mutate(Big_Pg_count = case_when(FR_pg_length > .5 ~ 1, F
 FR_info  <- FR_info %>% select(-FR_pg_length, -type_FR_doc)             
 
 
-reg_prdctr <- reg_prdctr %>% left_join(FR_pg_length)
+reg_prdctr <- reg_prdctr %>% left_join(FR_info)
 
-## Add number of partners 
-
-reg_prdctr <- reg_prdctr %>% left_join(mod_partner_count)
-#note - this variable was made in a chunk below so won't be able to knit script without bringing that information forward 
 
 names(reg_prdctr) <- c("scientific_name"     ,           "common_name"            ,       
  "no_iniv"        ,                "range_area"         ,           
   "percentpublic"     ,             "plant"           ,              
  "public_mang_shannons_diversity", "total_threats"  ,               
- "FR_pg_length"         ,          "patner_count"  )
+ "month_12"         ,              "wd_proposed"    ,               
+"Big_Pg_count"      )
 
 skim(reg_prdctr)
 
-
+reg_prdctr_init <- reg_prdctr
 
 ```
 
 
-
+### Base model
 
 ```{r Correlation Matrix}
 # Correlation Matrix of Predictors vs Responses ##
@@ -291,9 +289,9 @@ skim(reg_prdctr)
 
 
 #set up
-PredictorsOnlyPixel <- reg_prdctr[,c(3)]
-PredictAndResponsePixel <- reg_prdctr[,-c(1:2)]
-PredictAndResponseGrid <- reg_prdctr[,-c(1:2)]
+PredictorsOnlyPixel <- reg_prdctr_init[,c(3)]
+PredictAndResponsePixel <- reg_prdctr_init[,-c(1:2)]
+PredictAndResponseGrid <- reg_prdctr_init[,-c(1:2)]
   
 # put histograms on the diagonal panel	
 panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
@@ -339,7 +337,7 @@ cor(reg_prdctr[,-c(1:2)], use = "complete.obs") # matrix seems fine
 
 ```
 
-
+- Note: percent public variable is still in matrix but was removed from model
 
 
 VIFS
@@ -347,30 +345,56 @@ VIFS
 #### Previous
 ###vif(lm(no_iniv ~ range_area +percentpublic + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr))
 
-vif(lm(no_iniv ~ range_area +percentpublic + plant + public_mang_shannons_diversity + total_threats + FR_pg_length + patner_count,data = reg_prdctr))
+vif(lm(log(no_iniv) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_init))
 ```
 
-Q - keep log??? 
+model summary - variations
 
 ```{r lm1}
-lm2 <- lm(log(no_iniv) ~ range_area +percentpublic + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr)
+lm1 <- lm(log(no_iniv) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_init)
 
-#withou log 
-#lm2 <- lm((no_iniv) ~ range_area +percentpublic + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr)
+lm2 <- lm(log(no_iniv) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_init)
 
-### ### ### ### ### ### ### ###
+lm3 <- lm(log(no_iniv) ~ range_area + plant + public_mang_shannons_diversity + total_threats + Big_Pg_count,data = reg_prdctr_init)
 
-lm2 <-  lm(log(no_iniv) ~ range_area +percentpublic + plant + public_mang_shannons_diversity + total_threats + FR_pg_length + patner_count,data = reg_prdctr)
+lm4 <- lm(log(no_iniv) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats + Big_Pg_count,data = reg_prdctr_init)
 
+lm5 <- lm(log(no_iniv) ~ range_area + plant + public_mang_shannons_diversity + total_threats + month_12,data = reg_prdctr_init)
+
+lm6 <- lm(log(no_iniv) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats + month_12,data = reg_prdctr_init)
+
+lm7 <- lm(log(no_iniv) ~ range_area + plant + public_mang_shannons_diversity + total_threats + wd_proposed,data = reg_prdctr_init)
+
+lm8 <- lm(log(no_iniv) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats + wd_proposed,data = reg_prdctr_init)
+
+
+summary(lm1)
 summary(lm2)
+summary(lm3)
+summary(lm4)
+summary(lm5)
+summary(lm6)
+summary(lm7)
+summary(lm8)
+
+
+AIC(lm1)
+AIC(lm2)
+AIC(lm3)
+AIC(lm4)
+AIC(lm5)
+AIC(lm6)
+AIC(lm7)
+AIC(lm8)
+
 
 #kable(table(lm2$coefficients))
 
-par(mfrow = c(1, 1))
-plot(lm2)
+#par(mfrow = c(1, 1))
+#plot(lm2)
 
-qqPlot(residuals(lm2))
-par(mfrow = c(1, 1))
+#qqPlot(residuals(lm2))
+#par(mfrow = c(1, 1))
 
 #plot(predicted(lm2), residuals(lm2))
 #hist(residuals(lm2))
@@ -378,6 +402,7 @@ par(mfrow = c(1, 1))
 AIC(lm2)
 #check_overdispersion(lm2)
 ```
+
 
 
 
@@ -830,6 +855,12 @@ partners <- partners[-which(partners$Type_of_Org == "multi"),]
 #remove black "NA" partners
 partners <- partners[-which(is.na(partners$Partners)),]
 
+# also want to do a check of spelling to see if sort partner names alphabetically, do any different verions show up (might not even be user error - some entities had name changes that were flagged in FR)
+# check complete - ran: 
+          #mod_partner_count <- sub_partners %>% group_by(scientific_name) %>%  distinct(Partners)
+# and looks good 
+
+
 ## count number of partners for each species
 ## make two versions 
   # one normal
@@ -839,6 +870,15 @@ normal_partner_count <- partners %>% group_by(scientific_name) %>%
   distinct(Partners) %>%  summarise(n()) 
 #nothing removed or changed 
 
+names(normal_partner_count) <- c("scientific_name", "normal_count" )
+
+#remove flattailed outlier 
+
+no_lizard <- normal_partner_count
+
+no_lizard <- no_lizard %>% filter(!grepl("Phrynosoma", scientific_name))
+names(no_lizard) <- c("scientific_name", "no_liz" )
+
 #remove offices
 sub_partners <- partners
 sub_partners$Partners <- gsub("(.*)-.*", "\\1", sub_partners$Partners) ## Altered text from https://stackoverflow.com/questions/25307899/r-remove-anything-after-comma-from-columnn 
@@ -846,21 +886,25 @@ sub_partners$Partners <- gsub("(.*)-.*", "\\1", sub_partners$Partners) ## Altere
 mod_partner_count <- sub_partners %>% group_by(scientific_name) %>% 
   distinct(Partners) %>%  summarise(n()) 
 
-
-# note - getting a bug when use duplicate so next time try match_df from plyr 
-  
-
-# also want to do a check of spelling to see if sort partner names alphabetically, do any different verions show up (might not even be user error - some entities had name changes that were flagged in FR)
-# check complete - ran: 
-          #mod_partner_count <- sub_partners %>% group_by(scientific_name) %>%  distinct(Partners)
-# and looks good 
-
-### ### So need to add all remaining partners, re run and then decide on bins 
-
+names(mod_partner_count) <- c("scientific_name", "no_offices" )
 
 ### addressing issue that Flattailed Horned lizard has so many partners - 
 ## after combine Federal agency offices, remove all remaining partners with "district" (otherwise will remove federal district offices if do so before - one work around might be to only remove district for this partner) issue is that the partner has 23 partners that are a subsection of county and getting repeated multiple times 
 
+no_district <- sub_partners %>% 
+  mutate(district = case_when(grepl("district", Partners, ignore.case = TRUE) ~ 1)) # Finding all cases of district and replacing with NA
+
+#remove black the now "NA" district partners
+no_district_part <- no_district[-which(no_district$district == 1),]
+
+no_district_part_count <- no_district_part %>% group_by(scientific_name) %>% 
+  distinct(Partners) %>%  summarise(n())  #count modified number of partners here now
+
+names(no_district_part_count) <- c("scientific_name", "no_distinct")
+
+# note - getting a bug when use duplicate so next time try match_df from plyr 
+
+### ### So need to decide on bins 
 
 ```
 
@@ -872,6 +916,136 @@ o	To account for the uncertainty in number of partners, we put this information 
 o	We use logit regression models to predict participation by different “types” of partners
 
 
+
+#### Set up model 
+
+```{r}
+## Add number of partners 
+
+partners <- full_join(normal_partner_count, mod_partner_count) %>% full_join(no_district_part_count) %>% full_join(no_lizard)
+
+
+reg_prdctr <- reg_prdctr %>% left_join(partners)
+#note - this variable was made in a chunk below so won't be able to knit script without bringing that information forward 
+
+
+## rearrange order
+
+reg_prdctr <- reg_prdctr %>% 
+  select(-no_iniv) %>% 
+  select(scientific_name, common_name, normal_count:no_liz, range_area: Big_Pg_count)
+
+```
+
+
+
+
+### Base model
+
+```{r Correlation Matrix}
+# Correlation Matrix of Predictors vs Responses ##
+## modified some code from http://handlesman.blogspot.com/2011/03/matrix-plot-with-confidence-intervals.html
+#Not working because of NAs in data - getting error that x is not numeric 
+
+
+#set up
+PredictorsOnlyPixel <- reg_prdctr[,c(3:7)]
+PredictAndResponsePixel <- reg_prdctr[,-c(1:2)]
+PredictAndResponseGrid <- reg_prdctr[,-c(1:2)]
+  
+# put histograms on the diagonal panel	
+panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
+{
+  usr <- par("usr"); on.exit(par(usr))			# not sure what usr is for?
+  par(usr = c(usr[1:2],0,1.5))
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)			# make the hist 
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col="grey", ...)  # defines what the histogram is going to look like
+}
+
+# put correlations on the upper panels,
+panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- cor(x, y,use="complete.obs")				
+  txt <- format(c(r, 0.123456789), digits=digits)[1]
+  prefix <- "r = "
+  rc <- cor.test(x,y,method = c("pearson"))				## calculate pearsons rho for upper grid
+  txt <- paste(prefix,txt,sep="")
+  text(0.5, 0.5, txt, cex = 1)
+}
+
+## plot a correlation matrix plot that uses the functions specified above to say what to plot where
+      ## this was taken directly from website and still not plotting r values for all 
+#pairs(PredictAndResponsePixel[1:6], lower.panel=panel.smooth, cex = .8, diag.panel=panel.hist, cex.labels = 1.2, font.labels=2, upper.panel=panel.cor)
+
+##Pixel level
+
+pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+
+
+
+### Predictors only  -->  only have one response so not going to run this one
+##pairs(PredictorsOnlyPixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+
+
+#test correlations to look for covariation between predictors
+cor(reg_prdctr[,-c(1:2)], use = "complete.obs") # matrix seems fine
+#no na.rm in this one instead it's "use"
+
+```
+
+- Note: percent public variable is still in matrix but was removed from model
+
+
+VIFS
+```{r}
+vif(lm(log(normal_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr))
+
+vif(lm(log(no_offices) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr))
+
+vif(lm(log(no_distinct) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr))
+
+vif(lm(log(no_liz) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr))
+```
+
+```{r lm1}
+lma <- lm(log(normal_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr)
+
+lmb <- lm(log(no_offices) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr)
+
+lmc <- lm(log(no_distinct) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr)
+
+lmd <- lm(log(no_liz) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr)
+
+summary(lma)
+summary(lmb)
+summary(lmc)
+summary(lmd)
+
+#par(mfrow = c(1, 1))
+#plot(lm2)
+
+#qqPlot(residuals(lm2))
+#par(mfrow = c(1, 1))
+
+#plot(predicted(lm2), residuals(lm2))
+#hist(residuals(lm2))
+# how add CI equivalent around q-q plot? 
+AIC(lma)
+AIC(lmb)
+AIC(lmc) ## C has lowest value 
+AIC(lmd)
+
+#check_overdispersion(lm2)
+```
+
+
+
+
+
 test relationship between number of initiatives and number of partners 
 ```{r}
 test <- full_join(normal_partner_count, names) 
@@ -880,8 +1054,18 @@ test2 <- test %>% full_join(no_init_per_sp_2, by = "common_name")
 names(test2) <- c("scientific_name", "part"        ,     "common_name"   ,  "initi")
 
 plot(test2$initi ~ test2$part)
+
 ```
 
+
+Q - how many agreement documents are we missing 
+```{r}
+question <- sub_initiatves_partners
+
+normal_partner_count <- question %>% group_by(scientific_name, RowSpecInfo, Agreement_Name) %>% 
+  distinct(DoWeHaveDoc) %>%  summarise(n(DoWeHaveDoc)) 
+
+```
 
 
 
