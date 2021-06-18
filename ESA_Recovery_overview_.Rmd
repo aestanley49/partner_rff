@@ -242,11 +242,12 @@ reg_prdctr <- L_df %>% select(scientific_name, common_name, no_iniv, range_area,
 
 ## Add FR_pg_length variable and create dummy variables
 
-#type of FR doc - 12 monthns
 FR_info <- FR_pg_length_and_doc_type
-month_12 <- c(0)
-FR_info <- add_column(FR_info, month_12)
-FR_info[which(FR_info$type_FR_doc == "12-Month Findings" ),5] <- 1
+
+#type of FR doc - 12 monthns
+
+FR_info <- FR_info %>% mutate(month_12 = case_when(grepl("month", type_FR_doc, ignore.case = TRUE) ~ 1)) %>% 
+  replace(is.na(.), 0) # then replace all 0s 
 
 #type of FR doc - withdrawal of proposed rule 
 # method used above won't work because strings are all slightly different
@@ -257,7 +258,7 @@ FR_info <- FR_info %>% mutate(wd_proposed = case_when(grepl("withdrawal", type_F
   replace(is.na(.), 0) # then replace all 0s 
 
 #FR page count based on binary variable (1 = if greater than 1 page)
-FR_info <- FR_info  %>% mutate(Big_Pg_count = case_when(FR_pg_length > .5 ~ 1, FR_pg_length <= .5 ~ 0 )) 
+FR_info <- FR_info  %>% mutate(Big_Pg_count = case_when(FR_pg_length > 1 ~ 1, FR_pg_length <= 1 ~ 0 )) 
 
 #select the predictors actually want 
 FR_info  <- FR_info %>% select(-FR_pg_length, -type_FR_doc)             
@@ -276,6 +277,22 @@ names(reg_prdctr) <- c("scientific_name"     ,           "common_name"          
 skim(reg_prdctr)
 
 reg_prdctr_init <- reg_prdctr
+
+
+## create logs of range area and # initatives
+
+reg_prdctr_init <- reg_prdctr_init %>% 
+  mutate(log_rangearea = log(range_area)) %>% 
+  mutate(log_initatives = log(no_iniv))
+
+
+## re arrange order 
+
+reg_prdctr_init <- reg_prdctr_init %>% select(scientific_name:no_iniv, log_initatives, log_rangearea, range_area:Big_Pg_count)
+
+## removing %public until have all data and Big_pg_count 
+reg_prdctr_init <- reg_prdctr_init %>% select(-percentpublic, Big_Pg_count)
+
 
 ```
 
@@ -326,6 +343,17 @@ panel.cor <- function(x, y, digits=2, prefix="", cex.cor, ...)
 pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
 
 
+printme <- pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+
+##try printing dendrogram so can actually see it 
+
+ggsave(filename = "cormat_initatives.jpg", plot = printme, path = output.dir)
+
+
+pdf("cormat_initative")
+pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
+#dev.off()
+while (!is.null(dev.list()))  dev.off()
 
 ### Predictors only  -->  only have one response so not going to run this one
 ##pairs(PredictorsOnlyPixel,lower.panel = panel.smooth, diag.panel=panel.hist,upper.panel=panel.cor)
@@ -367,6 +395,8 @@ lm7 <- lm(log(no_iniv) ~ range_area + plant + public_mang_shannons_diversity + t
 
 lm8 <- lm(log(no_iniv) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats + wd_proposed,data = reg_prdctr_init)
 
+lm9 <- lm(log(no_iniv) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats + wd_proposed + month_12,data = reg_prdctr_init)
+
 
 summary(lm1)
 summary(lm2)
@@ -376,6 +406,7 @@ summary(lm5)
 summary(lm6)
 summary(lm7)
 summary(lm8)
+summary(lm9)
 
 
 AIC(lm1)
@@ -386,6 +417,7 @@ AIC(lm5)
 AIC(lm6)
 AIC(lm7)
 AIC(lm8)
+AIC(lm9)
 
 
 #kable(table(lm2$coefficients))
@@ -942,7 +974,7 @@ reg_prdctr <- reg_prdctr %>%
 
 ### Base model
 
-```{r Correlation Matrix}
+```{r Correlation Matrix 2}
 # Correlation Matrix of Predictors vs Responses ##
 ## modified some code from http://handlesman.blogspot.com/2011/03/matrix-plot-with-confidence-intervals.html
 #Not working because of NAs in data - getting error that x is not numeric 
@@ -1011,7 +1043,7 @@ vif(lm(log(no_distinct) ~ range_area + plant + public_mang_shannons_diversity + 
 vif(lm(log(no_liz) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr))
 ```
 
-```{r lm1}
+```{r}
 lma <- lm(log(normal_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr)
 
 lmb <- lm(log(no_offices) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr)
@@ -1059,7 +1091,7 @@ plot(test2$initi ~ test2$part)
 
 
 Q - how many agreement documents are we missing 
-```{r}
+```{r eval=FALSE, include = F}
 question <- sub_initiatves_partners
 
 normal_partner_count <- question %>% group_by(scientific_name, RowSpecInfo, Agreement_Name) %>% 
