@@ -53,7 +53,7 @@ library(car) #contains vif function
 
 ##load in different datasets
 ```{r, echo = FALSE, include = FALSE}
-initiatves_partners <- read_excel(paste0("/usr/local/bin/store/partner_rff/data/AS12_Jun_7_21_codingdata.xlsx"), sheet = "initiatves_partners", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
+initiatves_partners <- read_excel(paste0("/usr/local/bin/store/partner_rff/data/AS12_Jun_15_21_codingdata.xlsx"), sheet = "initiatves_partners", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
                )
 
 proactive <- read_excel(paste0("/usr/local/bin/store/partner_rff/data/AS12_Jun_15_21_codingdata.xlsx"), sheet = "threats", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
@@ -576,7 +576,7 @@ ggplot(smelt) + aes(x=variable, y=value, fill = factor(rowname, levels=c("NA", "
   ggtitle("Actions for types of species") + 
   scale_y_continuous(name = "count")+
   labs(fill = "Outcome")+ 
-  scale_fill_manual(values=c("black", "firebrick1", "mediumpurple", "dodgerblue"))
+  scale_fill_manual(values=c("grey", "firebrick1", "mediumpurple", "dodgerblue"))
  
 ```
 
@@ -938,6 +938,31 @@ names(no_district_part_count) <- c("scientific_name", "no_distinct")
 
 ### ### So need to decide on bins 
 
+
+
+## No HCPs
+
+NoHCPS <- partners
+
+NoHCPS <- NoHCPS[-which(NoHCPS$DocCategory == "HCP"),] ## loose ~90 rows 
+
+NoHCPS_count <- NoHCPS %>% group_by(scientific_name) %>% 
+  distinct(Partners) %>%  summarise(n()) 
+
+names(NoHCPS_count) <- c("scientific_name", "NoHCPS_count")
+
+
+## Partners only in FR 
+
+FR_only <- partners
+
+FR_only <- FR_only[which(FR_only$Partner_Source == "FR"),]
+
+FR_only_count <- FR_only %>% group_by(scientific_name) %>% 
+  distinct(Partners) %>%  summarise(n()) 
+
+names(FR_only_count) <- c("scientific_name", "FR_only_count")
+
 ```
 
 
@@ -954,18 +979,36 @@ o	We use logit regression models to predict participation by different â€œtypesâ
 ```{r}
 ## Add number of partners 
 
-partners <- full_join(normal_partner_count, mod_partner_count) %>% full_join(no_district_part_count) %>% full_join(no_lizard)
+partners <- full_join(normal_partner_count, mod_partner_count) %>% full_join(NoHCPS_count) %>% full_join(FR_only_count)
 
 
-reg_prdctr <- reg_prdctr %>% left_join(partners)
+
+## create logs of range area and # initatives
+
+reg_prdctr_partners <- reg_prdctr
+
+reg_prdctr_partners <- reg_prdctr_partners %>% 
+  mutate(log_rangearea = log(range_area))
+ 
+## re arrange order 
+reg_prdctr_partners <- reg_prdctr_partners %>% select(scientific_name:no_iniv , log_rangearea, range_area:Big_Pg_count)
+## removing %public until have all data and Big_pg_count 
+reg_prdctr_partners <- reg_prdctr_partners %>% select(-percentpublic, -Big_Pg_count, -no_iniv)
+
+
+reg_prdctr_partners <- reg_prdctr_partners %>% left_join(partners)
 #note - this variable was made in a chunk below so won't be able to knit script without bringing that information forward 
 
+reg_prdctr_partners <- as.data.frame(reg_prdctr_partners)
+reg_prdctr_partners[,c(10:13)] <- sapply(reg_prdctr_partners[ ,c(10:13)], as.numeric)
+reg_prdctr_partners <- as.data.frame(reg_prdctr_partners)
 
-## rearrange order
+names(reg_prdctr_partners)
 
-reg_prdctr <- reg_prdctr %>% 
-  select(-no_iniv) %>% 
-  select(scientific_name, common_name, normal_count:no_liz, range_area: Big_Pg_count)
+reg_prdctr_partners <- reg_prdctr_partners %>% select(scientific_name:common_name , normal_count:FR_only_count, log_rangearea, range_area:wd_proposed)
+
+
+
 
 ```
 
@@ -981,9 +1024,9 @@ reg_prdctr <- reg_prdctr %>%
 
 
 #set up
-PredictorsOnlyPixel <- reg_prdctr[,c(3:7)]
-PredictAndResponsePixel <- reg_prdctr[,-c(1:2)]
-PredictAndResponseGrid <- reg_prdctr[,-c(1:2)]
+PredictorsOnlyPixel <- reg_prdctr_partners[,c(3:6)]
+PredictAndResponsePixel <- reg_prdctr_partners[,-c(1:2)]
+PredictAndResponseGrid <- reg_prdctr_partners[,-c(1:2)]
   
 # put histograms on the diagonal panel	
 panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
@@ -1024,7 +1067,7 @@ pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,
 
 
 #test correlations to look for covariation between predictors
-cor(reg_prdctr[,-c(1:2)], use = "complete.obs") # matrix seems fine
+##cor(reg_prdctr[,-c(1:2)], use = "complete.obs") # matrix seems fine
 #no na.rm in this one instead it's "use"
 
 ```
@@ -1034,44 +1077,60 @@ cor(reg_prdctr[,-c(1:2)], use = "complete.obs") # matrix seems fine
 
 VIFS
 ```{r}
-vif(lm(log(normal_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr))
+vif(lm(log(normal_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners))
 
-vif(lm(log(no_offices) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr))
+vif(lm(log(no_offices) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners))
 
-vif(lm(log(no_distinct) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr))
+vif(lm(log(NoHCPS_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners))
 
-vif(lm(log(no_liz) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr))
+vif(lm(log(FR_only_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners))
 ```
 
 ```{r}
-lma <- lm(log(normal_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr)
+lma <- lm(log(normal_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
 
-lmb <- lm(log(no_offices) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr)
+lmb <- lm(log(no_offices) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
 
-lmc <- lm(log(no_distinct) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr)
+lmc <- lm(log(NoHCPS_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
 
-lmd <- lm(log(no_liz) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr)
+lmd <- lm(log(FR_only_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
 
 summary(lma)
 summary(lmb)
 summary(lmc)
 summary(lmd)
 
-#par(mfrow = c(1, 1))
-#plot(lm2)
-
-#qqPlot(residuals(lm2))
-#par(mfrow = c(1, 1))
-
-#plot(predicted(lm2), residuals(lm2))
-#hist(residuals(lm2))
-# how add CI equivalent around q-q plot? 
 AIC(lma)
 AIC(lmb)
 AIC(lmc) ## C has lowest value 
 AIC(lmd)
 
 #check_overdispersion(lm2)
+
+
+
+lme <- lm(log(normal_count) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
+
+lmf <- lm(log(no_offices) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
+
+lmg <- lm(log(NoHCPS_count) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
+
+lmh <- lm(log(FR_only_count) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
+
+summary(lme)
+summary(lmf)
+summary(lmg)
+summary(lmh)
+
+AIC(lme)
+AIC(lmf)
+AIC(lmg) ## C has lowest value 
+AIC(lmh)
+
+
+## note - no changes when added FR docs
+
+
 ```
 
 
