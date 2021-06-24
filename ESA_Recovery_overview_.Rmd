@@ -49,6 +49,7 @@ library(corrplot) #for visualizing chi square results
 library(reshape) # has melt function
 library(skimr) #super nice summary package 
 library(car) #contains vif function 
+library("stargazer")
 ```
 
 ##load in different datasets
@@ -143,7 +144,7 @@ Species Name changes/differences accross datasets
 Chorizanthe parryi var fernandina -> Chorizanthe parryi var. fernandina
 Moxostoma sp 2 -> Moxostoma sp.
   
-```{r}
+```{r, include = FALSE, echo = FALSE}
 
 tdata_mod <- tdata %>% select(scientific_name, common_name, vert_vs_invert, species_group, number_of_counties, range_area, habitat_modification, overutilization, pollution, species_species_interactions, env_stochasticity, demographic_stochasticity, total_threats, public_mang_shannons_diversity, avg_employment)
 
@@ -181,7 +182,7 @@ df <- df[,c(27,23,1:22,24:26)]
 - Count of efforts, agreements, groups per species 
 
 
-```{r}
+```{r, include = FALSE, echo = FALSE,  warning=FALSE}
 #### - Number of initiatives per species
 
 #number of partners in each of the agreements
@@ -219,13 +220,28 @@ summarize(sum = sum(count))
 ggplot(no_init_per_sp_3, aes(common_name, sum)) +   
   geom_bar(aes(fill = RowSpecInfo), position = "stack", stat="identity") + theme(axis.text.x = element_text(angle = 90)) + ggtitle("Number of initiatives per species") + scale_x_discrete(name ="Species") + scale_y_continuous(name ="Count") + coord_flip()
 
+
+## Sum stats 
+sum(no_init_per_sp_2$sum)
+## [1] 185
+
+summary(no_init_per_sp_2$sum)
+
+sumstat <- no_init_per_sp_3
+
+sumstat <- pivot_wider(sumstat, names_from = RowSpecInfo, values_from = sum)
+
+sum(sumstat$Agreement, na.rm = T)
+sum(sumstat$Effort, na.rm = T)
+sum(sumstat$Group, na.rm = T)
+
 ```
 
 #### 1 - Regression Predictor Modification
 -	Working group mentioned – logistic regression
 -	Numbers of efforts or agreements – linear regression or negative binomial or poisson regression (since count data)
 
-```{r}
+```{r, include = FALSE, echo = FALSE,  warning=FALSE}
 NoIniv <- no_init_per_sp_2 
 names(NoIniv) <- c("common_name", "no_iniv")
 
@@ -299,7 +315,7 @@ reg_prdctr_init <- reg_prdctr_init %>% select(-percentpublic, Big_Pg_count)
 
 ### Base model
 
-```{r Correlation Matrix}
+```{r Correlation Matrix, include = FALSE, echo = FALSE}
 # Correlation Matrix of Predictors vs Responses ##
 ## modified some code from http://handlesman.blogspot.com/2011/03/matrix-plot-with-confidence-intervals.html
 #Not working because of NAs in data - getting error that x is not numeric 
@@ -369,7 +385,7 @@ cor(reg_prdctr[,-c(1:2)], use = "complete.obs") # matrix seems fine
 
 
 VIFS
-```{r}
+```{r, include = FALSE, echo = FALSE}
 #### Previous
 ###vif(lm(no_iniv ~ range_area +percentpublic + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr))
 
@@ -378,44 +394,35 @@ vif(lm(log(no_iniv) ~ range_area + plant + public_mang_shannons_diversity + tota
 
 model summary - variations
 
-```{r lm1}
-lm1 <- lm(log(no_iniv) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_init)
+```{r lm1, include = FALSE, echo = FALSE}
+lm1 <- lm(log(no_iniv) ~ range_area + plant  + total_threats,data = reg_prdctr_init)
 
-lm2 <- lm(log(no_iniv) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_init)
+lm2 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats,data = reg_prdctr_init)
 
-lm3 <- lm(log(no_iniv) ~ range_area + plant + public_mang_shannons_diversity + total_threats + Big_Pg_count,data = reg_prdctr_init)
+lm4 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + Big_Pg_count,data = reg_prdctr_init)
 
-lm4 <- lm(log(no_iniv) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats + Big_Pg_count,data = reg_prdctr_init)
+lm6 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + month_12,data = reg_prdctr_init)
 
-lm5 <- lm(log(no_iniv) ~ range_area + plant + public_mang_shannons_diversity + total_threats + month_12,data = reg_prdctr_init)
+lm8 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + wd_proposed,data = reg_prdctr_init)
 
-lm6 <- lm(log(no_iniv) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats + month_12,data = reg_prdctr_init)
-
-lm7 <- lm(log(no_iniv) ~ range_area + plant + public_mang_shannons_diversity + total_threats + wd_proposed,data = reg_prdctr_init)
-
-lm8 <- lm(log(no_iniv) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats + wd_proposed,data = reg_prdctr_init)
-
-lm9 <- lm(log(no_iniv) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats + wd_proposed + month_12,data = reg_prdctr_init)
+lm9 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + wd_proposed + month_12,data = reg_prdctr_init)
 
 
 summary(lm1)
 summary(lm2)
-summary(lm3)
 summary(lm4)
-summary(lm5)
 summary(lm6)
-summary(lm7)
 summary(lm8)
 summary(lm9)
 
 
 AIC(lm1)
 AIC(lm2)
-AIC(lm3)
+
 AIC(lm4)
-AIC(lm5)
+
 AIC(lm6)
-AIC(lm7)
+
 AIC(lm8)
 AIC(lm9)
 
@@ -436,6 +443,14 @@ AIC(lm2)
 ```
 
 
+Trying stargazer 
+
+```{r, include = FALSE, echo = FALSE}
+stargazer(lm1, lm2, lm4, lm6, lm8, lm9, type = "html", title = "Initiatives_models", align = TRUE, out = "output/Initiatives_models_22_Jun_2021.html", # AIC isn't calculated for lm models so adding manually
+          add.lines=list(c("AIC", round(AIC(lm1),1), round(AIC(lm2),1), round(AIC(lm4),1), round(AIC(lm6),1), round(AIC(lm8),1), round(AIC(lm9),1)  ))) 
+
+
+```
 
 
 
@@ -443,7 +458,8 @@ AIC(lm2)
 
 #### 1 - Summary stats
 
-```{r}
+Count of outcomes as proactive vs responsive
+```{r, echo = FALSE,  warning=FALSE}
 
 outcomes <- df
 
@@ -478,8 +494,8 @@ ggplot(outcomes, aes(f0)) +
 
 ```
 
-
-```{r}
+Count of outcomes on public vs private land 
+```{r, echo = FALSE,  warning=FALSE}
 
 ### ### Land
 outcomes <- outcomes %>% rowwise() %>% mutate("public" = sum(preempt_public, public_unclear, respon_public)) %>% #rowSums with mutate (need rowwise) 
@@ -509,7 +525,7 @@ ggplot(outcomes, aes(f0)) +
 ```
 
 
-```{r}
+```{r, echo=FALSE,  warning=FALSE}
 ### ### ### ### ### ### Taxa 
 
 taxa <- outcomes
@@ -581,7 +597,7 @@ ggplot(smelt) + aes(x=variable, y=value, fill = factor(rowname, levels=c("NA", "
 ```
 
 
-```{r}
+```{r, echo=FALSE,  warning=FALSE}
 ### ### ### Taxa -- Land 
   ### 	all species, plant species, animal species (outcome: land)
 
@@ -636,7 +652,7 @@ ggplot(sactions_melt) + aes(x=variable, y=value, fill = factor(rowname, levels=c
 ```
 
 
-```{r}
+```{r, echo=FALSE,  warning=FALSE}
 
 ### ### ### ### ### ### ### ### ### ### ### ### ### Land
 
@@ -682,7 +698,7 @@ ggplot(act_land) + aes(x=variable, y=value, fill = factor(actionresults, levels=
 ```
 
 
-```{r}
+```{r, echo=FALSE, include=FALSE}
 
 ### ### ### ### ### Range size -- Preempt  
   ### restricted versus wide-ranging species? (outcome: preempt)
@@ -717,7 +733,7 @@ ggplot(count_range) + aes(x=variable, y=value, fill = actionresults) +
 ```
 
 
-```{r}
+```{r, echo=FALSE}
 ### ### ### ### ### Range size -- Preempt 
   ### 	presence of each threat type (outcome: preempt)
 
@@ -790,7 +806,7 @@ ggplot(threats_actions) + aes(x=variable, y=value, fill = factor(rowname, levels
 ```
 
 Chi squares 
-```{r}
+```{r, echo=FALSE}
 # assumption: 5 or more in at least 80% of the cells, and no cell should have an expected of less than one (3).
 
 
@@ -811,13 +827,13 @@ kable(diff_tb)
 
 chsq <- chisq.test(diff_tb)
 
-chsq$residuals
+#chsq$residuals
 
-corrplot(chsq$residuals, is.cor = FALSE)
+#corrplot(chsq$residuals, is.cor = FALSE)
 
 contrib <- 100*chsq$residuals^2/chsq$statistic
-round(contrib, 3)
-corrplot(contrib, is.cor = FALSE)
+#round(contrib, 3)
+#corrplot(contrib, is.cor = FALSE)
 
 
 ### ### ###	Removing UNC from - Differences in frequency of proactive and protective measures on public versus private lands (Chi-square) 
@@ -826,11 +842,11 @@ diff_tb <- data.frame('preempt' = c(15,21), 'respon' = c(2,14))
 rownames(diff_tb) <- c("private", "public")
 
 chsq <- chisq.test(diff_tb)
-chsq$residuals
-corrplot(chsq$residuals, is.cor = FALSE)
+#chsq$residuals
+#corrplot(chsq$residuals, is.cor = FALSE)
 contrib <- 100*chsq$residuals^2/chsq$statistic
-round(contrib, 3)
-corrplot(contrib, is.cor = FALSE)
+#round(contrib, 3)
+#corrplot(contrib, is.cor = FALSE)
 
 
 ### I think I need to use fisher's exact here because 1 out of 4 values is less than 5... 
@@ -874,7 +890,7 @@ rownames(land_taxa) <- rname
 
 #### 3 - Data wrangling 
 
-```{r}
+```{r, include = FALSE, echo = FALSE}
 
 partners <- sub_initiatves_partners
 
@@ -976,7 +992,7 @@ o	We use logit regression models to predict participation by different “types�
 
 #### Set up model 
 
-```{r}
+```{r, include = FALSE, echo = FALSE}
 ## Add number of partners 
 
 partners <- full_join(normal_partner_count, mod_partner_count) %>% full_join(NoHCPS_count) %>% full_join(FR_only_count)
@@ -992,12 +1008,14 @@ reg_prdctr_partners <- reg_prdctr_partners %>%
  
 ## re arrange order 
 reg_prdctr_partners <- reg_prdctr_partners %>% select(scientific_name:no_iniv , log_rangearea, range_area:Big_Pg_count)
-## removing %public until have all data and Big_pg_count 
-reg_prdctr_partners <- reg_prdctr_partners %>% select(-percentpublic, -Big_Pg_count, -no_iniv)
+## removing %public until have all data and
+reg_prdctr_partners <- reg_prdctr_partners %>% select(-percentpublic, -no_iniv)
 
 
 reg_prdctr_partners <- reg_prdctr_partners %>% left_join(partners)
 #note - this variable was made in a chunk below so won't be able to knit script without bringing that information forward 
+
+reg_partners <- reg_prdctr_partners # I want to use different set of variables in models than in cormat (more modifications to follow...)
 
 reg_prdctr_partners <- as.data.frame(reg_prdctr_partners)
 reg_prdctr_partners[,c(10:13)] <- sapply(reg_prdctr_partners[ ,c(10:13)], as.numeric)
@@ -1008,7 +1026,13 @@ names(reg_prdctr_partners)
 reg_prdctr_partners <- reg_prdctr_partners %>% select(scientific_name:common_name , normal_count:FR_only_count, log_rangearea, range_area:wd_proposed)
 
 
+reg_prdctr_partners <- reg_prdctr_partners %>% 
+  mutate(log_normal = log(normal_count)) %>% 
+  mutate(log_HCPS = log(NoHCPS_count))%>% 
+  mutate(log_FR = log(FR_only_count))
 
+
+reg_prdctr_partners <- reg_prdctr_partners %>% select(scientific_name:common_name , -normal_count:FR_only_count, log_normal:log_FR, log_rangearea, range_area:wd_proposed)
 
 ```
 
@@ -1017,7 +1041,7 @@ reg_prdctr_partners <- reg_prdctr_partners %>% select(scientific_name:common_nam
 
 ### Base model
 
-```{r Correlation Matrix 2}
+```{r Correlation Matrix 2, include = FALSE, echo = FALSE}
 # Correlation Matrix of Predictors vs Responses ##
 ## modified some code from http://handlesman.blogspot.com/2011/03/matrix-plot-with-confidence-intervals.html
 #Not working because of NAs in data - getting error that x is not numeric 
@@ -1076,34 +1100,40 @@ pairs(PredictAndResponsePixel,lower.panel = panel.smooth, diag.panel=panel.hist,
 
 
 VIFS
-```{r}
-vif(lm(log(normal_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners))
+```{r, include = FALSE, echo = FALSE}
+vif(lm(log(normal_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_partners))
 
-vif(lm(log(no_offices) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners))
+vif(lm(log(no_offices) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_partners))
 
-vif(lm(log(NoHCPS_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners))
+vif(lm(log(NoHCPS_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_partners))
 
-vif(lm(log(FR_only_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners))
+vif(lm(log(FR_only_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_partners))
 ```
 
-```{r}
-lma <- lm(log(normal_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
+```{r, include = FALSE, echo = FALSE}
+lm1 <- lm(log(NoHCPS_count) ~ range_area + plant  + total_threats,data = reg_partners)
 
-lmb <- lm(log(no_offices) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
+lm2 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats,data = reg_partners)
 
-lmc <- lm(log(NoHCPS_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
+lm4 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + Big_Pg_count,data = reg_partners)
 
-lmd <- lm(log(FR_only_count) ~ range_area + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
+lm6 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + month_12,data = reg_partners)
 
-summary(lma)
-summary(lmb)
-summary(lmc)
-summary(lmd)
+lm8 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + wd_proposed,data = reg_partners)
 
-AIC(lma)
-AIC(lmb)
-AIC(lmc) ## C has lowest value 
-AIC(lmd)
+lm9 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + wd_proposed + month_12,data = reg_partners)
+
+
+
+#summary(lma)
+#summary(lmb)
+#summary(lmc)
+#summary(lmd)
+
+#AIC(lma)
+#AIC(lmb)
+#AIC(lmc) ## C has lowest value 
+#AIC(lmd)
 
 #check_overdispersion(lm2)
 
@@ -1113,7 +1143,7 @@ lme <- lm(log(normal_count) ~ log(range_area) + plant + public_mang_shannons_div
 
 lmf <- lm(log(no_offices) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
 
-lmg <- lm(log(NoHCPS_count) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
+lmg <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats +wd_proposed,data = reg_prdctr_partners)
 
 lmh <- lm(log(FR_only_count) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
 
@@ -1133,12 +1163,67 @@ AIC(lmh)
 
 ```
 
+Adding stargazer 
+
+```{r, include = FALSE, echo = FALSE}
+stargazer(lm1, lm2, lm4, lm6, lm8, lm9, type = "html", title = "Partners_models", align = TRUE, out = "output/Partners_models_22_Jun_2021.html", # AIC isn't calculated for lm models so adding manually
+          add.lines=list(c("AIC", round(AIC(lm1),1), round(AIC(lm2),1), round(AIC(lm4),1), round(AIC(lm6),1), round(AIC(lm8),1), round(AIC(lm9),1)  ))) 
+
+
+```
+
+
+## Paper 
+###Summary stats
+
+- number of unique partners working on all species 
+(note - using the HCP dataset)
+```{r, include = FALSE, echo = FALSE, eval=FALSE, warning=FALSE}
+
+tryme <- NoHCPS
+tryme <- tryme %>% distinct(Partners) 
+
+
+
+summary(reg_partners$NoHCPS_count)
+
+```
+
+
+
+
+
+
+
+Scrap - testing ECOS csv against our list of species 
+
+```{r, include = FALSE, echo = FALSE, eval=FALSE, warning=FALSE}
+
+mod_species    <- initiatves_partners  
+
+mod_species <- mod_species %>% group_by(scientific_name) %>% 
+  distinct(Partners) %>%  summarise(n()) 
+
+names(mod_species) <- c("Scientific.Name", "count")
+      
+ECOS <- read.csv(paste0(DataSource,"/ECOS_species-precluded-from-listing-report.csv"), stringsAsFactors = FALSE) 
+
+                            
+testing <- mod_species %>% full_join(ECOS)
+
+
+### 26 species that are on our list but not on ECOS
+
+#21 species on ECOS that are not on our list 
+
+
+```
 
 
 
 
 test relationship between number of initiatives and number of partners 
-```{r}
+```{r, include = FALSE, echo = FALSE, eval=FALSE,}
 test <- full_join(normal_partner_count, names) 
 
 test2 <- test %>% full_join(no_init_per_sp_2, by = "common_name")
