@@ -5,6 +5,7 @@ date: "6/7/2021"
 output:
   word_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -25,6 +26,7 @@ Notes
 
 
 ##Set up file structure 
+
 ```{r, include = FALSE, echo = FALSE}
 ## setup the file structure so that this markdown document is in the main project folder along with the other folders noted below
 
@@ -58,12 +60,18 @@ library(sandwich) # for resolving heteroskedasticity
 library("relaimpo") # for partial R2ed calcs
 library(heplots) # different type of R2ed calc
 library(rsq) # third type of R2ed calcs
+library(sjPlot) # like stargazer but tables look more like what we want
+library(sandwich) ## for Robust Standard Errors and testing heteroskedasticty 
+library(lmtest) ## not sure what this does but was on same blog as sandwich package
 ```
 
 ##load in different datasets
 ```{r, echo = FALSE, include = FALSE}
 initiatves_partners <- read_excel(paste0("/usr/local/bin/store/partner_rff/data/AS12_Jun_15_21_codingdata.xlsx"), sheet = "initiatves_partners", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
                )
+
+initiatves_partners2 <- read_excel(paste0(DataSource,"/AS12_Aug_1_21_codingdata.xlsx"), sheet = "initiatves_partners", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
+               ) ## This has the updated Partner types but it breaks my code if I change all to this format
 
 proactive <- read_excel(paste0("/usr/local/bin/store/partner_rff/data/AS12_Jun_15_21_codingdata.xlsx"), sheet = "threats", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
                )
@@ -114,7 +122,7 @@ names <- names %>% distinct(scientific_name)
 
 proactive <- left_join(names, proactive)
 
-FR_pg_length_and_doc_type <- proactive %>% select(scientific_name, common_name, FR_pg_length, type_FR_doc)
+FR_pg_length_and_doc_type <- proactive %>% dplyr::select(scientific_name, common_name, FR_pg_length, type_FR_doc)
 
 proactive <- proactive[,-c(3:10, 20:31)] ## removed excess columns 
 names <- proactive[,c(1,2)]
@@ -157,14 +165,14 @@ Moxostoma sp 2 -> Moxostoma sp.
   
 ```{r, include = FALSE, echo = FALSE}
 
-tdata_mod <- tdata %>% select(scientific_name, common_name, vert_vs_invert, species_group, number_of_counties, range_area, habitat_modification, overutilization, pollution, species_species_interactions, env_stochasticity, demographic_stochasticity, total_threats, public_mang_shannons_diversity, private_land_proportion, weighted_rural)
+tdata_mod <- tdata %>% dplyr::select(scientific_name, common_name, vert_vs_invert, species_group, number_of_counties, range_area, habitat_modification, overutilization, pollution, species_species_interactions, env_stochasticity, demographic_stochasticity, total_threats, public_mang_shannons_diversity, private_land_proportion, weighted_rural)
 
 #put together with current list of species [doing Proactive dataset - may need to merge again]
 
 t_pro_df <- left_join(proactive2, tdata_mod, by = c("scientific_name"))
-t_pro_df <- t_pro_df %>% select(-common_name.y)
+t_pro_df <- t_pro_df %>% dplyr::select(-common_name.y)
 t_pro_df$common_name <- t_pro_df$common_name.x
-t_pro_df <- t_pro_df %>% select(-common_name.x)
+t_pro_df <- t_pro_df %>% dplyr::select(-common_name.x)
 
 ## Need to add values for % public/ private (located in tdata) bc not in new dataset 
 ## AND get info for species that have been recently removed from tyler's current dataset 
@@ -264,7 +272,7 @@ plant <- c(0)
 L_df <- add_column(L_df, plant)
 L_df[which(L_df$vert_vs_invert == "P"),27] <- 1
 
-reg_prdctr <- L_df %>% select(scientific_name, common_name, no_iniv, range_area, plant, public_mang_shannons_diversity, total_threats, private_land_proportion, weighted_rural)
+reg_prdctr <- L_df %>% dplyr::select(scientific_name, common_name, no_iniv, range_area, plant, public_mang_shannons_diversity, total_threats, private_land_proportion, weighted_rural)
 
 
 ## Add FR_pg_length variable and create dummy variables
@@ -288,7 +296,7 @@ FR_info <- FR_info %>% mutate(wd_proposed = case_when(grepl("withdrawal", type_F
 FR_info <- FR_info  %>% mutate(Big_Pg_count = case_when(FR_pg_length > 1 ~ 1, FR_pg_length <= 1 ~ 0 )) 
 
 #select the predictors actually want 
-FR_info  <- FR_info %>% select(-FR_pg_length, -type_FR_doc)             
+FR_info  <- FR_info %>% dplyr::select(-FR_pg_length, -type_FR_doc)             
 
 
 reg_prdctr <- reg_prdctr %>% left_join(FR_info)
@@ -316,17 +324,24 @@ reg_prdctr_init <- reg_prdctr_init %>%
 
 ## re arrange order 
 
-reg_prdctr_init <- reg_prdctr_init %>% select(scientific_name:no_iniv, log_initatives, log_rangearea, range_area:Big_Pg_count)
+reg_prdctr_init <- reg_prdctr_init %>% dplyr::select(scientific_name:no_iniv, log_initatives, log_rangearea, range_area:Big_Pg_count)
 
 ## removing %public until have all data and Big_pg_count 
-reg_prdctr_init <- reg_prdctr_init %>% select(-public_mang_shannons_diversity, Big_Pg_count)
+reg_prdctr_init <- reg_prdctr_init %>% dplyr::select(-Big_Pg_count)
 
 
 ## Need an extra variable to try in the partners model so pulling it here
-ns_threats <-  select(tdata, common_name, scientific_name, nserve_pop_stability)
+ns_threats <-  dplyr::select(tdata, common_name, scientific_name, nserve_pop_stability)
 
 reg_prdctr_init <- reg_prdctr_init %>% left_join(ns_threats, by = "scientific_name")
 
+reg_prdctr_init <- reg_prdctr_init %>% dplyr::select(-common_name.y)
+
+## need to get same number of observations for all models so remove nas from nserve
+
+##reg_prdctr_init <- reg_prdctr_init[-which(is.na(reg_prdctr_init$nserve_pop_stability)),]
+
+reg_prdctr_init <- reg_prdctr_init %>% mutate(Shannon_private = ((1 - private_land_proportion)*public_mang_shannons_diversity)) %>% mutate(Shannon_private_area = ((1 - private_land_proportion)*log_rangearea *public_mang_shannons_diversity))
 
 
 ```
@@ -341,9 +356,9 @@ reg_prdctr_init <- reg_prdctr_init %>% left_join(ns_threats, by = "scientific_na
 
 
 #set up
-PredictorsOnlyPixel <- reg_prdctr_init[,c(3)]
-PredictAndResponsePixel <- reg_prdctr_init[,-c(1:2)]
-PredictAndResponseGrid <- reg_prdctr_init[,-c(1:2)]
+PredictorsOnlyPixel <- reg_prdctr_init[,c(4)]
+PredictAndResponsePixel <- reg_prdctr_init[,-c(1:3,6,11)]
+PredictAndResponseGrid <- reg_prdctr_init[,-c(1:3,6,11)]
   
 # put histograms on the diagonal panel	
 panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
@@ -408,83 +423,196 @@ VIFS
 #### Previous
 ###vif(lm(no_iniv ~ range_area +percentpublic + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr))
 
-vif(lm(log(no_iniv) ~ range_area + plant  + total_threats + private_land_proportion + weighted_rural, data = reg_prdctr_init))
+vif(lm(log(no_iniv) ~ range_area + plant  + total_threats + private_land_proportion, data = reg_prdctr_init))
+
+#lm10 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion,data = reg_prdctr_init)
 ```
 
 model summary - variations
 
 ```{r lm1, include = FALSE, echo = FALSE}
-lm1 <- lm(log(no_iniv) ~ range_area + plant  + total_threats,data = reg_prdctr_init)
-
-lm2 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats,data = reg_prdctr_init)
-
-lm4 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + Big_Pg_count,data = reg_prdctr_init)
-
-lm6 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + month_12,data = reg_prdctr_init)
-
-lm8 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + wd_proposed,data = reg_prdctr_init)
-
-lm9 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + wd_proposed + month_12,data = reg_prdctr_init)
 
 lm10 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion,data = reg_prdctr_init)
 
-lm11 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + weighted_rural,data = reg_prdctr_init)
-
-lm12 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion + month_12,data = reg_prdctr_init)
-
-lm13 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion + wd_proposed,data = reg_prdctr_init)
-
 lm14 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion + wd_proposed + month_12,data = reg_prdctr_init)
 
+lmc <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + nserve_pop_stability + private_land_proportion , data = reg_prdctr_init)
 
-summary(lm1)
-summary(lm2)
-summary(lm4)
-summary(lm6)
-summary(lm8)
-summary(lm9)
-summary(lm10)
-summary(lm11)
+lmd <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion + wd_proposed + month_12 + nserve_pop_stability,data = reg_prdctr_init) #kitchen sink
 
 
-AIC(lm1)
-AIC(lm2)
+lme <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion + public_mang_shannons_diversity ,data = reg_prdctr_init)
 
-AIC(lm4)
+lmf <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion + Shannon_private,data = reg_prdctr_init)
 
-AIC(lm6)
+lmg <- lm(log(no_iniv) ~  plant  + total_threats  + Shannon_private_area,data = reg_prdctr_init)
 
-AIC(lm8)
-AIC(lm9)
-AIC(lm10)
-AIC(lm11)
+#lmh <- lm(log(no_iniv) ~ plant  + total_threats + private_land_proportion + Log_Shannon_area,data = reg_prdctr_init)
 
 
-#kable(table(lm2$coefficients))
 
-#par(mfrow = c(1, 1))
-#plot(lm2)
+lm1 <- lm(log(no_iniv) ~ range_area + plant  + total_threats,data = reg_prdctr_init)
+lm2 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats,data = reg_prdctr_init)
+#lm4 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + Big_Pg_count,data = reg_prdctr_init)
+lm6 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + month_12,data = reg_prdctr_init)
+lm8 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + wd_proposed,data = reg_prdctr_init)
+lm9 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + wd_proposed + month_12,data = reg_prdctr_init)
+lm10 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion,data = reg_prdctr_init)
+lm11 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + weighted_rural,data = reg_prdctr_init)
+lm12 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion + month_12,data = reg_prdctr_init)
+lm13 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion + wd_proposed,data = reg_prdctr_init)
+lm14 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion + wd_proposed + month_12,data = reg_prdctr_init)
+lma <- lm(log(no_iniv) ~ log(range_area) + plant + nserve_pop_stability,data = reg_prdctr_init)
+lmb <- lm(log(no_iniv) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion, data = reg_prdctr_init)
+lmc <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + nserve_pop_stability + private_land_proportion , data = reg_prdctr_init)
 
-#qqPlot(residuals(lm2))
-#par(mfrow = c(1, 1))
-
-#plot(predicted(lm2), residuals(lm2))
-#hist(residuals(lm2))
-# how add CI equivalent around q-q plot? 
-AIC(lm2)
-#check_overdispersion(lm2)
 ```
 
+
+Robust Standard Errors in R
+```{r, echo=FALSE, warning=FALSE, include=FALSE}
+
+coeftest(lm10, vcov = vcovHC(lm10, type="HC1"))
+```
 
 Trying stargazer 
 
-```{r, include = FALSE, echo = FALSE}
-stargazer(lm1, lm2, lm10, lm11, lm12, lm13, lm14, type = "html", title = "Initiatives_models", align = TRUE, out = "output/Initiatives_models_22_Jun_2021.html", # AIC isn't calculated for lm models so adding manually
-          add.lines=list(c("AIC", round(AIC(lm1),1), round(AIC(lm2),1), round(AIC(lm10),1), round(AIC(lm11),1), round(AIC(lm12),1), round(AIC(lm13),1), round(AIC(lm14),1)  ))) 
+```{r stargazer intiative, include = FALSE, echo = FALSE}
+
+
+
+# Calculate robust confidence intervals
+se_robust <- function(x)
+  coeftest(x, vcov. = sandwich::sandwich)[, 2]
+
+aic_calc <- function(x)
+  round(AIC(x),1)
+
+mdls <- list(
+  lm10, lm14, lmc, lmd, lme
+)
+
+
+stargazer(lm10, lm14, lmc, lmd, lme, 
+          type = "html", 
+          title = "Initiatives_models_Supplementary", 
+          align = TRUE, 
+          out = "output/Initiatives_models_1_Aug_2021.html", 
+          flip = TRUE, # AIC isn't calculated for lm models so adding manually
+          add.lines=list(c("AIC", aic_calc(lm10), aic_calc(lm14), aic_calc(lmc), aic_calc(lmd), aic_calc(lme)  )) , 
+          se = lapply(mdls, se_robust),  ## setting se to be calculated by Robust Standard Errors from function
+          omit.stat = c("f", "ser"), 
+          star.char = c("+", "*", "**", "***"),
+          star.cutoffs = c(.1, .05, .01, .001), 
+          notes.append = FALSE, 
+          notes = c("+ p<.1; * p<0.05; ** p<0.01; *** p<0.001"), 
+          covariate.labels=c("Log of range area", "Plant (present = 1)", "Total number of five factor threats", "NatureServe popn stability",  "Proportion of private land",  "wd proposed","month 12 findings", "Public mang. shannons diversity" ,"Constant"),
+          dep.var.labels=c("Log of No. Initiatives") )
+
+
+
+#stargazer(lm10, lm14, lmc, lmd, lme,lmf,lmg, type = "html", title = "Initiatives_models_Supplementary", align = TRUE, out = #"output/Initiatives_models_25_Jul_2021.html", # AIC isn't calculated for lm models so adding manually
+#          add.lines=list(c("AIC", round(AIC(lm10),1), round(AIC(lm14),1), round(AIC(lmc),1), round(AIC(lmd),1), round(AIC(lme),1), round(AIC(lmf),1), round(AIC(lmg),1)
+#                           ))) 
+
+
+#stargazer(lm1, lm2, lm10, lm11, lm12, lm13, lm14, lmb, lmc, type = "html", title = "Initiatives_models", align = TRUE, out = "output/Initiatives_models_22_Jun_2021.html", # AIC isn't calculated for lm models so adding manually
+ #         add.lines=list(c("AIC", round(AIC(lm1),1), round(AIC(lm2),1), round(AIC(lm10),1), round(AIC(lm11),1), round(AIC(lm12),1), round(AIC(lm13),1), round(AIC(lm14),1) , round(AIC(lmb),1) , round(AIC(lmc),1) ))) 
 
 
 ```
 
+
+
+lmg is the R^2 contribution averaged over orderings amoung regressors
+```{r, echo=FALSE, warning=FALSE, include=FALSE}
+
+#calc.relimp(lm10)
+#calc.relimp(lm11)
+#calc.relimp(lm16)
+#calc.relimp(lm17)
+
+#etasq(lm10)
+
+rsq.partial(lm10)
+rsq.partial(lmb)
+rsq.partial(lmc)
+```
+
+- 
+```{r predicting values 1, include = FALSE, echo = FALSE}
+
+
+## rerunning model so can have log_rangearea instead of log(range_area) --> same values but can't use predict with log(range_area) and get different set up in stargazer if run one model with log_rangearea
+lm10 <- lm(log(no_iniv) ~ log_rangearea + plant  + total_threats + private_land_proportion,data = reg_prdctr_init)
+
+
+## Get mean from summary stats of each predictor
+summary(reg_prdctr_init$log_rangearea)
+summary(reg_prdctr_init$plant)
+summary(reg_prdctr_init$total_threats)
+summary(reg_prdctr_init$private_land_proportion)
+
+summary(reg_prdctr_init$range_area)
+meanlog <- log(3.050e+10) #mean for range area logged #24.14099
+meanlogx2 <- log((3.050e+10) * 2)
+meanlogx1_2 <- log((3.050e+10)*.5)
+
+#predict(lm10, data.frame(log_rangearea = 23.39, plant = 0.3571, total_threats =  2.333, private_land_proportion = 0.4871))
+
+#summary(lm10)
+
+base <- predict(lm10, data.frame(log_rangearea = meanlog, plant = 0.3571, total_threats =  2.333 , private_land_proportion = 0.4871))
+base <- exp(base)
+base <- base %>% as.data.frame() %>% add_column("base")
+
+plant_0 <- predict(lm10, data.frame(log_rangearea = meanlog, plant = 0, total_threats =  2.333 , private_land_proportion = 0.4871))
+plant_0 <- exp(plant_0)
+plant_0 <- plant_0 %>% as.data.frame() %>% add_column("plant_0")
+
+plant_1 <- predict(lm10, data.frame(log_rangearea = meanlog, plant = 1, total_threats =  2.333 , private_land_proportion = 0.4871))
+plant_1 <- exp(plant_1)
+plant_1 <- plant_1 %>% as.data.frame() %>% add_column("plant_1")
+
+log_rangeareax2 <- predict(lm10, data.frame(log_rangearea = meanlogx2, plant = 0.3571, total_threats =  2.333 , private_land_proportion = 0.4871)) ## big change here 
+log_rangeareax2 <- exp(log_rangeareax2)
+log_rangeareax2 <- log_rangeareax2 %>% as.data.frame() %>% add_column("log_rangeareax2")
+
+log_rangeareax1_2 <- predict(lm10, data.frame(log_rangearea = meanlogx1_2, plant = 0.3571, total_threats =  2.333 , private_land_proportion = 0.4871))
+log_rangeareax1_2 <- exp(log_rangeareax1_2)
+log_rangeareax1_2 <- log_rangeareax1_2 %>% as.data.frame() %>% add_column("log_rangeareax1_2")
+
+private_land_proportionx2 <- predict(lm10, data.frame(log_rangearea = meanlog, plant = 0.3571, total_threats =  2.333 , private_land_proportion = (0.4871 * 2)))
+private_land_proportionx2 <- exp(private_land_proportionx2)
+private_land_proportionx2 <- private_land_proportionx2 %>% as.data.frame() %>% add_column("private_land_proportionx2")
+
+private_land_proportionx1_2 <- predict(lm10, data.frame(log_rangearea = meanlog, plant = 0.3571, total_threats =  2.333 , private_land_proportion = (0.4871 * .5)))
+private_land_proportionx1_2 <- exp(private_land_proportionx1_2)
+private_land_proportionx1_2 <- private_land_proportionx1_2 %>% as.data.frame() %>% add_column("private_land_proportionx1_2")
+
+##put together dataframe
+
+predictions <- base %>% full_join(plant_0) %>% full_join(plant_1) %>% full_join(log_rangeareax2) %>% full_join(log_rangeareax1_2) %>% full_join(private_land_proportionx2) %>% full_join(private_land_proportionx1_2)
+
+## this is clunky but it works .. 
+
+diagn <- diag(as.matrix(predictions[, -1]))
+predictions$call <- diagn
+
+names(predictions) <- c(
+ "value"          ,                     "\"base\""    ,                    
+ "\"plant_0\""          ,           "\"plant_1\""     ,               
+           "\"log_rangeareax2\""      ,      
+ "\"log_rangeareax1_2\""    ,       "\"private_land_proportionx2\""  ,
+  "\"private_land_proportionx1_2\"" , "call" 
+)
+
+
+predictions <- predictions[,c(1,9)]
+
+#predict_values <- predictions %>% select(value, call)
+## Can't knit this line ^^ but this gets final dataset 
+```
 
 
 ## 2.	What are the actions specified in the federal register important for the species?
@@ -563,7 +691,7 @@ outcomes <- outcomes %>% rowwise() %>% mutate("private_only" = private - both_pu
 
 all <- outcomes
 
-all <- all %>% select(preempt:react, public:private)
+all <- all %>% dplyr::select(preempt:react, public:private)
 
 names(all) <- c("preempt_yes", "react_yes"  , "public_yes" , "private_yes")
 
@@ -584,23 +712,13 @@ all2 <- all1 %>%  pivot_wider(names_from = two, values_from = all) ## transformi
 
 
 test_act <- all2 %>% filter(one == "preempt" | one =="react") %>% 
-  select(yes, no)
+  dplyr::select(yes, no)
 
-test_land <- all2 %>% filter(one == "private" | one =="public") %>% select(yes, no)
+test_land <- all2 %>% filter(one == "private" | one =="public") %>% dplyr::select(yes, no)
 
 
-test_actions <- chisq.test(test_act)
-test_actions
 
-test_land_a <- chisq.test(test_land)
-test_land_a
-
-fish_actions <- fisher.test(test_act)
-fish_actions
-
-fish_land <- fisher.test(test_land)
-fish_land
-
+kable(all2)
 
 #fish <- row_wise_fisher_test(test_threat_actions, workspace = 2e8, p.adjust.method = "bonferroni")
 #fish
@@ -609,13 +727,20 @@ fish_land
 ggplot(all1) + aes(x=factor(one), y=all, fill = (two)) +
   geom_bar(stat="identity", position = "stack") +
   ggtitle("Actions and locations") + 
-  scale_y_continuous(name = "count")+
+  scale_y_continuous(name = "Count")+
   labs(fill = "Yes or No") + 
   scale_x_discrete(limits = c("preempt", "react", "private", "public")) + 
   theme(axis.title.x = element_blank())
+
   
+test_actions <- chisq.test(test_act)
+test_actions
+## Total number y/n preempted and reactive 
+fish_actions <- fisher.test(test_act)
+fish_actions
 
 test_act <- all1 %>% filter(one == "preempt" | one =="react") 
+
 
   ggplot(test_act) + aes(x=factor(one), y=all, fill = (two)) +
   geom_bar(stat="identity", position = "stack") +
@@ -635,6 +760,15 @@ ggplot(test_land) + aes(x=factor(one), y=all, fill = (two)) +
   scale_x_discrete(limits = c("private", "public")) + 
   theme(axis.title.x = element_blank())
 
+test_land <- all2 %>% filter(one == "private" | one =="public") %>% dplyr::select(yes, no)
+
+
+test_land_a <- chisq.test(test_land)
+test_land_a
+## Total number y/n private and public 
+fish_land <- fisher.test(test_land)
+fish_land
+
 ```
 
 
@@ -644,7 +778,7 @@ ggplot(test_land) + aes(x=factor(one), y=all, fill = (two)) +
 ### ### ### ### ### ### Taxa 
 
 taxa <- outcomes
-taxa <- taxa %>% select(scientific_name, common_name, preempt_private:species_group, preempt:landresults)
+taxa <- taxa %>% dplyr::select(scientific_name, common_name, preempt_private:species_group, preempt:landresults)
 
 ## Filling in missing data 
 taxa[which(is.na(taxa$vert_vs_invert)),12] <- c("I")
@@ -653,7 +787,7 @@ taxa[which(is.na(taxa$species_group)),13] <- "Insects"
 ### ### ### Taxa -- Actions
   ### 	all species, plant species, animal species (outcome: preempt)
 
-taxa_small <- taxa %>% select(scientific_name, actionresults, vert_vs_invert )
+taxa_small <- taxa %>% dplyr::select(scientific_name, actionresults, vert_vs_invert )
 
 ## trying to get the following data frame 
 #|       | both| preempt | protect|
@@ -720,7 +854,7 @@ taxa2 <- outcomes
 taxa2[which(is.na(taxa2$vert_vs_invert)),12] <- c("I")
 taxa2[which(is.na(taxa2$species_group)),13] <- "Insects"   
 
-taxa2 <- taxa2 %>% select(scientific_name, common_name, vert_vs_invert:species_group, habitat_modification:demographic_stochasticity,  preempt:react, public:private)
+taxa2 <- taxa2 %>% dplyr::select(scientific_name, common_name, vert_vs_invert:species_group, habitat_modification:demographic_stochasticity,  preempt:react, public:private)
 
 
 
@@ -755,7 +889,7 @@ taxa2 <- taxa2 %>%
 ## taxa: actions 
 
 taxa_actions <- taxa2
-taxa_actions <- taxa_actions %>% select(plant_preempt_yes, plant_preempt_no, plant_react_yes, plant_react_no, vert_preempt_yes, vert_preempt_no, vert_react_yes, vert_react_no, invert_preempt_yes, invert_preempt_no , invert_react_yes, invert_react_no)
+taxa_actions <- taxa_actions %>% dplyr::select(plant_preempt_yes, plant_preempt_no, plant_react_yes, plant_react_no, vert_preempt_yes, vert_preempt_no, vert_react_yes, vert_react_no, invert_preempt_yes, invert_preempt_no , invert_react_yes, invert_react_no)
 
 taxa_actions <- colSums(taxa_actions[,c(1:12)], na.rm = T) 
 taxa_actions <- as.data.frame(taxa_actions) %>% rownames_to_column()
@@ -765,31 +899,13 @@ taxa_actions1 <- taxa_actions %>% separate(rowname, c("one", "two", "three"), "_
 taxa_actions2 <- taxa_actions1 %>%  pivot_wider(names_from = three, values_from = taxa_actions) ## transforming dataset so have "Yes" and "No" as seperate columns to be set up in same way as Becky's dataset 
 
 
-test_taxa_actions <- taxa_actions2 %>% select(yes, no) # Have a zero in dataset
+test_taxa_actions <- taxa_actions2 %>% dplyr::select(yes, no) # Have a zero in dataset
 test <- chisq.test(test_taxa_actions)
 test
 
 
 #fish <- pairwise_fisher_test(test_taxa_actions, workspace = 2e8, p.adjust.method = "bonferroni")
 #fish
-
-taxa_plant <- taxa_actions2 %>% filter(one == "plant") %>% select(yes, no)
-fish_taxa_plant <- pairwise_fisher_test(taxa_plant, p.adjust.method = "bonferroni")
-fish_taxa_plant <- fisher_test(taxa_plant)
-
-taxa_vert <- taxa_actions2 %>% filter(one == "vert") %>% select(yes, no)
-fish_taxa_vert <- pairwise_fisher_test(taxa_vert, p.adjust.method = "bonferroni")
-fish_taxa_vert <- fisher_test(taxa_vert)
-
-taxa_preempt <- taxa_actions2 %>% filter(two == "preempt") %>% select(yes, no)
-fish_taxa_preempt <- pairwise_fisher_test(taxa_preempt, p.adjust.method = "bonferroni")
-fish_taxa_preempt <- fisher_test(taxa_preempt)
-
-
-taxa_react <- taxa_actions2 %>% filter(two == "react") %>% select(yes, no)
-fish_taxa_react <- pairwise_fisher_test(taxa_react, p.adjust.method = "bonferroni")
-fish_taxa_react <- fisher_test(taxa_react)
-
 
 
 
@@ -806,6 +922,37 @@ ggplot(taxa_actions1) + aes(x=two, y=taxa_actions, fill = (three)) +
 #  geom_bar(stat="identity", position = "dodge", color = "black") +
 #  labs(fill = "Yes or No")
 
+
+taxa_actions2 %>% filter(one == "plant") %>% kable()
+
+taxa_plant <- taxa_actions2 %>% filter(one == "plant") %>% dplyr::select(yes, no)
+fish_taxa_plant <- pairwise_fisher_test(taxa_plant, p.adjust.method = "bonferroni")
+fish_taxa_plant <- fisher_test(taxa_plant)
+fish_taxa_plant
+
+taxa_actions2 %>% filter(one == "vert") %>% kable()
+
+taxa_vert <- taxa_actions2 %>% filter(one == "vert") %>% dplyr::select(yes, no)
+fish_taxa_vert <- pairwise_fisher_test(taxa_vert, p.adjust.method = "bonferroni")
+fish_taxa_vert <- fisher_test(taxa_vert)
+fish_taxa_vert
+
+taxa_actions2 %>% filter(two == "preempt") %>% kable()
+
+taxa_preempt <- taxa_actions2 %>% filter(two == "preempt") %>% dplyr::select(yes, no)
+fish_taxa_preempt <- pairwise_fisher_test(taxa_preempt, p.adjust.method = "bonferroni")
+#fish_taxa_preempt <- fisher_test(taxa_preempt)
+fish_taxa_preempt
+
+taxa_actions2 %>% filter(two == "react") %>% kable()
+
+taxa_react <- taxa_actions2 %>% filter(two == "react") %>% dplyr::select(yes, no)
+fish_taxa_react <- pairwise_fisher_test(taxa_react, p.adjust.method = "bonferroni")
+#fish_taxa_react <- fisher_test(taxa_react)
+fish_taxa_react
+
+
+
 ```
 
 
@@ -817,7 +964,7 @@ ggplot(taxa_actions1) + aes(x=two, y=taxa_actions, fill = (three)) +
 ### ### ### Taxa -- Land 
   ### 	all species, plant species, animal species (outcome: land)
 
-taxa_land <- taxa %>% select(scientific_name, landresults, vert_vs_invert )
+taxa_land <- taxa %>% dplyr::select(scientific_name, landresults, vert_vs_invert )
 
 plants <- taxa_land %>% filter(vert_vs_invert == "P") %>% ## Select which species type to subset 
 pivot_wider(names_from = landresults, values_from = vert_vs_invert) %>%  ## may action types col names
@@ -876,7 +1023,7 @@ taxa2 <- outcomes
 taxa2[which(is.na(taxa2$vert_vs_invert)),12] <- c("I")
 taxa2[which(is.na(taxa2$species_group)),13] <- "Insects"   
 
-taxa2 <- taxa2 %>% select(scientific_name, common_name, vert_vs_invert:species_group, habitat_modification:demographic_stochasticity,  preempt:react, public:private)
+taxa2 <- taxa2 %>% dplyr::select(scientific_name, common_name, vert_vs_invert:species_group, habitat_modification:demographic_stochasticity,  preempt:react, public:private)
 
 
 
@@ -911,7 +1058,7 @@ taxa2 <- taxa2 %>%
 ## taxa: actions 
 
 taxa_land <- taxa2
-taxa_land <- taxa_land %>% select(plant_public_yes, plant_public_no, plant_private_yes, plant_private_no, vert_public_yes, vert_public_no, vert_private_yes, vert_private_no, invert_public_yes, invert_public_no , invert_private_yes, invert_private_no)
+taxa_land <- taxa_land %>% dplyr::select(plant_public_yes, plant_public_no, plant_private_yes, plant_private_no, vert_public_yes, vert_public_no, vert_private_yes, vert_private_no, invert_public_yes, invert_public_no , invert_private_yes, invert_private_no)
 
 taxa_land <- colSums(taxa_land[,c(1:12)], na.rm = T) 
 taxa_land <- as.data.frame(taxa_land) %>% rownames_to_column()
@@ -921,7 +1068,7 @@ taxa_land1 <- taxa_land %>% separate(rowname, c("one", "two", "three"), "_")  ##
 taxa_land2 <- taxa_land1 %>%  pivot_wider(names_from = three, values_from = taxa_land) ## transforming dataset so have "Yes" and "No" as seperate columns to be set up in same way as Becky's dataset 
 
 
-test_taxa_land <- taxa_land2 %>% select(yes, no) # Have a zero in dataset
+test_taxa_land <- taxa_land2 %>% dplyr::select(yes, no) # Have a zero in dataset
 test <- chisq.test(test_taxa_land)
 test
 
@@ -930,32 +1077,55 @@ test
 #fish
 
 
-
-taxa_plant <- taxa_land2 %>% filter(one == "plant") %>% select(yes, no)
-fish_taxa_plant <- pairwise_fisher_test(taxa_plant, p.adjust.method = "bonferroni")
-fish_taxa_plant <- fisher_test(taxa_plant)
-
-taxa_vert <- taxa_land2 %>% filter(one == "vert") %>% select(yes, no)
-fish_taxa_vert <- pairwise_fisher_test(taxa_vert, p.adjust.method = "bonferroni")
-fish_taxa_vert <- fisher_test(taxa_vert)
-
-taxa_public <- taxa_land2 %>% filter(two == "public") %>% select(yes, no)
-fish_taxa_public <- pairwise_fisher_test(taxa_public, p.adjust.method = "bonferroni")
-#fish_taxa_public <- fisher_test(taxa_public)
-
-
-taxa_private <- taxa_land2 %>% filter(two == "private") %>% select(yes, no)
-fish_taxa_private <- pairwise_fisher_test(taxa_private, p.adjust.method = "bonferroni")
-#fish_taxa_private <- fisher_test(taxa_private)
-
-
 ggplot(taxa_land1) + aes(x=two, y=taxa_land, fill = (three)) +
-  geom_bar(stat="identity", position = "stack") + 
+  geom_bar(stat="identity", position = stack(preserve = "single"), width = .9) +  ###??????
   facet_wrap(~one) +
   ggtitle("Land for types of species") + 
   scale_y_continuous(name = "count")+
   labs(fill = "Yes or No")+ 
   theme(panel.margin = grid:: unit(-1.25, "lines"))
+
+
+taxa_land2 %>% filter(one == "plant") %>% kable()
+
+taxa_plant <- taxa_land2 %>% filter(one == "plant") %>% dplyr::select(yes, no)
+fish_taxa_plant <- pairwise_fisher_test(taxa_plant, p.adjust.method = "bonferroni")
+fish_taxa_plant <- fisher_test(taxa_plant)
+fish_taxa_plant
+
+
+taxa_land2 %>% filter(one == "vert") %>% kable()
+
+taxa_vert <- taxa_land2 %>% filter(one == "vert") %>% dplyr::select(yes, no)
+fish_taxa_vert <- pairwise_fisher_test(taxa_vert, p.adjust.method = "bonferroni")
+fish_taxa_vert <- fisher_test(taxa_vert)
+fish_taxa_vert
+
+
+taxa_land2 %>% filter(one == "invert") %>% kable()
+
+taxa_invert <- taxa_land2 %>% filter(one == "invert") %>% dplyr::select(yes, no)
+fish_taxa_invert <- pairwise_fisher_test(taxa_invert, p.adjust.method = "bonferroni")
+fish_taxa_invert <- fisher_test(taxa_invert)
+fish_taxa_invert
+
+
+taxa_land2 %>% filter(two == "public") %>% kable()
+
+taxa_public <- taxa_land2 %>% filter(two == "public") %>% dplyr::select(yes, no)
+fish_taxa_public <- pairwise_fisher_test(taxa_public, p.adjust.method = "bonferroni")
+#fish_taxa_public <- fisher_test(taxa_public)
+fish_taxa_public
+
+
+
+taxa_land2 %>% filter(two == "private") %>% kable()
+
+taxa_private <- taxa_land2 %>% filter(two == "private") %>% dplyr::select(yes, no)
+fish_taxa_private <- pairwise_fisher_test(taxa_private, p.adjust.method = "bonferroni")
+#fish_taxa_private <- fisher_test(taxa_private)
+  fish_taxa_private
+  
   
 ```
 
@@ -969,7 +1139,7 @@ ggplot(taxa_land1) + aes(x=two, y=taxa_land, fill = (three)) +
   ### public land actions for a species, private land actions for a species (outcome: preempt)
 
 land_preempt <- outcomes
-land_preempt <- land_preempt %>% select(scientific_name, actionresults, landresults)
+land_preempt <- land_preempt %>% dplyr::select(scientific_name, actionresults, landresults)
 
 land_preempt$number <- rownames(land_preempt)
 
@@ -1011,7 +1181,7 @@ ggplot(act_land) + aes(x=variable, y=value, fill = factor(actionresults, levels=
 
 landactions <- outcomes
 
-landactions <- landactions %>% select(scientific_name, common_name,  preempt:react, public:private)
+landactions <- landactions %>% dplyr::select(scientific_name, common_name,  preempt:react, public:private)
 
 landactions[which(landactions$preempt == 0),3] <- NA
 landactions[which(landactions$react == 0),4] <- NA
@@ -1031,7 +1201,7 @@ landactions <- landactions %>%
 
 
 landactionsa <- landactions
-landactionsa <- landactionsa %>% select(-scientific_name:-private)
+landactionsa <- landactionsa %>% dplyr::select(-scientific_name:-private)
 
 landactionsa <- colSums(landactionsa[,c(1:8)], na.rm = T) 
 landactionsa <- as.data.frame(landactionsa) %>% rownames_to_column()
@@ -1041,7 +1211,7 @@ landactions1 <- landactionsa %>% separate(rowname, c("one", "two", "three"), "_"
 landactions2 <- landactions1 %>%  pivot_wider(names_from = three, values_from = landactionsa) ## transforming dataset so have "Yes" and "No" as seperate columns to be set up in same way as Becky's dataset 
 
 
-test_landactions <- landactions2 %>% select(yes, no) # Have a zero in dataset
+test_landactions <- landactions2 %>% dplyr::select(yes, no) # Have a zero in dataset
 test <- chisq.test(test_landactions)
 test
 
@@ -1049,14 +1219,21 @@ test
 #fish
 
 
-landactions_preempt <- landactions2 %>% filter(one == "preempt") %>% select(yes, no)
+
+landactions2 %>% filter(one == "preempt") %>% kable()
+
+landactions_preempt <- landactions2 %>% filter(one == "preempt") %>% dplyr::select(yes, no)
 fish_landactions_preempt <- pairwise_fisher_test(landactions_preempt, p.adjust.method = "bonferroni")
 fish_landactions_preempt <- fisher_test(landactions_preempt)
+fish_landactions_preempt
 
-landactions_react <- landactions2 %>% filter(one == "react") %>% select(yes, no)
+
+landactions2 %>% filter(one == "react") %>% kable()
+
+landactions_react <- landactions2 %>% filter(one == "react") %>% dplyr::select(yes, no)
 fish_landactions_react <- pairwise_fisher_test(landactions_react, p.adjust.method = "bonferroni")
 fish_landactions_react <- fisher_test(landactions_react)
-
+fish_landactions_react
 
 
 ggplot(landactions1) + aes(x=two, y=landactionsa, fill = (three)) +
@@ -1074,7 +1251,7 @@ ggplot(landactions1) + aes(x=two, y=landactionsa, fill = (three)) +
 
 landactions <- outcomes
 
-landactions <- landactions %>% select(scientific_name, common_name,  preempt:react, public:private)
+landactions <- landactions %>% dplyr::select(scientific_name, common_name,  preempt:react, public:private)
 
 landactions[which(landactions$public == 0),5] <- NA
 landactions[which(landactions$private == 0),6] <- NA
@@ -1094,7 +1271,7 @@ landactions <- landactions %>%
 
 
 landactionsa <- landactions
-landactionsa <- landactionsa %>% select(-scientific_name:-private)
+landactionsa <- landactionsa %>% dplyr::select(-scientific_name:-private)
 
 landactionsa <- colSums(landactionsa[,c(1:8)], na.rm = T) 
 landactionsa <- as.data.frame(landactionsa) %>% rownames_to_column()
@@ -1104,7 +1281,7 @@ landactions1 <- landactionsa %>% separate(rowname, c("one", "two", "three"), "_"
 landactions2 <- landactions1 %>%  pivot_wider(names_from = three, values_from = landactionsa) ## transforming dataset so have "Yes" and "No" as seperate columns to be set up in same way as Becky's dataset 
 
 
-test_landactions <- landactions2 %>% select(yes, no) # Have a zero in dataset
+test_landactions <- landactions2 %>% dplyr::select(yes, no) # Have a zero in dataset
 test <- chisq.test(test_landactions)
 test
 
@@ -1120,6 +1297,24 @@ ggplot(landactions1) + aes(x=one, y=landactionsa, fill = (three)) +
   scale_y_continuous(name = "count")+
   labs(fill = "Yes or No")+ 
   theme(panel.margin = grid:: unit(-1.25, "lines"))
+
+
+
+landactions1 %>% filter(two == "public") %>% kable()
+
+landactions_preempt <- landactions2 %>% filter(two == "public") %>% dplyr::select(yes, no)
+fish_landactions_preempt <- pairwise_fisher_test(landactions_preempt, p.adjust.method = "bonferroni")
+fish_landactions_preempt <- fisher_test(landactions_preempt)
+fish_landactions_preempt
+
+
+landactions2 %>% filter(two == "private") %>% kable()
+
+landactions_react <- landactions2 %>% filter(two == "private") %>% dplyr::select(yes, no)
+fish_landactions_react <- pairwise_fisher_test(landactions_react, p.adjust.method = "bonferroni")
+fish_landactions_react <- fisher_test(landactions_react)
+fish_landactions_react
+
   
 ```
 
@@ -1134,7 +1329,7 @@ hist(outcomes$range_area, breaks = 40)
 ## let's do 2 categories of small v large range (split point = 2.0e + 10)
 
 range <- outcomes
-range <- range %>% select(scientific_name, range_area, actionresults)
+range <- range %>% dplyr::select(scientific_name, range_area, actionresults)
 range <- range %>% mutate(size = range_area < (.5*10^10))
 #Want to use equivalent of group by and then colsum (tidyr version didn't work but the datatable method does)
 
@@ -1164,7 +1359,7 @@ ggplot(count_range) + aes(x=variable, y=value, fill = actionresults) +
   ### 	presence of each threat type (outcome: preempt)
 
 threat_type <- outcomes
-threat_type <- threat_type %>% select(scientific_name, habitat_modification:total_threats, actionresults)
+threat_type <- threat_type %>% dplyr::select(scientific_name, habitat_modification:total_threats, actionresults)
 
 # note - going to do this independently (so for each threat type not by species.. slightly different than other ones)
 
@@ -1238,7 +1433,7 @@ Note - missing three species because don't have data
 
 types <- outcomes
 
-types <- types %>% select(scientific_name, common_name, vert_vs_invert:species_group, habitat_modification:demographic_stochasticity,  preempt:react, public:private)
+types <- types %>% dplyr::select(scientific_name, common_name, vert_vs_invert:species_group, habitat_modification:demographic_stochasticity,  preempt:react, public:private)
 
 ## changing 0s in threat types to NA then following code will work (issue was that want to subset 1s for each threat type, but can't get inverse without including 0s for threat type so turning 0s to NAs)
 
@@ -1287,7 +1482,7 @@ types <- types %>%  mutate(hab_preempt_yes = habitat_modification*preempt) %>% #
 
 ## taxa: actions 
 
-threat_actions <- types %>% select(-scientific_name:-private)
+threat_actions <- types %>% dplyr::select(-scientific_name:-private)
 
 threat_actions <- colSums(threat_actions[,c(1:24)], na.rm = T) 
 threat_actions <- as.data.frame(threat_actions) %>% rownames_to_column()
@@ -1297,64 +1492,128 @@ threat_actions1 <- threat_actions %>% separate(rowname, c("one", "two", "three")
 threat_actions2 <- threat_actions1 %>%  pivot_wider(names_from = three, values_from = threat_actions) ## transforming dataset so have "Yes" and "No" as seperate columns to be set up in same way as Becky's dataset 
 
 
-test_threat_actions <- threat_actions2 %>% select(yes, no) # Have a zero in dataset
+test_threat_actions <- threat_actions2 %>% dplyr::select(yes, no) # Have a zero in dataset
 test <- chisq.test(test_threat_actions)
 test
 
 
 
-#fish <- row_wise_fisher_test(test_threat_actions, workspace = 2e8, p.adjust.method = "bonferroni")
-#fish
-
-threat_preempt <- threat_actions2 %>% filter(two == "preempt") %>% select(yes, no)
-fish_threat_preempt <- pairwise_fisher_test(threat_preempt, p.adjust.method = "bonferroni")
-fish_threat_preempt <- fisher_test(threat_preempt)
-
-threat_react <- threat_actions2 %>% filter(two == "react") %>% select(yes, no)
-fish_threat_react <- pairwise_fisher_test(threat_react, p.adjust.method = "bonferroni")
-fish_threat_react <- fisher_test(threat_react)
-
-
-
-threat_hab <- threat_actions2 %>% filter(one == "hab") %>% select(yes, no)
-fish_threat_hab <- pairwise_fisher_test(threat_hab, p.adjust.method = "bonferroni")
-fish_threat_hab <- fisher_test(threat_hab)
-
-threat_overut <- threat_actions2 %>% filter(one == "overut") %>% select(yes, no)
-fish_threat_overut <- pairwise_fisher_test(threat_overut, p.adjust.method = "bonferroni")
-fish_threat_overut <- fisher_test(threat_overut)
-
-threat_poll <- threat_actions2 %>% filter(one == "poll") %>% select(yes, no)
-fish_threat_poll <- pairwise_fisher_test(threat_poll, p.adjust.method = "bonferroni")
-fish_threat_poll <- fisher_test(threat_poll)
-
-#### This is the only one sig 
-threat_spsp <- threat_actions2 %>% filter(one == "spsp") %>% select(yes, no)
-fish_threat_spsp <- pairwise_fisher_test(threat_spsp, p.adjust.method = "bonferroni")
-fish_threat_spsp <- fisher_test(threat_spsp)
-
-threat_envst <- threat_actions2 %>% filter(one == "envst") %>% select(yes, no)
-fish_threat_envst <- pairwise_fisher_test(threat_envst, p.adjust.method = "bonferroni")
-fish_threat_envst <- fisher_test(threat_envst)
-
-threat_demst <- threat_actions2 %>% filter(one == "demst") %>% select(yes, no)
-fish_threat_demst <- pairwise_fisher_test(threat_demst, p.adjust.method = "bonferroni")
-fish_threat_demst <- fisher_test(threat_demst)
+threat_actions1 <- threat_actions1 %>%
+  mutate(two = case_when(str_detect(two, 'preempt') ~ 'Restorative ', 
+                           str_detect(two, 'react') ~ 'Prohibitive',
+                           TRUE ~ 'OTHER')) %>%
+  mutate(one = case_when(str_detect(one, 'hab') ~ 'Habitat Modification', 
+                           str_detect(one, 'overut') ~ 'Overutilization',
+                         str_detect(one, 'poll') ~ 'Pollution',
+                         str_detect(one, 'spsp') ~ 'Species–Species Interaction',
+                         str_detect(one, 'envst') ~ 'Environmental Stochasticity',
+                         str_detect(one, 'demst') ~ 'Demographic Stochasticity',
+                           TRUE ~ 'OTHER'))
 
 
-
-ggplot(threat_actions1) + aes(x=two, y=threat_actions, fill = (three)) +
-  geom_bar(stat="identity", position = "stack") + 
-  facet_wrap(~one) +
+threats_plot <- ggplot(threat_actions1) + aes(x=two, y=threat_actions, fill = (three)) +
+  geom_bar(stat="identity", position = "stack", width = .9) + 
+  facet_wrap(~one, nrow = 1) +
   ggtitle("Actions for types of threats") + 
   scale_y_continuous(name = "count")+
   labs(fill = "Yes or No")+ 
-  theme(panel.margin = grid:: unit(-1.25, "lines"))
+  theme(panel.margin = grid:: unit(-1.25, "lines")) + 
+  scale_x_discrete(name = "Type of Action") +   
+  theme(text=element_text(color="black"),axis.text=element_text(color="black"))
   
+
+ggsave(filename = "threats_plot_Aug_8.png",threats_plot , device = 'png')
+
+#fish <- row_wise_fisher_test(test_threat_actions, workspace = 2e8, p.adjust.method = "bonferroni")
+#fish
+
+threat_actions2 %>% filter(two == "preempt") %>% kable()
+
+threat_preempt <- threat_actions2 %>% filter(two == "preempt") %>% dplyr::select(yes, no)
+fish_threat_preempt <- pairwise_fisher_test(threat_preempt, p.adjust.method = "bonferroni")
+#fish_threat_preempt <- fisher_test(threat_preempt)
+fish_threat_preempt
+
+
+threat_actions2 %>% filter(two == "react") %>% kable()
+
+threat_react <- threat_actions2 %>% filter(two == "react") %>% dplyr::select(yes, no)
+fish_threat_react <- pairwise_fisher_test(threat_react, p.adjust.method = "bonferroni")
+#fish_threat_react <- fisher_test(threat_react)
+fish_threat_react
+
+
+
+threat_actions2 %>% filter(one == "hab") %>% kable()
+
+threat_hab <- threat_actions2 %>% filter(one == "hab") %>% dplyr::select(yes, no)
+fish_threat_hab <- pairwise_fisher_test(threat_hab, p.adjust.method = "bonferroni")
+fish_threat_hab <- fisher_test(threat_hab)
+fish_threat_hab
+
+
+threat_actions2 %>% filter(one == "overut") %>% kable()
+
+threat_overut <- threat_actions2 %>% filter(one == "overut") %>% dplyr::select(yes, no)
+fish_threat_overut <- pairwise_fisher_test(threat_overut, p.adjust.method = "bonferroni")
+fish_threat_overut <- fisher_test(threat_overut)
+fish_threat_overut
+
+
+threat_actions2 %>% filter(one == "poll") %>% kable()
+
+threat_poll <- threat_actions2 %>% filter(one == "poll") %>% dplyr::select(yes, no)
+fish_threat_poll <- pairwise_fisher_test(threat_poll, p.adjust.method = "bonferroni")
+fish_threat_poll <- fisher_test(threat_poll)
+fish_threat_poll
+
+
+threat_actions2 %>% filter(one == "spsp") %>% kable()
+
+#### This is the only one sig 
+threat_spsp <- threat_actions2 %>% filter(one == "spsp") %>% dplyr::select(yes, no)
+fish_threat_spsp <- pairwise_fisher_test(threat_spsp, p.adjust.method = "bonferroni")
+fish_threat_spsp <- fisher_test(threat_spsp)
+fish_threat_spsp
+
+
+threat_actions2 %>% filter(one == "envst") %>% kable()
+
+threat_envst <- threat_actions2 %>% filter(one == "envst") %>% dplyr::select(yes, no)
+fish_threat_envst <- pairwise_fisher_test(threat_envst, p.adjust.method = "bonferroni")
+fish_threat_envst <- fisher_test(threat_envst)
+fish_threat_envst
+
+
+threat_actions2 %>% filter(one == "demst") %>% kable()
+
+threat_demst <- threat_actions2 %>% filter(one == "demst") %>% dplyr::select(yes, no)
+fish_threat_demst <- pairwise_fisher_test(threat_demst, p.adjust.method = "bonferroni")
+fish_threat_demst <- fisher_test(threat_demst)
+fish_threat_demst
+
+
+
   
 #ggplot(taxa_actions1) + aes(x=one, y=taxa_actions, fill = (three)) +
 #  geom_bar(stat="identity", position = "dodge", color = "black") +
 #  labs(fill = "Yes or No")
+
+
+## change names of threats and action types 
+
+
+threats_plot <- ggplot(threat_actions1) + aes(x=two, y=threat_actions, fill = (three)) +
+  geom_bar(stat="identity", position = "stack", width = .9, preserve = "single") + 
+  facet_wrap(~one, nrow = 1) +
+  ggtitle("Actions for types of threats") + 
+  scale_y_continuous(name = "count")+
+  labs(fill = "Yes or No")+ 
+  theme(panel.margin = grid:: unit(-1.25, "lines")) + 
+  theme(axis.text.x = element_text(angle = 45)) + 
+  scale_x_discrete(name = "Type of Action") +   
+  theme(text=element_text(color="black"),axis.text=element_text(color="black"))
+ 
 
 ```
 
@@ -1416,23 +1675,23 @@ fish
 ### ### ###		Difference in protective versus proactive for plants versus animals
 
 act_taxa <- s
-act_taxa <- act_taxa %>% select(-rowname)
+act_taxa <- act_taxa %>% dplyr::select(-rowname)
 
 #add vert and invert to see if can get values up for chi square
 act_taxa <- act_taxa %>% mutate(allvert = vert + invert)
-act_taxa <- act_taxa %>% select(-vert, -invert)
+act_taxa <- act_taxa %>% dplyr::select(-vert, -invert)
 
 ## *** issue here - values are still too low 
 
 ### ### ###		Difference in public versus private lands actions for plant versus animal
 
 land_taxa <- sactions
-land_taxa <- land_taxa %>% select(-rowname)
+land_taxa <- land_taxa %>% dplyr::select(-rowname)
 rname <- rownames(land_taxa)
 
 #add vert and invert to see if can get values up for chi square
 land_taxa <- land_taxa %>% mutate(allvert = vert + invert)
-land_taxa <- land_taxa %>% select(-vert, -invert)
+land_taxa <- land_taxa %>% dplyr::select(-vert, -invert)
 rownames(land_taxa) <- rname
 
 ## *** issue here - values are still too low 
@@ -1561,7 +1820,7 @@ partners <- full_join(normal_partner_count, mod_partner_count) %>% full_join(NoH
 reg_prdctr_partners <- reg_prdctr
 
 ## Need an extra variable to try in the partners model so pulling it here
-ns_threats <- tdata %>% select(common_name, scientific_name, nserve_pop_stability)
+ns_threats <- tdata %>% dplyr::select(common_name, scientific_name, nserve_pop_stability)
 
 reg_prdctr_partners <- reg_prdctr_partners %>% left_join(ns_threats, by = "scientific_name")
 
@@ -1571,9 +1830,9 @@ reg_prdctr_partners <- reg_prdctr_partners %>%
   mutate(log_rangearea = log(range_area)) 
  
 ## re arrange order 
-reg_prdctr_partners <- reg_prdctr_partners %>% select(scientific_name:no_iniv, log_rangearea, range_area:Big_Pg_count, nserve_pop_stability)
+reg_prdctr_partners <- reg_prdctr_partners %>% dplyr::select(scientific_name:no_iniv, log_rangearea, range_area:Big_Pg_count, nserve_pop_stability)
 ## removing %public until have all data and
-reg_prdctr_partners <- reg_prdctr_partners %>% select(-public_mang_shannons_diversity, -no_iniv)
+reg_prdctr_partners <- reg_prdctr_partners %>% dplyr::select( -no_iniv)
 
 
 reg_prdctr_partners <- reg_prdctr_partners %>% left_join(partners)
@@ -1581,7 +1840,7 @@ reg_prdctr_partners <- reg_prdctr_partners %>% left_join(partners)
 
 reg_partners <- reg_prdctr_partners # I want to use different set of variables in models than in cormat (more modifications to follow...)
 
-reg_partners <- reg_partners %>% select(scientific_name, common_name.x, NoHCPS_count, log_rangearea:nserve_pop_stability) %>% select(-weighted_rural)
+reg_partners <- reg_partners %>% dplyr::select(scientific_name, common_name.x, NoHCPS_count, log_rangearea:nserve_pop_stability) %>% dplyr::select(-weighted_rural)
 
 #reg_prdctr_partners <- as.data.frame(reg_prdctr_partners)
 #reg_prdctr_partners[,c(10:13)] <- sapply(reg_prdctr_partners[ ,c(10:13)], as.numeric)
@@ -1589,7 +1848,7 @@ reg_partners <- reg_partners %>% select(scientific_name, common_name.x, NoHCPS_c
 
 #names(reg_prdctr_partners)
 
-#reg_prdctr_partners <- reg_prdctr_partners %>% select(scientific_name:common_name , normal_count:FR_only_count, log_rangearea, range_area:wd_proposed)
+#reg_prdctr_partners <- reg_prdctr_partners %>% dplyr::select(scientific_name:common_name , normal_count:FR_only_count, log_rangearea, range_area:wd_proposed)
 
 
 #reg_prdctr_partners <- reg_prdctr_partners %>% 
@@ -1599,6 +1858,14 @@ reg_partners <- reg_partners %>% select(scientific_name, common_name.x, NoHCPS_c
 
 
 #reg_prdctr_partners <- reg_prdctr_partners %>% select(scientific_name:common_name , -normal_count:-FR_only_count, -log_normal:-log_FR, log_HCPS, log_rangearea, range_area:wd_proposed)
+
+reg_partners <- reg_partners %>% mutate(log_HCPS = log(NoHCPS_count))
+
+## add two new variables
+
+reg_partners <- reg_partners %>% mutate(Shannon_private = ((1 - private_land_proportion)*public_mang_shannons_diversity)) %>% mutate(Shannon_private_area = ((1 - private_land_proportion)*log_rangearea *public_mang_shannons_diversity))
+
+
 
 ```
 
@@ -1615,8 +1882,8 @@ reg_partners <- reg_partners %>% select(scientific_name, common_name.x, NoHCPS_c
 
 #set up
 PredictorsOnlyPixel <- reg_partners[,c(3)]
-PredictAndResponsePixel <- reg_partners[,-c(1:2)]
-PredictAndResponseGrid <- reg_partners[,-c(1:2)]
+PredictAndResponsePixel <- reg_partners[,-c(1:2, 5, 10, 11, 12, 14)]
+PredictAndResponseGrid <- reg_partners[,-c(1:2, 5, 10, 11, 12, 14)]
   
 # put histograms on the diagonal panel	
 panel.hist <- function (x,...)					# define a function that says what we want to plot in the diagonal
@@ -1669,99 +1936,99 @@ VIFS
 ```{r, include = FALSE, echo = FALSE}
 
 
-vif(lm(log(NoHCPS_count) ~ range_area + plant  + total_threats,data = reg_partners))
+#vif(lm(log(NoHCPS_count) ~ range_area + plant  + total_threats,data = reg_partners))
 
-vif(lm(log(NoHCPS_count) ~ range_area + plant + private_land_proportion + weighted_rural + total_threats,data = reg_partners))
+vif(lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion, data = reg_partners))
+
 ```
 
+
+*Note - lm23 is parsimonious with 16 (added log shannon's h)
 ```{r, include = FALSE, echo = FALSE}
 
-reg_partners <- reg_partners[-which(is.na(reg_partners$nserve_pop_stability)),] #removes NAs (can get same number of observations)
-
-lm1 <- lm(log(NoHCPS_count) ~ range_area + plant  + total_threats,data = reg_partners)
-
-lm2 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats,data = reg_partners)
-
-lm4 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + Big_Pg_count,data = reg_partners)
-
-lm6 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + month_12,data = reg_partners)
-
-lm8 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + wd_proposed,data = reg_partners)
-
-lm9 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + wd_proposed + month_12,data = reg_partners)
-
-
-lm10 <- lm(log(NoHCPS_count) ~  log(range_area)+ plant  + total_threats + private_land_proportion,data = reg_partners)
-
-lm12 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + private_land_proportion + month_12,data = reg_partners)
-
-lm13 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + private_land_proportion + wd_proposed,data = reg_partners)
-
-lm14 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + private_land_proportion + wd_proposed + month_12,data = reg_partners)
-
-lm15 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + private_land_proportion + Big_Pg_count,data = reg_partners)
-
-
-lm11 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability,data = reg_partners)
+#reg_partners <- reg_partners[-which(is.na(reg_partners$nserve_pop_stability)),] #removes NAs (can get same number of observations)
 
 lm16 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion, data = reg_partners)
 
+lm10 <- lm(log(NoHCPS_count) ~  log(range_area)+ plant  + total_threats + private_land_proportion,data = reg_partners)
+
+lm18 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion + public_mang_shannons_diversity, data = reg_partners)
+
+lm19 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion + wd_proposed + month_12, data = reg_partners)
+
+lm20 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion + wd_proposed + month_12 + public_mang_shannons_diversity + total_threats , data = reg_partners) #kitchen sink
+
+
+lm21 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion + public_mang_shannons_diversity, data = reg_partners)
+
+lm22 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + Shannon_private, data = reg_partners)
+
+lm23 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + Shannon_private_area, data = reg_partners)
+
+
+
+### old --> 
+lm1 <- lm(log(NoHCPS_count) ~ range_area + plant  + total_threats,data = reg_partners)
+lm2 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats,data = reg_partners)
+lm4 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + Big_Pg_count,data = reg_partners)
+lm6 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + month_12,data = reg_partners)
+lm8 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + wd_proposed,data = reg_partners)
+lm9 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + wd_proposed + month_12,data = reg_partners)
+lm10 <- lm(log(NoHCPS_count) ~  log(range_area)+ plant  + total_threats + private_land_proportion,data = reg_partners)
+lm12 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + private_land_proportion + month_12,data = reg_partners)
+lm13 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + private_land_proportion + wd_proposed,data = reg_partners)
+lm14 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + private_land_proportion + wd_proposed + month_12,data = reg_partners)
+lm15 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + private_land_proportion + Big_Pg_count,data = reg_partners)
+lm11 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability,data = reg_partners)
+lm16 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion, data = reg_partners)
 lm17 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + nserve_pop_stability + private_land_proportion , data = reg_partners)
-
-
-
-#summary(lma)
-#summary(lmb)
-#summary(lmc)
-#summary(lmd)
-
-#AIC(lma)
-#AIC(lmb)
-#AIC(lmc) ## C has lowest value 
-#AIC(lmd)
-
-#check_overdispersion(lm2)
-
-
-
-#lme <- lm(log(normal_count) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
-
-#lmf <- lm(log(no_offices) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
-
-#lmg <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats +wd_proposed,data = reg_prdctr_partners)
-
-#lmh <- lm(log(FR_only_count) ~ log(range_area) + plant + public_mang_shannons_diversity + total_threats,data = reg_prdctr_partners)
-
-#summary(lme)
-#summary(lmf)
-#summary(lmg)
-#summary(lmh)
-
-#AIC(lme)
-#AIC(lmf)
-#AIC(lmg) ## C has lowest value 
-#AIC(lmh)
-
-
-## note - no changes when added FR docs
-
-
 ```
 
 Adding stargazer 
 - https://rpubs.com/omerorsun/week3_stargazer
-```{r, include = FALSE, echo = FALSE}
-stargazer(lm1, lm4, lm10, lm12, lm13, lm14, lm15,lm11, lm16, lm17, type = "html", title = "Partners_models", align = TRUE, out = "output/Partners_models_1_July_2021.html", # AIC isn't calculated for lm models so adding manually
-          add.lines=list(c("AIC", round(AIC(lm1),1), round(AIC(lm4),1), round(AIC(lm10),1), round(AIC(lm12),1), round(AIC(lm13),1), round(AIC(lm14),1), round(AIC(lm15),1), round(AIC(lm11),1), round(AIC(lm16),1), round(AIC(lm17),1)  ))  )
+```{r stargazer partners, include = FALSE, echo = FALSE}
+## Old 
+#stargazer(lm1, lm4, lm10, lm12, lm13, lm14, lm15,lm11, lm16, lm17, type = "html", title = "Partners_models", align = TRUE, out = "output/Partners_models_1_July_2021.html", # AIC isn't calculated for lm models so adding manually
+#          add.lines=list(c("AIC", round(AIC(lm1),1), round(AIC(lm4),1), round(AIC(lm10),1), round(AIC(lm12),1), round(AIC(lm13),1), round(AIC(lm14),1), round(AIC(lm15),1), round(AIC(lm11),1), round(AIC(lm16),1), round(AIC(lm17),1)  ))  )
 
-calc <- data.frame(c("partial R2ed", calc.relimp(lm4), calc.relimp(lm10), calc.relimp(lm12), calc.relimp(lm13), calc.relimp(lm14), calc.relimp(lm15), calc.relimp(lm11), calc.relimp(lm16), calc.relimp(lm17))) 
 
-what <- calc.relimp(lm1)
+# Calculate robust confidence intervals
+se_robust <- function(x)
+  coeftest(x, vcov. = sandwich::sandwich)[, 2]
+
+aic_calc <- function(x)
+  round(AIC(x),1)
+
+mdls <- list(
+  lm16, lm10, lm18, lm19, lm20, lm21, lm22, lm23
+)
+
+stargazer(
+  mdls, type = "text", single.row = TRUE, report = "vcsp", 
+  se = lapply(mdls, se_robust), out = "output/Partners_models_SE_trial.html")
+
+
+stargazer(lm16, lm10, lm18, lm19, lm20, lm21, lm22, lm23, 
+          type = "html", 
+          title = "Partners_models_Supplementary", 
+          align = TRUE, 
+          out = "output/Partners_models_1_Aug_2021.html", 
+          flip = TRUE, # AIC isn't calculated for lm models so adding manually
+          add.lines=list(c("AIC", aic_calc(lm16), aic_calc(lm10), aic_calc(lm18), aic_calc(lm19), aic_calc(lm20), aic_calc(lm21) , aic_calc(lm22) , aic_calc(lm23)  )) , 
+          se = lapply(mdls, se_robust),  ## setting se to be calculated by Robust Standard Errors from function
+          omit.stat = c("f", "ser"), 
+          star.char = c("+", "*", "**", "***"),
+          star.cutoffs = c(.1, .05, .01, .001), 
+          notes.append = FALSE, 
+          notes = c("+ p<.1; * p<0.05; ** p<0.01; *** p<0.001"), 
+          covariate.labels=c("Log of range area", "Plant (present = 1)", "NatureServe popn stability", "Total number of five factor threats",  "Proportion of private land", "Public mang. shannons diversity" , "wd proposed","month 12 findings", "Constant"),
+          dep.var.labels=c("Log of No. Partners") )
+
 
 ```
 
 lmg is the R^2 contribution averaged over orderings amoung regressors
-```{r}
+```{r include = FALSE, echo = FALSE}
 
 #calc.relimp(lm10)
 #calc.relimp(lm11)
@@ -1778,29 +2045,17 @@ rsq.partial(lm17)
 
 
 Testing heteroskedasticity 
-- Breusch-Pagan test
-- https://www.r-bloggers.com/2016/01/how-to-detect-heteroscedasticity-and-rectify-it/
-- https://cran.r-project.org/web/packages/olsrr/vignettes/heteroskedasticity.html
-```{r}
-bptest(lm10)
+
+Robust Standard Errors in R
+```{r Robust Standard Errors, echo=FALSE, warning=FALSE, include=TRUE}
+
+coeftest(lm16, vcov = vcovHC(lm16, type="HC1"))
 
 
-plot(lm10)
-
-qqPlot(residuals(lm10))
-
-
-#demo of how to resolve
-food.ols <- lm(food_exp ~ income, data = food)
-food$resi <- food.ols$residuals
-varfunc.ols <- lm(log(resi^2) ~ log(income), data = food)
-food$varfunc <- exp(varfunc.ols$fitted.values)
-food.gls <- lm(food_exp ~ income, weights = 1/sqrt(varfunc), data = food)
-
+ coeftest(lm16, vcov. = sandwich::sandwich)[, 2]
+ 
+  coeftest(lm16, vcov = vcovHC(lm16, type="HC1"))[, 2]
 ```
-While it doesn’t give us the critical value to compare the test statistic, all you need to look at is the p-value to determine whether or not you should reject the null. If the p-value is less than the level of significance (in this case if the p-value is less than α=0.05), then you reject the null hypothesis. Since 0.006579 < 0.05, we can reject the null hypothesis.
-
-With a p-value of 0.91, we fail to reject the null hypothesis (that variance of residuals is constant) and therefore infer that ther residuals are homoscedastic. Lets check this graphically as well.
 
 
 
@@ -1808,11 +2063,11 @@ With a p-value of 0.91, we fail to reject the null hypothesis (that variance of 
 Predicting values 
 - https://www.youtube.com/watch?v=ahDFXHAdZRU
 - 
-```{r}
+```{r predicting values 2, include = FALSE, echo = FALSE}
 
 
 ## rerunning model so can have log_rangearea instead of log(range_area) --> same values but can't use predict with log(range_area) and get different set up in stargazer if run one model with log_rangearea
-lm10 <- lm(log(NoHCPS_count) ~  log_rangearea+ plant  + total_threats + private_land_proportion,data = reg_partners)
+lm16 <- lm(log(NoHCPS_count) ~ log_rangearea + plant + nserve_pop_stability + private_land_proportion, data = reg_partners)
 
 #fitted model
 # mod <- -7.10+0.29 * (log(range)) + -0.062 *(plant) + 0.21 (threats) + 1.58 * private_land
@@ -1823,46 +2078,68 @@ lm10 <- lm(log(NoHCPS_count) ~  log_rangearea+ plant  + total_threats + private_
 
 
 ## Get mean from summary stats of each predictor
-summary(reg_partners$log_rangearea)
+summary(reg_partners$range_area)
+meanlog <- log(3.050e+10) #mean for range area logged #24.14099
+meanlogx2 <- log((3.050e+10) * 2)
+meanlogx1_2 <- log((3.050e+10)*.5)
 summary(reg_partners$plant)
-summary(reg_partners$total_threats)
+summary(reg_partners$nserve_pop_stability)
 summary(reg_partners$private_land_proportion)
 
 
-predict(lm10, data.frame(log_rangearea = 23.44, plant = 0.4054, total_threats = 2.324, private_land_proportion = 0.4765))
+#predict(lm10, data.frame(log_rangearea = 23.39, plant = 0.3571, nserve_pop_stability = 4, private_land_proportion = 0.4871))
 
-summary(lm10)
+#summary(lm10)
 
-base <- predict(lm10, data.frame(log_rangearea = 23.44, plant = 0.4054, total_threats = 2.324, private_land_proportion = 0.4765))
+base <- predict(lm16, data.frame(log_rangearea = meanlog, plant = 0.3571, nserve_pop_stability = 4 , private_land_proportion = 0.4871))
+base <- exp(base)
 base <- base %>% as.data.frame() %>% add_column("base")
 
-plant_0 <- predict(lm10, data.frame(log_rangearea = 23.44, plant = 0, total_threats = 2.324, private_land_proportion = 0.4765))
+plant_0 <- predict(lm16, data.frame(log_rangearea = meanlog, plant = 0, nserve_pop_stability = 4 , private_land_proportion = 0.4871))
+plant_0 <- exp(plant_0)
 plant_0 <- plant_0 %>% as.data.frame() %>% add_column("plant_0")
 
-plant_1 <- predict(lm10, data.frame(log_rangearea = 23.44, plant = 1, total_threats = 2.324, private_land_proportion = 0.4765))
+plant_1 <- predict(lm16, data.frame(log_rangearea = meanlog, plant = 1, nserve_pop_stability = 4 , private_land_proportion = 0.4871))
+plant_1 <- exp(plant_1)
 plant_1 <- plant_1 %>% as.data.frame() %>% add_column("plant_1")
 
-plantx2 <- predict(lm10, data.frame(log_rangearea = 23.44, plant = (0.4054*2), total_threats = 2.324, private_land_proportion = 0.4765))
-plantx2 <- plantx2 %>% as.data.frame() %>% add_column("plantx2")
-
-log_rangeareax2 <- predict(lm10, data.frame(log_rangearea = (23.44*2), plant = 0.4054, total_threats = 2.324, private_land_proportion = 0.4765)) ## big change here 
+log_rangeareax2 <- predict(lm16, data.frame(log_rangearea = meanlogx2, plant = 0.3571, nserve_pop_stability = 4 , private_land_proportion = 0.4871)) ## big change here 
+log_rangeareax2 <- exp(log_rangeareax2)
 log_rangeareax2 <- log_rangeareax2 %>% as.data.frame() %>% add_column("log_rangeareax2")
 
-log_rangeareax1_2 <- predict(lm10, data.frame(log_rangearea = (23.44*.5), plant = 0.4054, total_threats = 2.324, private_land_proportion = 0.4765))
+log_rangeareax1_2 <- predict(lm16, data.frame(log_rangearea = meanlogx1_2, plant = 0.3571, nserve_pop_stability = 4 , private_land_proportion = 0.4871))
+log_rangeareax1_2 <- exp(log_rangeareax1_2)
 log_rangeareax1_2 <- log_rangeareax1_2 %>% as.data.frame() %>% add_column("log_rangeareax1_2")
 
-private_land_proportionx2 <- predict(lm10, data.frame(log_rangearea = 23.44, plant = 0.4054, total_threats = 2.324, private_land_proportion = (0.4765*2)))
-private_land_proportionx2 <- private_land_proportionx2 %>% as.data.frame() %>% add_column("private_land_proportionx2")
+private_land_proportion_1 <- predict(lm16, data.frame(log_rangearea = meanlog, plant = 0.3571, nserve_pop_stability = 4 , private_land_proportion = (1)))
+private_land_proportion_1 <- exp(private_land_proportion_1)
+private_land_proportion_1 <- private_land_proportion_1 %>% as.data.frame() %>% add_column("private_land_proportionx2")
 
-private_land_proportionx1_2 <- predict(lm10, data.frame(log_rangearea = 23.44, plant = 0.4054, total_threats = 2.324, private_land_proportion = (0.4765*.5)))
+private_land_proportionx1_2 <- predict(lm16, data.frame(log_rangearea = meanlog, plant = 0.3571, nserve_pop_stability = 4 , private_land_proportion = (0.4871 * .5)))
+private_land_proportionx1_2 <- exp(private_land_proportionx1_2)
 private_land_proportionx1_2 <- private_land_proportionx1_2 %>% as.data.frame() %>% add_column("private_land_proportionx1_2")
 
 ##put together dataframe
 
-predictions <- base %>% full_join(plant_0) %>% full_join(plant_1) %>% full_join(plantx2) %>% full_join(log_rangeareax2) %>% full_join(log_rangeareax1_2) %>% full_join(private_land_proportionx2) %>% full_join(private_land_proportionx1_2)
+predictions <- base %>% full_join(plant_0) %>% full_join(plant_1) %>% full_join(log_rangeareax2) %>% full_join(log_rangeareax1_2) %>% full_join(private_land_proportion_1) %>% full_join(private_land_proportionx1_2)
 
-## this is clunky 
+## this is clunky but it works .. 
 
+diagn <- diag(as.matrix(predictions[, -1]))
+predictions$call <- diagn
+
+names(predictions) <- c(
+ "value"          ,                     "\"base\""    ,                    
+ "\"plant_0\""          ,                        
+ "\"plantx2\""           ,          "\"log_rangeareax2\""      ,      
+ "\"log_rangeareax1_2\""    ,       "\"private_land_proportionx1\""  ,
+  "\"private_land_proportionx1_2\"" , "call" 
+)
+
+predictions <- predictions[,c(1,9)]
+
+##predictions <- predictions %>% select(value, call)
+## Can't knit this line ^^ but this gets final dataset 
 
 ```
 
@@ -1885,14 +2162,213 @@ summary(reg_partners$NoHCPS_count)
 ```
 
 
+### Table with both models
+
+
+Let's try with sjPlot
+```{r, include = FALSE, echo = FALSE}
+
+lm10 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion,data = reg_prdctr_init)
+
+lm16 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion, data = reg_partners)
+
+
+stargazer(lm10, type = "html", title = "Preemptive Conservation Models",  out = "output/format_triala.html", 
+           star.char = c("+", "*", "**", "***"),
+          star.cutoffs = c(.1, .05, .01, .001), 
+          notes.append = FALSE, 
+          notes = c("+ p<.1; * p<0.05; ** p<0.01; *** p<0.001"), 
+          covariate.labels=c("Log of range area", "Plant (present = 1)", "Total number of five factor threats",  "Proportion of private land", "Constant"),
+          dep.var.labels=c("Log of No. Initiatives"), 
+          add.lines=list(c("AIC", round(AIC(lm10),1)))) 
+
+ 
+stargazer(lm16, type = "html", title = "Preemptive Conservation Models",  out = "output/format_trialb.html", 
+          star.char = c("+", "*", "**", "***"),
+          star.cutoffs = c(.1, .05, .01, .001), 
+          notes.append = FALSE, 
+          notes = c("+ p<.1; * p<0.05; ** p<0.01; *** p<0.001"), 
+          covariate.labels=c("Log of range area", "Plant (present = 1)",  "Natureserve popn. stability", "Proportion of private land", "Constant"),
+          dep.var.labels=c("Log of No. Partners"), 
+          add.lines=list(c("AIC", round(AIC(lm16),1)))) 
+
+summary(reg_prdctr_init$no_iniv)
+sd(reg_prdctr_init$no_iniv)
+
+summary(partners$NoHCPS_count)
+sd(partners$NoHCPS_count)
+
+
+```
+
+###Graph for presentation 
+```{r}
+all <- outcomes
+
+all <- all %>% dplyr::select(preempt:react, public:private)
+
+names(all) <- c("preempt_yes", "react_yes"  , "public_yes" , "private_yes")
+
+## create the inverse (cases where no)
+all <- all %>% 
+  mutate(preempt_no = case_when(preempt_yes < 1 ~ 1  )) %>% 
+  mutate(react_no = case_when(react_yes < 1 ~ 1  )) %>% 
+  mutate(public_no = case_when(public_yes < 1 ~ 1  )) %>% 
+  mutate(private_no = case_when(private_yes < 1 ~ 1  )) 
+
+
+all <- colSums(all[,c(1:8)], na.rm = T) 
+all <- as.data.frame(all) %>% rownames_to_column()
+
+all1 <- all %>% separate(rowname, c("one", "two"), "_")  ## seperating into three different columns based on "_"
+
+all2 <- all1 %>%  pivot_wider(names_from = two, values_from = all) ## transforming dataset so have "Yes" and "No" as seperate columns to be set up in same way as Becky's dataset 
+
+
+test_act <- all2 %>% filter(one == "preempt" | one =="react") %>% 
+  dplyr::select(yes, no)
+
+test_land <- all2 %>% filter(one == "private" | one =="public") %>% dplyr::select(yes, no)
+
+
+
+kable(all2)
+
+### Changing to capitals
+all1[which(all1$one == "preempt"),1] <- "Proactive"
+all1[which(all1$one == "react"),1] <- "Reactive"
+all1[which(all1$one == "private"),1] <- "Private"
+all1[which(all1$one == "public"),1] <- "Public"
+
+all1[which(all1$two == "yes"),2] <- "Yes"
+all1[which(all1$two == "no"),2] <- "No"
+
+
+
+faded <- ggplot(all1) + aes(x=factor(one), y=all, fill = (two)) +
+  geom_bar(stat="identity", position = "stack", alpha = 1/5) +
+  scale_y_continuous(name = "Count")+
+  labs(fill = "Effort for Species?") + 
+  scale_fill_manual(values=c("mediumpurple", "#00abff"))+ 
+ scale_x_discrete(name = "Effort Category", limits = c("Proactive", "Reactive", "Private", "Public")) +    theme(text=element_text(color="black", size = 15),axis.text=element_text(color="black"))
+
+ggsave(filename = "fadedESA.png",faded , width = 10, heigh = 5, device = 'png')
+
+sharp <- ggplot(all1) + aes(x=factor(one), y=all, fill = (two)) +
+  geom_bar(stat="identity", position = "stack") +
+  scale_y_continuous(name = "Count")+
+  labs(fill = "Effort for Species?") + 
+  scale_fill_manual(values=c("mediumpurple", "#00abff"))+ 
+  scale_x_discrete(name = "Effort Category", limits = c("Proactive", "Reactive", "Private", "Public")) +    theme(text=element_text(color="black", size = 15),axis.text=element_text(color="black"))
+
+
+ggsave(filename = "sharpESA.png", sharp, width = 10, heigh = 5, device = 'png')
+
+pdf("sharpESA")
+sharp
+#dev.off()
+while (!is.null(dev.list()))  dev.off()
+
+```
+
+### Partner Type Table 
+Question here - do we want to use all data that has been sampled or only the 42 species we have in the other analyses? 
+Depending on answer, need to change the == "R" to == "X" (same set up as further above) or do some other subsetting 
+```{r}
+part_type <- initiatves_partners2
+
+part_type <- part_type[which(part_type$post_5_25 == "x" | part_type$post_5_25 == "X"),] # need to use the same subset as the rest of the analysis 
+
+#also need to remove two species that have data for but which fall outside our dataset
+#part_type <- part_type[-which(part_type$post_5_25 == "R"),]
+
+part_type <- part_type %>% dplyr::select(scientific_name, common_name, RowSpecInfo, Agreement_Name, Partner_Source, Partners, Type_of_Org )
+
+#Need to remove empty rows with no species information (Before used "X" to filter to rows being used)
+#part_type <- part_type[-which(is.na(part_type$common_name)),]
+
+# Remove rows with no partners 
+part_type <- part_type[-which(is.na(part_type$Partners)),]
+
+# Remove rows with multi-partner strings 
+part_type <- part_type[-which(part_type$Type_of_Org == "multi"),]
+
+# Remove rows with unclear labels
+part_type <- part_type[-which(part_type$Type_of_Org == "UNC"),]
+
+
+## First want to check have the same partner type assigned to each partner
+check_here <- part_type %>% group_by(Partners, Type_of_Org) %>% arrange(Partners)
+
+## Also need to check why getting 44 species for USFWS when I think dataset only has 42 species 
+
+check_here_2 <- part_type %>% filter(Type_of_Org == "USFWS") %>% group_by(common_name) %>%    summarise(unique(common_name))
+
+
+ 
+## Get unique number of initiatives for each partner type 
+
+no_init_part_type <- part_type %>% 
+  group_by(common_name, RowSpecInfo, Agreement_Name, Type_of_Org ) %>% 
+  dplyr::count(Type_of_Org) %>%  #for each unique inititive done for a particular species, how many org types are working on that initiative
+  group_by(Type_of_Org) %>% 
+  dplyr::count(Type_of_Org) # given the unique number of initiatives calculated above, how many initiatives is an org type working on across the dataset
+  
+## Get unique number of species for each partner type 
+no_sp_part_type <- part_type %>% 
+  group_by(common_name, Type_of_Org ) %>% 
+  dplyr::count(common_name) %>% 
+  dplyr::count(Type_of_Org) %>% 
+  group_by(Type_of_Org) %>% 
+  dplyr::count()
+#for each unique inititive done for a particular species, how many org types are working on that initiative
+  
+count(unique(part_type$scientific_name))
+
+
+
+### ways to skin a cat... other options for categories here
+
+#Organize into 
+  # Federal 
+  # state
+  # other entities 
+
+
+part_type_cat2 <- part_type
+
+## change all state abbreviations 
+part_type_cat2 <- part_type_cat2 %>%
+  mutate(Type_of_Org = case_when(str_detect(Type_of_Org, 'SB|SG|SL|SO|SW') ~ 'State', 
+                           str_detect(Type_of_Org, 'M|FO|BLM|NPS|USFWS|USFS') ~ 'Federal',
+                           str_detect(Type_of_Org, 'P') ~ 'Private',
+                           TRUE ~ 'OTHER'))
 
 
 
 
+no_init_part_type_cat2 <- part_type_cat2 %>% 
+  group_by(common_name, RowSpecInfo, Agreement_Name, Type_of_Org ) %>% 
+  dplyr::count(Type_of_Org) %>%  #for each unique inititive done for a particular species, how many org types are working on that initiative
+  group_by(Type_of_Org) %>% 
+  dplyr::count(Type_of_Org) # given the unique number of initiatives calculated above, how many initiatives is an org type working on across the dataset
+  
+## Get unique number of species for each partner type 
+no_sp_part_type_cat2 <- part_type_cat2 %>% 
+  group_by(common_name, Type_of_Org ) %>% 
+  dplyr::count(common_name) %>% 
+  dplyr::count(Type_of_Org) %>% 
+  group_by(Type_of_Org) %>% 
+  dplyr::count()
 
+```
+
+
+
+### Scrap work 
 Scrap - testing ECOS csv against our list of species 
 
-```{r, include = FALSE, echo = FALSE, eval=FALSE, warning=FALSE}
+```{r scrap, include = FALSE, echo = FALSE, eval=FALSE, warning=FALSE}
 
 mod_species    <- initiatves_partners  
 
@@ -1923,47 +2399,70 @@ checkdf <- left_join(names, confidence)
 
 checkdf <- checkdf[-which(is.na(checkdf$Initiatives_confidence_measure)),]
 
-checkdf <- checkdf %>% select(scientific_name, common_name, Initiatives_confidence_measure, partners_confidence_measure)
+checkdf <- checkdf %>% dplyr::select(scientific_name, common_name, Initiatives_confidence_measure, partners_confidence_measure)
 
-checkdf <- checkdf %>%  mutate(good = case_when(grepl("RC", partners_confidence_measure, ignore.case = TRUE) ~ 1))  %>% 
-  replace(is.na(.), 0)
+checkdf <- checkdf %>%  mutate(partner_good_5 = case_when(grepl("RC", partners_confidence_measure, ignore.case = TRUE) ~ 1))  %>% 
+  replace(is.na(.), .5)
 
-checkdf <- checkdf %>%  mutate(some_missing = case_when(grepl("MI", partners_confidence_measure, ignore.case = TRUE) ~ 1))  %>% 
-  replace(is.na(.), 0) 
+checkdf <- checkdf %>%  mutate(Initiatives_good_5 = case_when(grepl("RC", Initiatives_confidence_measure, ignore.case = TRUE) ~ 1))  %>% 
+  replace(is.na(.), .5)
 
-checkdf <- checkdf %>%  mutate(okay  = good + some_missing)  # Finding all cases 
+checkdf <- checkdf %>%  mutate(partner_good_1_5 = case_when(grepl("RC", partners_confidence_measure, ignore.case = TRUE) ~ 1))  %>% 
+  replace(is.na(.), 1.5)
+
+checkdf <- checkdf %>%  mutate(Initiatives_good_1_5 = case_when(grepl("RC", Initiatives_confidence_measure, ignore.case = TRUE) ~ 1))  %>% 
+  replace(is.na(.), 1.5)
+
+#checkdf <- checkdf %>%  mutate(some_missing = case_when(grepl("MI", partners_confidence_measure, ignore.case = TRUE) ~ 1))  %>% 
+ # replace(is.na(.), 0) 
+
+#checkdf <- checkdf %>%  mutate(okay  = good + some_missing)  # Finding all cases 
 
 
 # now for partners only going to create two new columns to subset 
 
+
+
 useme <- full_join(reg_partners, checkdf)
 
 
-good <- useme[which(useme$good == 1),]
-hist(good$NoHCPS_count)
-good <- good %>% select(scientific_name:private_land_proportion, NoHCPS_count)
-lma <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + private_land_proportion,data = good)
-summary(lma)
 
-okay <- useme[which(useme$okay == 1),]
-hist(okay$NoHCPS_count)
-okay <- okay %>% select(scientific_name:private_land_proportion, NoHCPS_count)
-lmb <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + private_land_proportion,data = okay)
-summary(lmb)
+### normal
+lma1 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + nserve_pop_stability + private_land_proportion,data = useme)
 
+### .5
+lmb1 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + nserve_pop_stability + private_land_proportion,data = useme, weights=partner_good_5)
+summary(lma1)
 
-#lm1 <- lm(log(NoHCPS_count) ~ range_area + plant  + total_threats,data = good)
-#lm4 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + Big_Pg_count,data = good)
-#lm10 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + private_land_proportion,data = good)
-#lm11 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + weighted_rural,data = good)
-#lm12 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + private_land_proportion + month_12,data = good)
-#lm13 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + private_land_proportion + wd_proposed,data = good)
-#lm14 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + private_land_proportion + wd_proposed + month_12,data = good)
-#lm15 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + total_threats + private_land_proportion + Big_Pg_count,data = good)
+### 1.5
+lmc1 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + nserve_pop_stability + private_land_proportion,data = useme, weights=partner_good_1_5)
 
 
-#stargazer(lm1, lm4, lm10, lm11, lm12, lm13, lm14, lm15, type = "html", title = "Partners_models", align = TRUE, out = "output/Sensitivity_analysis.html", # AIC isn't calculated for lm models so adding manually
-#          add.lines=list(c("AIC", round(AIC(lm1),1), round(AIC(lm4),1), round(AIC(lm10),1), round(AIC(lm11),1), round(AIC(lm12),1), round(AIC(lm13),1), round(AIC(lm14),1), round(AIC(lm15),1)  ))) 
+
+useme2 <- full_join(reg_prdctr_init, checkdf)
+
+
+
+### normal
+lma2 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion,data = useme2)
+
+### .5
+lmb2 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion,data = useme2, weights=Initiatives_good_5)
+
+### 1.5
+lmc2 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion,data = useme2, weights=Initiatives_good_1_5)
+
+stargazer(lma1, lmb1, lma2, lmb2, type = "html", title = "Preemptive Conservation Models Confidence Check",  out = "output/WeightedConfidenceCheck.html", 
+          star.char = c("+", "*", "**", "***"),
+          star.cutoffs = c(.1, .05, .01, .001), 
+          notes.append = FALSE, 
+          notes = c("+ p<.1; * p<0.05; ** p<0.01; *** p<0.001"), 
+          covariate.labels=c("Log of range area", "Plant (present = 1)",  "Natureserve popn. stability", "Total 5 factor threats", "Proportion of private land", "Constant"),
+          column.labels = c("PartnerNormal", "Partner.5", "Partner1.5", "InitiativesNormal", "Initiatives.5", "Initiatives1.5"),
+          model.numbers = FALSE,
+          dep.var.labels=c("Log of No. Partners", "Log of No. Initiatives"),
+          add.lines=list(c("AIC", round(AIC(lma1),1), round(AIC(lmb1),1),  round(AIC(lma2),1), round(AIC(lmb2),1) )))
+
 
 ```
 
@@ -2022,3 +2521,31 @@ min_tdata <- tdata[,c(3,4,18)]
 missing <- full_join(min_tdata, outcomes)
 
 ```
+
+
+
+- Breusch-Pagan test
+- https://www.r-bloggers.com/2016/01/how-to-detect-heteroscedasticity-and-rectify-it/
+- https://cran.r-project.org/web/packages/olsrr/vignettes/heteroskedasticity.html
+```{r OLD heteroskedasticity, include = FALSE, echo = FALSE, eval=FALSE}
+bptest(lm10)
+
+
+plot(lm10)
+
+qqPlot(residuals(lm10))
+
+
+#demo of how to resolve
+#food.ols <- lm(food_exp ~ income, data = food)
+#food$resi <- food.ols$residuals
+#varfunc.ols <- lm(log(resi^2) ~ log(income), data = food)
+#food$varfunc <- exp(varfunc.ols$fitted.values)
+#food.gls <- lm(food_exp ~ income, weights = 1/sqrt(varfunc), data = food)
+
+```
+While it doesn’t give us the critical value to compare the test statistic, all you need to look at is the p-value to determine whether or not you should reject the null. If the p-value is less than the level of significance (in this case if the p-value is less than α=0.05), then you reject the null hypothesis. Since 0.006579 < 0.05, we can reject the null hypothesis.
+
+With a p-value of 0.91, we fail to reject the null hypothesis (that variance of residuals is constant) and therefore infer that ther residuals are homoscedastic. Lets check this graphically as well.
+
+
