@@ -1127,6 +1127,23 @@ fish_taxa_private <- pairwise_fisher_test(taxa_private, p.adjust.method = "bonfe
   fish_taxa_private
   
   
+  
+ taxa_land1a <- taxa_land1 %>%    mutate(one = case_when(str_detect(one, 'plant') ~ 'Plant', 
+                           str_detect(one, '^vert') ~ 'Vertebrate',
+                           str_detect(one, 'inver') ~ 'Invertebrate')) %>% 
+                          mutate(two = case_when(str_detect(two, 'public') ~ 'Public', 
+                           str_detect(two, 'private') ~ 'Private'))
+
+ggplot(taxa_land1a) + aes(x=two, y=taxa_land, fill = (three)) +
+  geom_bar(stat="identity") +  ###??????
+  facet_wrap(~one) +
+  ggtitle("Land for types of species") + 
+  scale_y_continuous(name = "Count")+
+  labs(fill = "Yes or No")+ 
+  theme(panel.margin = grid:: unit(-1.25, "lines"))  +
+  scale_x_discrete(name = "Type of Action") + 
+    theme_bw(base_size = 14) 
+    
 ```
 
 
@@ -1604,15 +1621,16 @@ fish_threat_demst
 
 
 threats_plot <- ggplot(threat_actions1) + aes(x=two, y=threat_actions, fill = (three)) +
-  geom_bar(stat="identity", position = "stack", width = .9, preserve = "single") + 
+  geom_bar(stat="identity", position = "stack", width = 1, preserve = "single") + 
   facet_wrap(~one, nrow = 1) +
   ggtitle("Actions for types of threats") + 
-  scale_y_continuous(name = "count")+
+  scale_y_continuous(name = "Count")+
   labs(fill = "Yes or No")+ 
   theme(panel.margin = grid:: unit(-1.25, "lines")) + 
   theme(axis.text.x = element_text(angle = 45)) + 
   scale_x_discrete(name = "Type of Action") +   
-  theme(text=element_text(color="black"),axis.text=element_text(color="black"))
+  theme(text=element_text(color="black"),axis.text=element_text(color="black"))+
+  theme_bw(base_size = 7) 
  
 
 ```
