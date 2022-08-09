@@ -54,6 +54,7 @@ library(car) #contains vif function
 library("stargazer")
 library(fmsb) #for pairwise fisher's test
 library("rstatix") ## for fisher's exact 
+library(zoo)
 library(lmtest) ## for heteroskedasticity 
 library(car) #function qqPlot - car
 library(sandwich) # for resolving heteroskedasticity
@@ -67,16 +68,20 @@ library(lmtest) ## not sure what this does but was on same blog as sandwich pack
 
 ##load in different datasets
 ```{r, echo = FALSE, include = FALSE}
-initiatves_partners <- read_excel(paste0("/usr/local/bin/store/partner_rff/data/AS12_Jun_15_21_codingdata.xlsx"), sheet = "initiatves_partners", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
+
+newthreatsdata <- read_excel(paste0(DataSource, "/AS13_RSE2_May_6_22_codingdata.xlsx"), sheet = "threats", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
+               )
+
+initiatves_partners <- read_excel(paste0(DataSource, "/AS12_Jun_15_21_codingdata.xlsx"), sheet = "initiatves_partners", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
                )
 
 initiatves_partners2 <- read_excel(paste0(DataSource,"/AS12_Aug_1_21_codingdata.xlsx"), sheet = "initiatves_partners", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
                ) ## This has the updated Partner types but it breaks my code if I change all to this format
 
-proactive <- read_excel(paste0("/usr/local/bin/store/partner_rff/data/AS12_Jun_15_21_codingdata.xlsx"), sheet = "threats", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
+proactive <- read_excel(paste0(DataSource, "/AS12_Jun_15_21_codingdata.xlsx"), sheet = "threats", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
                )
 
-confidence <- read_excel(paste0("/usr/local/bin/store/partner_rff/data/AS12_Jun_15_21_codingdata.xlsx"), sheet = "metadata", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
+confidence <- read_excel(paste0(DataSource, "/AS12_Jun_15_21_codingdata.xlsx"), sheet = "metadata", trim_ws = T, col_names = T, na = c("", " ", "NA") #issue was that "" is coming up instead of NA
                )
 
 
@@ -120,7 +125,7 @@ names <- sub_initiatves_partners[,c(3,4)]
 names <- names %>% distinct(scientific_name)
 ## then joining with proactive dataset 
 
-proactive <- left_join(names, proactive)
+proactive <- left_join(names, newthreatsdata)
 
 FR_pg_length_and_doc_type <- proactive %>% dplyr::select(scientific_name, common_name, FR_pg_length, type_FR_doc)
 
@@ -206,12 +211,12 @@ df <- t_pro_df[,c(25,1:20,21,22:24)]
 
 #number of partners in each of the agreements
 no_init_per_sp <- sub_initiatves_partners %>% group_by(common_name, RowSpecInfo) %>% distinct(Agreement_Name) %>%    #count how many names are distinct 
-summarise(n())
+dplyr::summarise(n())
 
 ## number of initiatives per species 
 no_init_per_sp$count <- no_init_per_sp$`n()` 
 no_init_per_sp_2 <- no_init_per_sp %>% group_by(common_name) %>%
-summarize(sum = sum(count))
+dplyr::summarise(sum = sum(count))
 
 ggplot(no_init_per_sp_2) + geom_bar(mapping = aes(x = reorder(common_name, -sum), y = sum), stat = "identity")+ theme(axis.text.x = element_text(angle = 90)) + ggtitle("Number of initiatives per species") + scale_x_discrete(name ="Species") + scale_y_continuous(name ="Count")
 
@@ -224,7 +229,7 @@ summary(no_init_per_sp_2)
 ##### - Count of efforts, agreements, groups per species
 
 no_init_per_sp <- sub_initiatves_partners %>% group_by(common_name, RowSpecInfo) %>% distinct(Agreement_Name) %>%    #count how many names are distinct 
-summarise(n())
+dplyr::summarise(n())
 
 ## need to figure out how to add "Landowner" and "document" to other categories to count types of efforts 
 no_init_per_sp[which(no_init_per_sp$RowSpecInfo == "Land Owner"),2] <- "Effort"
@@ -233,7 +238,7 @@ no_init_per_sp[which(no_init_per_sp$RowSpecInfo == "Document"),2] <- "Agreement"
 no_init_per_sp$count <- no_init_per_sp$`n()` 
 
 no_init_per_sp_3 <- no_init_per_sp %>% group_by(common_name, RowSpecInfo) %>%
-summarize(sum = sum(count))
+dplyr::summarise(sum = sum(count))
 
 
 ggplot(no_init_per_sp_3, aes(common_name, sum)) +   
@@ -253,6 +258,20 @@ sumstat <- pivot_wider(sumstat, names_from = RowSpecInfo, values_from = sum)
 sum(sumstat$Agreement, na.rm = T)
 sum(sumstat$Effort, na.rm = T)
 sum(sumstat$Group, na.rm = T)
+
+
+
+########## Data points for table
+
+init_type_sp_count <- no_init_per_sp %>% 
+  group_by(RowSpecInfo) %>% dplyr::summarise(n())
+
+no_init_partner <- sub_initiatves_partners %>% group_by(common_name, RowSpecInfo, Partners) %>% distinct(Agreement_Name) %>%    #count how many names are distinct 
+dplyr::summarise(n())
+
+no_init_partner_2 <- no_init_partner %>% 
+  group_by(RowSpecInfo) %>% dplyr::summarise(n())
+
 
 ```
 
@@ -441,7 +460,7 @@ lmc <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + nserve_pop_s
 lmd <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion + wd_proposed + month_12 + nserve_pop_stability,data = reg_prdctr_init) #kitchen sink
 
 
-lme <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion + public_mang_shannons_diversity ,data = reg_prdctr_init)
+#lme <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion + public_mang_shannons_diversity ,data = reg_prdctr_init) #no longer want shannon's H
 
 lmf <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion + Shannon_private,data = reg_prdctr_init)
 
@@ -479,6 +498,18 @@ Trying stargazer
 
 ```{r stargazer intiative, include = FALSE, echo = FALSE}
 
+lm10a <- lm((no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion,data = reg_prdctr_init)
+lm10 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion,data = reg_prdctr_init)
+
+lmc <- lm(log(no_iniv) ~ log(range_area) + plant + total_threats  + nserve_pop_stability + private_land_proportion , data = reg_prdctr_init)
+
+lm20 <- lm(log(no_iniv) ~ log(range_area) + plant   + nserve_pop_stability + private_land_proportion , data = reg_prdctr_init)
+
+lm14 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion + wd_proposed + month_12,data = reg_prdctr_init)
+
+lmd <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion + wd_proposed + month_12 + nserve_pop_stability,data = reg_prdctr_init) #kitchen sink
+
+lm22 <- lm(log(no_iniv) ~ log(range_area) + plant  + private_land_proportion + wd_proposed + month_12 + nserve_pop_stability,data = reg_prdctr_init) #kitchen sink
 
 
 # Calculate robust confidence intervals
@@ -489,24 +520,24 @@ aic_calc <- function(x)
   round(AIC(x),1)
 
 mdls <- list(
-  lm10, lm14, lmc, lmd, lme
+   lm10,  lm20, lmc, lm14, lm22, lmd
 )
 
 
-stargazer(lm10, lm14, lmc, lmd, lme, 
+stargazer(lm10, lm20, lmc, lm14, lm22, lmd, 
           type = "html", 
-          title = "Initiatives_models_Supplementary", 
+          
           align = TRUE, 
-          out = "output/Initiatives_models_1_Aug_2021.html", 
+          out = "output/Initiatives_models_16_Jun_2022.html", 
           flip = TRUE, # AIC isn't calculated for lm models so adding manually
-          add.lines=list(c("AIC", aic_calc(lm10), aic_calc(lm14), aic_calc(lmc), aic_calc(lmd), aic_calc(lme)  )) , 
+          add.lines=list(c("AIC", aic_calc(lm10), aic_calc(lm20), aic_calc(lmc), aic_calc(lm14), aic_calc(lm22), aic_calc(lmd) )) , 
           se = lapply(mdls, se_robust),  ## setting se to be calculated by Robust Standard Errors from function
           omit.stat = c("f", "ser"), 
           star.char = c("+", "*", "**", "***"),
           star.cutoffs = c(.1, .05, .01, .001), 
           notes.append = FALSE, 
           notes = c("+ p<.1; * p<0.05; ** p<0.01; *** p<0.001"), 
-          covariate.labels=c("Log of range area", "Plant (present = 1)", "Total number of five factor threats", "NatureServe popn stability",  "Proportion of private land",  "wd proposed","month 12 findings", "Public mang. shannons diversity" ,"Constant"),
+          covariate.labels=c("Log of range area", "Plant (present = 1)", "Total threats", "NatureServe popn stability",  "Proportion of private land",  "Withdrawal of a proposed rule","12 Month finding", "Constant"),
           dep.var.labels=c("Log of No. Initiatives") )
 
 
@@ -546,6 +577,7 @@ rsq.partial(lmc)
 ## rerunning model so can have log_rangearea instead of log(range_area) --> same values but can't use predict with log(range_area) and get different set up in stargazer if run one model with log_rangearea
 lm10 <- lm(log(no_iniv) ~ log_rangearea + plant  + total_threats + private_land_proportion,data = reg_prdctr_init)
 
+summary(lm10)
 
 ## Get mean from summary stats of each predictor
 summary(reg_prdctr_init$log_rangearea)
@@ -691,9 +723,20 @@ outcomes <- outcomes %>% rowwise() %>% mutate("private_only" = private - both_pu
 
 all <- outcomes
 
+
+### Testing to see wether there is action info for all 42 species
+code_test <- outcomes[,c(1:10)]
+code_test <- code_test %>% rowwise() %>% mutate("count" = sum(preempt_private, preempt_public, preempt_unclear, respon_private, respon_public, respon_unclear, private_unclear, public_unclear)) 
+## 1 species doesn't have any action info.. (BASALT DAISY)
+
+### remove row with all 0s (this will change things aka (BASALT DAISY) ) 
+outcomes <- outcomes[-c(4),]
+
+
 all <- all %>% dplyr::select(preempt:react, public:private)
 
 names(all) <- c("preempt_yes", "react_yes"  , "public_yes" , "private_yes")
+
 
 ## create the inverse (cases where no)
 all <- all %>% 
@@ -865,6 +908,15 @@ taxa_vert <- taxa_actions2 %>% filter(one == "vert") %>% dplyr::select(yes, no)
 fish_taxa_vert <- pairwise_fisher_test(taxa_vert, p.adjust.method = "bonferroni")
 fish_taxa_vert <- fisher_test(taxa_vert)
 fish_taxa_vert
+
+taxa_actions2 %>% filter(one == "invert") %>% kable()
+
+taxa_invert <- taxa_actions2 %>% filter(one == "invert") %>% dplyr::select(yes, no)
+fish_taxa_invert <- pairwise_fisher_test(taxa_invert, p.adjust.method = "bonferroni")
+fish_taxa_invert <- fisher_test(taxa_invert)
+fish_taxa_invert
+
+
 
 taxa_actions2 %>% filter(two == "preempt") %>% kable()
 
@@ -1040,7 +1092,8 @@ landactions <- landactions %>%
  mutate(react_private_yes = react*private) %>% ## any cases will have 1
   mutate(react_private_no = case_when(react_private_yes < 1 ~ 1  )) 
  
- 
+ ## # of species with at least one restorative action and at least one prohibitive action mentioned 
+actions_mentioned <- colSums(landactions[, c(3,4)], na.rm = T)
 
 
 landactionsa <- landactions
@@ -1340,7 +1393,7 @@ fish_threat_demst
 
 
 threats_plot <- ggplot(threat_actions1) + aes(x=two, y=threat_actions, fill = (three)) +
-  geom_bar(stat="identity", position = "stack", width = 1, preserve = "single") + 
+  geom_bar(stat="identity", position = "stack", width = 1, preserve = "single", color = "black") + 
   facet_wrap(~one, nrow = 1) +
   ggtitle("Actions for types of threats") + 
   scale_y_continuous(name = "Count")+
@@ -1468,7 +1521,7 @@ partners <- partners[-which(is.na(partners$Partners)),]
   # the other where remove text after - (eg BLM-Suprise Feild office would be BLM)
 
 normal_partner_count <- partners %>% group_by(scientific_name) %>% 
-  distinct(Partners) %>%  summarise(n()) 
+  distinct(Partners) %>%  dplyr::summarise(n()) 
 #nothing removed or changed 
 
 names(normal_partner_count) <- c("scientific_name", "normal_count" )
@@ -1485,7 +1538,7 @@ sub_partners <- partners
 sub_partners$Partners <- gsub("(.*)-.*", "\\1", sub_partners$Partners) ## Altered text from https://stackoverflow.com/questions/25307899/r-remove-anything-after-comma-from-columnn 
 
 mod_partner_count <- sub_partners %>% group_by(scientific_name) %>% 
-  distinct(Partners) %>%  summarise(n()) 
+  distinct(Partners) %>%  dplyr::summarise(n()) 
 
 names(mod_partner_count) <- c("scientific_name", "no_offices" )
 
@@ -1499,7 +1552,7 @@ no_district <- sub_partners %>%
 no_district_part <- no_district[-which(no_district$district == 1),]
 
 no_district_part_count <- no_district_part %>% group_by(scientific_name) %>% 
-  distinct(Partners) %>%  summarise(n())  #count modified number of partners here now
+  distinct(Partners) %>%  dplyr::summarise(n())  #count modified number of partners here now
 
 names(no_district_part_count) <- c("scientific_name", "no_distinct")
 
@@ -1516,7 +1569,7 @@ NoHCPS <- partners
 NoHCPS <- NoHCPS[-which(NoHCPS$DocCategory == "HCP"),] ## loose ~90 rows 
 
 NoHCPS_count <- NoHCPS %>% group_by(scientific_name) %>% 
-  distinct(Partners) %>%  summarise(n()) 
+  distinct(Partners) %>%  dplyr::summarise(n()) 
 
 names(NoHCPS_count) <- c("scientific_name", "NoHCPS_count")
 
@@ -1528,7 +1581,7 @@ FR_only <- partners
 FR_only <- FR_only[which(FR_only$Partner_Source == "FR"),]
 
 FR_only_count <- FR_only %>% group_by(scientific_name) %>% 
-  distinct(Partners) %>%  summarise(n()) 
+  distinct(Partners) %>%  dplyr::summarise(n()) 
 
 names(FR_only_count) <- c("scientific_name", "FR_only_count")
 
@@ -1606,7 +1659,10 @@ reg_partners <- reg_partners %>% mutate(Shannon_private = ((1 - private_land_pro
 
 ```
 
-
+Writing csv of the datatable for the 42 species for tyler 
+```{r}
+write.csv(reg_partners, paste(DataSource,"/42species.csv", sep = ""))
+```
 
 
 ### Base model
@@ -1689,18 +1745,18 @@ lm16 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + 
 
 lm10 <- lm(log(NoHCPS_count) ~  log(range_area)+ plant  + total_threats + private_land_proportion,data = reg_partners)
 
-lm18 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion + public_mang_shannons_diversity, data = reg_partners)
+#lm18 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion , data = reg_partners)
 
 lm19 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion + wd_proposed + month_12, data = reg_partners)
 
-lm20 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion + wd_proposed + month_12 + public_mang_shannons_diversity + total_threats , data = reg_partners) #kitchen sink
+lm20 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion + wd_proposed + month_12 + total_threats , data = reg_partners) #kitchen sink
 
 
-lm21 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion + public_mang_shannons_diversity, data = reg_partners)
+#lm21 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion , data = reg_partners)
 
-lm22 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + Shannon_private, data = reg_partners)
+lm22 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability, data = reg_partners)
 
-lm23 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + Shannon_private_area, data = reg_partners)
+#lm23 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability , data = reg_partners)
 
 
 
@@ -1729,6 +1785,22 @@ Adding stargazer
 #          add.lines=list(c("AIC", round(AIC(lm1),1), round(AIC(lm4),1), round(AIC(lm10),1), round(AIC(lm12),1), round(AIC(lm13),1), round(AIC(lm14),1), round(AIC(lm15),1), round(AIC(lm11),1), round(AIC(lm16),1), round(AIC(lm17),1)  ))  )
 
 
+
+
+lm16 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion, data = reg_partners)
+lm10 <- lm(log(NoHCPS_count) ~  log(range_area)+ plant  + total_threats + private_land_proportion,data = reg_partners)
+
+lmzz <- lm(log(NoHCPS_count) ~  log(range_area)+ plant  + total_threats + nserve_pop_stability + private_land_proportion,data = reg_partners)
+
+lm19 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion + wd_proposed + month_12, data = reg_partners)
+lm20 <- lm(log(NoHCPS_count) ~ log(range_area) + plant + nserve_pop_stability + private_land_proportion + wd_proposed + month_12 + total_threats , data = reg_partners) #kitchen sink
+
+lm22 <- lm(log(NoHCPS_count) ~ log(range_area) + plant  + private_land_proportion + wd_proposed + month_12 + total_threats , data = reg_partners) #kitchen sink
+
+
+
+
+
 # Calculate robust confidence intervals
 se_robust <- function(x)
   coeftest(x, vcov. = sandwich::sandwich)[, 2]
@@ -1737,7 +1809,7 @@ aic_calc <- function(x)
   round(AIC(x),1)
 
 mdls <- list(
-  lm16, lm10, lm18, lm19, lm20, lm21, lm22, lm23
+  lm16, lm10, lmzz, lm19, lm22, lm20
 )
 
 stargazer(
@@ -1745,20 +1817,20 @@ stargazer(
   se = lapply(mdls, se_robust), out = "output/Partners_models_SE_trial.html")
 
 
-stargazer(lm16, lm10, lm18, lm19, lm20, lm21, lm22, lm23, 
+stargazer(lm16, lm10, lmzz, lm19, lm22, lm20, 
           type = "html", 
-          title = "Partners_models_Supplementary", 
+          
           align = TRUE, 
-          out = "output/Partners_models_1_Aug_2021.html", 
+          out = "output/Partners_models_16_Jun_2022.html", 
           flip = TRUE, # AIC isn't calculated for lm models so adding manually
-          add.lines=list(c("AIC", aic_calc(lm16), aic_calc(lm10), aic_calc(lm18), aic_calc(lm19), aic_calc(lm20), aic_calc(lm21) , aic_calc(lm22) , aic_calc(lm23)  )) , 
+          add.lines=list(c("AIC", aic_calc(lm16), aic_calc(lm10), aic_calc(lm19), aic_calc(lmzz), aic_calc(lm20), aic_calc(lm22)   )) , 
           se = lapply(mdls, se_robust),  ## setting se to be calculated by Robust Standard Errors from function
           omit.stat = c("f", "ser"), 
           star.char = c("+", "*", "**", "***"),
           star.cutoffs = c(.1, .05, .01, .001), 
           notes.append = FALSE, 
           notes = c("+ p<.1; * p<0.05; ** p<0.01; *** p<0.001"), 
-          covariate.labels=c("Log of range area", "Plant (present = 1)", "NatureServe popn stability", "Total number of five factor threats",  "Proportion of private land", "Public mang. shannons diversity" , "wd proposed","month 12 findings", "Constant"),
+          covariate.labels=c("Log of range area", "Plant (present = 1)", "NatureServe popn stability", "Total threats",  "Proportion of private land" , "Withdrawal of a proposed rule","12 Month finding", "Constant"),
           dep.var.labels=c("Log of No. Partners") )
 
 
@@ -1805,6 +1877,8 @@ Predicting values
 
 ## rerunning model so can have log_rangearea instead of log(range_area) --> same values but can't use predict with log(range_area) and get different set up in stargazer if run one model with log_rangearea
 lm16 <- lm(log(NoHCPS_count) ~ log_rangearea + plant + nserve_pop_stability + private_land_proportion, data = reg_partners)
+
+summary(lm16)
 
 #fitted model
 # mod <- -7.10+0.29 * (log(range)) + -0.062 *(plant) + 0.21 (threats) + 1.58 * private_land
@@ -1893,8 +1967,12 @@ tryme <- NoHCPS
 tryme <- tryme %>% distinct(Partners) 
 
 
-
 summary(reg_partners$NoHCPS_count)
+
+```
+
+- number of inititives for all species 
+```{r}
 
 ```
 
@@ -1915,7 +1993,7 @@ stargazer(lm10, type = "html", title = "Preemptive Conservation Models",  out = 
           star.cutoffs = c(.1, .05, .01, .001), 
           notes.append = FALSE, 
           notes = c("+ p<.1; * p<0.05; ** p<0.01; *** p<0.001"), 
-          covariate.labels=c("Log of range area", "Plant (present = 1)", "Total number of five factor threats",  "Proportion of private land", "Constant"),
+          covariate.labels=c("Log of range area", "Plant (present = 1)", "Total threats",  "Proportion of private land", "Constant"),
           dep.var.labels=c("Log of No. Initiatives"), 
           add.lines=list(c("AIC", round(AIC(lm10),1)))) 
 
@@ -1935,6 +2013,38 @@ sd(reg_prdctr_init$no_iniv)
 summary(partners$NoHCPS_count)
 sd(partners$NoHCPS_count)
 
+
+
+# Calculate robust confidence intervals
+se_robust <- function(x)
+  coeftest(x, vcov. = sandwich::sandwich)[, 2]
+
+aic_calc <- function(x)
+  round(AIC(x),1)
+
+mdls <- list(
+  lm10, lm16
+)
+
+
+stargazer(lm10, lm16,
+          type = "html", 
+          
+          align = TRUE, 
+          out = "output/BothLMTable3.html", 
+          flip = TRUE, # AIC isn't calculated for lm models so adding manually
+          add.lines=list(c("AIC", aic_calc(lm10), aic_calc(lm16)  )) , 
+          se = lapply(mdls, se_robust),  ## setting se to be calculated by Robust Standard Errors from function
+          omit.stat = c("f", "ser"), 
+          star.char = c("+", "*", "**", "***"),
+          star.cutoffs = c(.1, .05, .01, .001), 
+          notes.append = FALSE, 
+          notes = c("+ p<.1; * p<0.05; ** p<0.01; *** p<0.001"), 
+          covariate.labels=c("Log of range area", "Plant (present = 1)", "Total threats", "NatureServe popn stability",  "Proportion of private land","Constant"),
+          dep.var.labels=c("Log of No. Initiatives", "Log of No. Partners") )
+
+
+covariate.labels=c("Log of range area", "Plant (present = 1)",  "Natureserve popn. stability", "Proportion of private land", "Constant")
 
 ```
 
@@ -2011,15 +2121,22 @@ while (!is.null(dev.list()))  dev.off()
 ### Partner Type Table 
 Question here - do we want to use all data that has been sampled or only the 42 species we have in the other analyses? 
 Depending on answer, need to change the == "R" to == "X" (same set up as further above) or do some other subsetting 
+
+New note - currently have HCPs in partner type counts (these were not used in regression)
 ```{r}
 part_type <- initiatves_partners2
 
 part_type <- part_type[which(part_type$post_5_25 == "x" | part_type$post_5_25 == "X"),] # need to use the same subset as the rest of the analysis 
 
+part_type <- part_type[-which(is.na(part_type$RowSpecInfo)),]
+
+
 #also need to remove two species that have data for but which fall outside our dataset
 #part_type <- part_type[-which(part_type$post_5_25 == "R"),]
 
-part_type <- part_type %>% dplyr::select(scientific_name, common_name, RowSpecInfo, Agreement_Name, Partner_Source, Partners, Type_of_Org )
+part_type <- part_type %>% dplyr::select(scientific_name, common_name, RowSpecInfo, Agreement_Name, Partner_Source, Partners, Type_of_Org, DocCategory )
+
+part_type <- part_type[-which(part_type$DocCategory == "HCP"),] ## loose ~90 rows 
 
 #Need to remove empty rows with no species information (Before used "X" to filter to rows being used)
 #part_type <- part_type[-which(is.na(part_type$common_name)),]
@@ -2098,6 +2215,101 @@ no_sp_part_type_cat2 <- part_type_cat2 %>%
   group_by(Type_of_Org) %>% 
   dplyr::count()
 
+
+
+## Get raw count of each partner type 
+no_raw_part_type_cat2 <- part_type_cat2 %>% 
+  group_by(Type_of_Org ) %>% 
+  dplyr::count(Type_of_Org) 
+
+### UGH this has reduancaies in it... Need to find where got number 326 from... 
+
+
+
+
+###### Checking to make sure that the data used here yeilds same results as used in regression 
+
+part_type
+
+dupNoHCPS <- NoHCPS
+
+#dupNoHCPS <- dupNoHCPS[-which(dupNoHCPS$DocCategory == "HCP"),] ## loose ~90 rows 
+
+NoHCPS_count <- dupNoHCPS %>% group_by(scientific_name) %>% 
+  distinct(Partners) %>%  dplyr::summarise(n()) 
+
+part_type <- part_type %>% dplyr::select(scientific_name, common_name, RowSpecInfo, Agreement_Name, Partner_Source, Partners, Type_of_Org, DocCategory )
+
+
+part_typeugh <- part_type[-which(part_type$DocCategory == "HCP"),] ## loose ~90 rows 
+
+part_typeugh <- part_type %>% group_by(scientific_name) %>% 
+  distinct(Partners) %>%  dplyr::summarise(n()) 
+
+names(part_typeugh) <- c("scientific_name", "okeycount"  )
+
+checkmeshit <- full_join(part_typeugh, NoHCPS_count)
+
+
+
+#######################################################################################################################
+### Get same info for no initatives 
+
+no_raw_init_type_cat2 <- part_type_cat2 %>% 
+  group_by(Agreement_Name, RowSpecInfo ) %>% 
+  dplyr::count(RowSpecInfo) 
+
+no_raw_init_type_cat2 <- no_raw_init_type_cat2 %>% 
+  group_by(RowSpecInfo ) %>% 
+  dplyr::count(RowSpecInfo) 
+
+
+
+```
+
+
+Difference in data count is that some species don't have partners... 
+
+```{r}
+#number of partners in each of the agreements
+no_init_per_sp <- sub_initiatves_partners %>% group_by(common_name, RowSpecInfo) %>% distinct(Agreement_Name) %>%    #count how many names are distinct 
+dplyr::summarise(n())
+
+ohboy <- sub_initiatves_partners
+
+ohboy <- ohboy[-which(ohboy$DocCategory == "HCP"),] ## loose ~90 rows 
+
+# Remove rows with no partners 
+ohboy <- ohboy[-which(is.na(ohboy$Partners)),]
+
+# Remove rows with multi-partner strings 
+ohboy <- ohboy[-which(ohboy$Type_of_Org == "multi"),]
+
+# Remove rows with unclear labels
+ohboy <- ohboy[-which(ohboy$Type_of_Org == "UNC"),]
+
+ohboy2 <- ohboy %>% 
+  dplyr::select(scientific_name, common_name, RowSpecInfo, Agreement_Name, Partner_Source, Partners, Type_of_Org, DocCategory ) %>% 
+  group_by(common_name, RowSpecInfo, Agreement_Name) %>% distinct(Partners) %>%    #count how many names are distinct 
+dplyr::summarise(n())
+
+names(ohboy2) <- c("common_name"  ,  "RowSpecInfo"   , "Agreement_Name", "ohboycount"   )
+
+part_type2 <- part_type %>% 
+  dplyr::select(scientific_name, common_name, RowSpecInfo, Agreement_Name, Partner_Source, Partners, Type_of_Org, DocCategory ) %>% 
+  group_by(common_name, RowSpecInfo, Agreement_Name) %>% distinct(Partners) %>%    #count how many names are distinct 
+dplyr::summarise(n())
+
+
+ugh <- full_join(ohboy2,part_type2)
+
+## So issue is that some of the agreement types were NA but haven't been removed yet 
+# Issue ARCTIC GRAYLING- UPPER MISSOURI RIVER DPS - - Big Hole River Drought Management Plan
+  # Need to use initiatves_partners2 (I think original dfs used to create ohboy2 vs part_type2 differ and that's causeing issue)
+
+getnumbers <- ugh %>% group_by(common_name, RowSpecInfo) %>% dplyr::summarise(n())
+
+
 ```
 
 
@@ -2134,9 +2346,24 @@ run confidence check
 checkdf <- left_join(names, confidence)
 # for some reason Beaver cave beetle got replicated so removing the row
 
-checkdf <- checkdf[-which(is.na(checkdf$Initiatives_confidence_measure)),]
+#checkdf <- checkdf[-which(is.na(checkdf$Initiatives_confidence_measure)),] ## This is where the issue is coming from (only have 38 species here... Let's try and do the same thing but a different way)
+
 
 checkdf <- checkdf %>% dplyr::select(scientific_name, common_name, Initiatives_confidence_measure, partners_confidence_measure)
+
+checkdf <- full_join(checkdf, names, by = c("scientific_name", "common_name"  ))
+
+### ugh okay so still missing data for some species but I have it in the data sheet so just going to manually add it to the spreadsheet..
+
+# First remove duplicated species
+checkdf <- checkdf[-c(6),] 
+
+checkdf[24,c(3:4)] <- c("RC")
+checkdf[31,c(3:4)] <- c("MI")
+checkdf[33,c(3:4)] <- c("SI")
+checkdf[38,c(3:4)] <- c("RC")
+
+
 
 checkdf <- checkdf %>%  mutate(partner_good_5 = case_when(grepl("RC", partners_confidence_measure, ignore.case = TRUE) ~ 1))  %>% 
   replace(is.na(.), .5)
@@ -2189,13 +2416,13 @@ lmb2 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_lan
 ### 1.5
 lmc2 <- lm(log(no_iniv) ~ log(range_area) + plant  + total_threats + private_land_proportion,data = useme2, weights=Initiatives_good_1_5)
 
-stargazer(lma1, lmb1, lma2, lmb2, type = "html", title = "Preemptive Conservation Models Confidence Check",  out = "output/WeightedConfidenceCheck.html", 
+stargazer(lma1, lmb1, lma2, lmb2, type = "html",  out = "output/WeightedConfidenceCheck_2022_04_22.html", 
           star.char = c("+", "*", "**", "***"),
           star.cutoffs = c(.1, .05, .01, .001), 
           notes.append = FALSE, 
           notes = c("+ p<.1; * p<0.05; ** p<0.01; *** p<0.001"), 
-          covariate.labels=c("Log of range area", "Plant (present = 1)",  "Natureserve popn. stability", "Total 5 factor threats", "Proportion of private land", "Constant"),
-          column.labels = c("PartnerNormal", "Partner.5", "Partner1.5", "InitiativesNormal", "Initiatives.5", "Initiatives1.5"),
+          covariate.labels=c("Log of range area", "Plant (present = 1)",  "Natureserve popn. stability", "Total threats", "Proportion of private land", "Constant"),
+          column.labels = c("PartnerNormal", "Partner.5", "InitiativesNormal", "Initiatives.5"),
           model.numbers = FALSE,
           dep.var.labels=c("Log of No. Partners", "Log of No. Initiatives"),
           add.lines=list(c("AIC", round(AIC(lma1),1), round(AIC(lmb1),1),  round(AIC(lma2),1), round(AIC(lmb2),1) )))
@@ -2227,6 +2454,97 @@ normal_partner_count <- question %>% group_by(scientific_name, RowSpecInfo, Agre
   distinct(DoWeHaveDoc) %>%  summarise(n(DoWeHaveDoc)) 
 
 ```
+
+
+
+Becky additional figure to add
+```{r}
+
+## partners
+
+lm16 <- lm(log(NoHCPS_count) ~ log_rangearea + plant + nserve_pop_stability + private_land_proportion, data = reg_partners)
+
+plot(reg_partners$range_area, reg_partners$NoHCPS_count)
+abline((lm16))
+
+## manually drop obs that aren't in model
+reg_partners_mod_mod <- reg_partners
+
+reg_partners_mod_mod <- reg_partners_mod_mod[-which(is.na(reg_partners_mod_mod$log_rangearea)),]
+reg_partners_mod_mod <- reg_partners_mod_mod[-which(is.na(reg_partners_mod_mod$NoHCPS_count)),]
+reg_partners_mod_mod <- reg_partners_mod_mod[-which(is.na(reg_partners_mod_mod$nserve_pop_stability)),]
+
+
+plot( predict(lm16), reg_partners_mod_mod$NoHCPS_count)
+plot_data <- data.frame( predicted_data = predict(lm16), reg_partners_mod_mod$NoHCPS_count)
+
+
+
+plot_data <- data.frame(Predicted_value = predict(lm16),  
+                       Observed_value = reg_partners_mod_mod$log_HCPS, prop = reg_partners_mod_mod$private_land_proportion)
+
+#plot_data$Predicted_value <- exp(plot_data$Predicted_value)
+
+plot(plot_data$prop, plot_data$Observed_value)
+abline(plot_data$prop, plot_data$Predicted_value)
+
+
+
+
+
+plot_data2 <- data.frame(Predicted_value = predict(lm16),  
+                       Observed_value = reg_partners_mod_mod$log_HCPS, lgrange = reg_partners_mod_mod$log_rangearea)
+
+#plot_data2$Predicted_value <- exp(plot_data2$Predicted_value)
+
+plot(plot_data2$lgrange, plot_data2$Observed_value)
+abline(reg = plot_data2$lgrange ~ plot_data2$Predicted_value)
+
+
+
+######## ############# ############# ############# #######################
+
+
+lm10 <- lm(log(no_iniv) ~ log_rangearea + plant  + total_threats + private_land_proportion,data = reg_prdctr_init)
+
+## manually drop obs that aren't in model
+reg_init_mod_mod <- reg_prdctr_init
+
+reg_init_mod_mod <- reg_init_mod_mod[-which(is.na(reg_init_mod_mod$log_rangearea)),]
+
+
+
+
+plot_data <- data.frame(Predicted_value = predict(lm10),  
+                       Observed_value = reg_init_mod_mod$log_initatives, prop = reg_init_mod_mod$private_land_proportion)
+
+#plot_data$Predicted_value <- exp(plot_data$Predicted_value)
+
+plot(plot_data$prop, plot_data$Observed_value)
+abline(plot_data$prop, plot_data$Predicted_value)
+
+
+
+
+
+
+plot_data <- data.frame(Predicted_value = predict(lm10),  
+                       Observed_value = reg_init_mod_mod$log_initatives, logrange = reg_init_mod_mod$log_rangearea)
+
+#plot_data$Predicted_value <- exp(plot_data$Predicted_value)
+
+
+x <- (1:length(reg_init_mod_mod$log_rangearea))
+
+plot(plot_data$logrange, plot_data$Observed_value)
+abline(plot_data$logrange, plot_data$Predicted_value)
+
+#add linear trend
+lines(predict(lm(plot_data$Predicted_value~plot_data$logrange)),col='green')
+ 
+```
+
+
 
 
 
